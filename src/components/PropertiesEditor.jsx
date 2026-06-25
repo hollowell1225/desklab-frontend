@@ -83,7 +83,7 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
     || template?.ports?.some(p => p.type === 'ac_output' || p.type === 'dc_output')
     || false;
 
-  const wattage = obj.wattage ?? template?.wattage ?? 0;
+  const wattage = toPowerValue(obj.wattage ?? template?.wattage);
   const maxLoad = toPowerValue(obj.maxLoad ?? template?.maxLoad);
 
   const currentLoad = hasPowerOutput ? computeDevicePowerLoad(obj.id, objects, connections) : 0;
