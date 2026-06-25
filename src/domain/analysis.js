@@ -18,6 +18,21 @@ export function toPowerValue(value) {
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
+// Fraction of maxLoad at/above which a power hub is flagged as "approaching limit".
+export const POWER_WARNING_RATIO = 0.9;
+
+// Classify a device's external power load against its safe maximum, coercing
+// both values first. Returns 'overload' (strictly over the limit), 'warning'
+// (at or above the warning ratio), or 'ok' (within limits, or no usable limit).
+export function classifyPowerLoad(currentLoad, maxLoad) {
+  const load = toPowerValue(currentLoad);
+  const limit = toPowerValue(maxLoad);
+  if (limit <= 0) return 'ok';
+  if (load > limit) return 'overload';
+  if (load > limit * POWER_WARNING_RATIO) return 'warning';
+  return 'ok';
+}
+
 const getPort = (object, portId) => object?.ports?.find(port => port.id === portId);
 const isPowerStrip = (object) =>
   object?.modelId === 'power-strip' || object?.type === 'power_strip';
@@ -347,7 +362,8 @@ export function analyzeProjectWiring(objects, connections) {
     const maxLoad = toPowerValue(object.maxLoad ?? template?.maxLoad);
     if (maxLoad > 0) {
       const currentLoad = computeDevicePowerLoad(object.id, objects, connections, powerGraph);
-      if (currentLoad > maxLoad) {
+      const loadStatus = classifyPowerLoad(currentLoad, maxLoad);
+      if (loadStatus === 'overload') {
         issues.push({
           id: `power-overload:${object.id}`,
           code: 'power_overload',
@@ -357,7 +373,7 @@ export function analyzeProjectWiring(objects, connections) {
           connectionIds: [],
           objectIds: [object.id],
         });
-      } else if (currentLoad > maxLoad * 0.9) {
+      } else if (loadStatus === 'warning') {
         issues.push({
           id: `power-warning:${object.id}`,
           code: 'power_warning',

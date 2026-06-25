@@ -5,7 +5,7 @@ import { Edges, Line, Text, useGLTF } from '@react-three/drei';
 import { createCameraPoseSynchronizer } from '../domain/camera-snapshot.js';
 import { getModelDefaultScale, findModelTemplate } from '../domain/catalog.js';
 import { evaluateConnectionLength, getConnectionEndpoints } from '../domain/connections.js';
-import { buildPowerGraph, computeDevicePowerLoad } from '../domain/analysis.js';
+import { buildPowerGraph, computeDevicePowerLoad, classifyPowerLoad, toPowerValue } from '../domain/analysis.js';
 import { toThreePosition, toThreeZRotation } from '../domain/coordinates.js';
 
 const CABLE_COLORS = {
@@ -286,16 +286,14 @@ export function PowerStatusOverlay({ objects, connections }) {
         if (!hasPowerOutput) return null;
 
         const template = findModelTemplate(obj);
-        const maxLoad = obj.maxLoad ?? template?.maxLoad ?? 0;
+        const maxLoad = toPowerValue(obj.maxLoad ?? template?.maxLoad);
         if (maxLoad <= 0) return null;
 
         const currentLoad = computeDevicePowerLoad(obj.id, objects, connections, powerGraph);
         if (currentLoad <= 0) return null;
 
-        const isOverloaded = currentLoad > maxLoad;
-        const isWarning = !isOverloaded && currentLoad > maxLoad * 0.9;
-
-        const color = isOverloaded ? '#f44336' : isWarning ? '#ff9800' : '#4caf50';
+        const loadStatus = classifyPowerLoad(currentLoad, maxLoad);
+        const color = loadStatus === 'overload' ? '#f44336' : loadStatus === 'warning' ? '#ff9800' : '#4caf50';
         const label = `⚡${currentLoad}W/${maxLoad}W`;
 
         return (

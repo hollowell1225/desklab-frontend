@@ -7,6 +7,7 @@ import {
   getInvalidConnectionIds,
   summarizeWiringIssues,
   computeDevicePowerLoad,
+  classifyPowerLoad,
 } from '../src/domain/analysis.js';
 import { placeCatalogObject } from '../src/domain/placement.js';
 import { DEVICE_CATALOG } from '../src/domain/catalog.js';
@@ -292,6 +293,23 @@ test('reports power overload and power warning for power hubs', () => {
   ], { type: 'monitor', modelId: 'monitor-27', wattage: 120 });
   const issues3 = analyzeProjectWiring([ups, pc, lightMonitor], conns2);
   assert.ok(issues3.some(i => i.code === 'power_warning'));
+});
+
+test('classifyPowerLoad reports overload, warning, and ok consistently', () => {
+  // No / non-positive limit means there is nothing to classify against.
+  assert.equal(classifyPowerLoad(1000, 0), 'ok');
+  assert.equal(classifyPowerLoad(1000, undefined), 'ok');
+
+  // Strictly over the limit is an overload; exactly at the limit is a warning.
+  assert.equal(classifyPowerLoad(501, 500), 'overload');
+  assert.equal(classifyPowerLoad(500, 500), 'warning');
+  // The warning threshold is strict: exactly 90% is still ok, just above it warns.
+  assert.equal(classifyPowerLoad(450, 500), 'ok');
+  assert.equal(classifyPowerLoad(451, 500), 'warning');
+
+  // String/invalid inputs are coerced, not concatenated or NaN-compared.
+  assert.equal(classifyPowerLoad('900', '500'), 'overload');
+  assert.equal(classifyPowerLoad('oops', '500'), 'ok');
 });
 
 test('computeDevicePowerLoad correctly aggregates power load recursively', () => {
