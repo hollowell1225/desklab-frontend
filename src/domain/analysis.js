@@ -9,6 +9,15 @@ import { findModelTemplate } from './catalog.js';
 const POWER_INPUT_TYPES = new Set(['ac_input', 'dc_input']);
 const POWER_OUTPUT_TYPES = new Set(['ac_output', 'dc_output']);
 
+// Coerce a stored wattage/maxLoad to a safe non-negative number. Imported or
+// draft-restored data can carry these as strings (isProjectObject does not
+// validate them), which would otherwise corrupt load arithmetic via string
+// concatenation or produce misleading comparisons.
+export function toPowerValue(value) {
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : 0;
+}
+
 const getPort = (object, portId) => object?.ports?.find(port => port.id === portId);
 const isPowerStrip = (object) =>
   object?.modelId === 'power-strip' || object?.type === 'power_strip';
@@ -335,7 +344,7 @@ export function analyzeProjectWiring(objects, connections) {
 
   for (const object of objects) {
     const template = findModelTemplate(object);
-    const maxLoad = object.maxLoad ?? template?.maxLoad ?? 0;
+    const maxLoad = toPowerValue(object.maxLoad ?? template?.maxLoad);
     if (maxLoad > 0) {
       const currentLoad = computeDevicePowerLoad(object.id, objects, connections, powerGraph);
       if (currentLoad > maxLoad) {
@@ -394,7 +403,7 @@ export function computeDevicePowerLoad(deviceId, objects, connections, existingP
       const childObj = objectById.get(childId);
       if (childObj) {
         const template = findModelTemplate(childObj);
-        const childSelfWattage = childObj.wattage ?? template?.wattage ?? 0;
+        const childSelfWattage = toPowerValue(childObj.wattage ?? template?.wattage);
         sum += getLoad(childId) + childSelfWattage;
       }
     }

@@ -332,6 +332,42 @@ test('computeDevicePowerLoad correctly aggregates power load recursively', () =>
   assert.equal(pcLoad, 0); // 没有外接设备，外接负载为0
 });
 
+test('power load coerces string/invalid wattage and maxLoad instead of corrupting math', () => {
+  // Drafts/imports can carry numeric fields as strings; isProjectObject does not
+  // validate wattage/maxLoad, so the engine must coerce them. String "+" must not
+  // turn the running load total into a concatenated string.
+  const strip = object('my-strip', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out-1', 'ac_output', 'output'),
+    port('ac-out-2', 'ac_output', 'output'),
+  ], { type: 'power_strip', modelId: 'power-strip', maxLoad: '2500' });
+  const heater = object('heater', [port('ac-in', 'ac_input', 'input')], { wattage: '900' });
+  const fan = object('fan', [port('ac-in', 'ac_input', 'input')], { wattage: 'oops' });
+
+  const conns = [
+    connection('c1', 'my-strip', 'ac-out-1', 'heater', 'ac-in', 1.5),
+    connection('c2', 'my-strip', 'ac-out-2', 'fan', 'ac-in', 1.5),
+  ];
+
+  const stripLoad = computeDevicePowerLoad('my-strip', [strip, heater, fan], conns);
+  assert.equal(typeof stripLoad, 'number');
+  assert.equal(stripLoad, 900); // "900" -> 900, invalid "oops" -> 0
+
+  // String maxLoad must still be comparable for overload detection.
+  const overheated = object('my-strip', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out-1', 'ac_output', 'output'),
+  ], { type: 'power_strip', modelId: 'power-strip', maxLoad: '500' });
+  const bigLoad = object('big', [port('ac-in', 'ac_input', 'input')], { wattage: '900' });
+  const issues = analyzeProjectWiring(
+    [overheated, bigLoad],
+    [connection('c', 'my-strip', 'ac-out-1', 'big', 'ac-in', 1.5)]
+  );
+  const overload = issues.find(i => i.code === 'power_overload');
+  assert.ok(overload, 'expected power_overload with string maxLoad/wattage');
+  assert.match(overload.description, /900W/);
+});
+
 test('shared power graph produces the same load totals as standalone load checks', () => {
   const ups = object('my-ups', [
     port('ac-in', 'ac_input', 'input'),
