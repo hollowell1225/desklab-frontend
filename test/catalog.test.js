@@ -72,6 +72,27 @@ test('generated port anchors stay normalized and preserve explicit anchors', () 
   assert.equal(port.anchor, explicit);
 });
 
+test('no two ports on a model share a default anchor position', () => {
+  // Cabling clarity depends on each port having a distinct world anchor; two ports
+  // at the same point make connections visually ambiguous. Guards the port-anchor
+  // accuracy the model-asset work relies on as the catalog grows.
+  for (const category of DEVICE_CATALOG) {
+    for (const model of category.models) {
+      const ports = withPortAnchors(model.ports || [], model.modelId);
+      const seen = new Map();
+      for (const port of ports) {
+        const key = ['x', 'y', 'z'].map(axis => port.anchor[axis].toFixed(4)).join(',');
+        assert.equal(
+          seen.has(key),
+          false,
+          `${model.modelId}: ports "${seen.get(key)}" and "${port.id}" share anchor ${key}`
+        );
+        seen.set(key, port.id);
+      }
+    }
+  }
+});
+
 test('modelId matching wins over shared legacy type matching', () => {
   const template = findModelTemplate({ modelId: 'monitor-27', type: 'monitor' });
   assert.equal(template.modelId, 'monitor-27');
