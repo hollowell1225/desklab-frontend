@@ -1174,7 +1174,7 @@ export default function App() {
 
         {/* 主体布局：左侧 3D Canvas + 右侧属性面板 */}
       <div
-        inert={projectEditable ? undefined : ''}
+        inert={!projectEditable}
         aria-disabled={!projectEditable}
         aria-busy={!projectLoaded}
         style={{
