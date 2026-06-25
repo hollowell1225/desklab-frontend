@@ -1,0 +1,511 @@
+import { useCallback, useEffect, useState } from 'react';
+import {
+  arePortsCompatible,
+  evaluateConnectionLength,
+  inferCableType,
+  isPortDirectionConsistent,
+  parsePositiveCableLength,
+  shouldResetConnectionDraftForSelection,
+  buildEthernetTopology,
+} from '../domain/connections.js';
+import { createEntityId } from '../domain/identifiers.js';
+
+// --- Connections MVP 组件 ---
+const getCompatibleTargetPorts = (fromPort, targetObject) => {
+  if (!fromPort || !targetObject || !targetObject.ports) return [];
+  return targetObject.ports.filter(toPort => arePortsCompatible(fromPort, toPort));
+};
+
+const ConnectionsEditor = ({ 
+  objects, 
+  connections, 
+  setConnections, 
+  selectedObj, 
+  connectionMode, 
+  setConnectionMode, 
+  connectionDraft, 
+  setConnectionDraft 
+}) => {
+  const [editingConnection, setEditingConnection] = useState(null);
+  const ethernetTopology = buildEthernetTopology(selectedObj, objects, connections);
+  const [prevSelectedObjId, setPrevSelectedObjId] = useState(selectedObj?.id);
+  if (selectedObj?.id !== prevSelectedObjId) {
+    setPrevSelectedObjId(selectedObj?.id);
+    setEditingConnection(null);
+  }
+
+  if (editingConnection) {
+    const current = connections.find(c => c.id === editingConnection.id);
+    if (!current) {
+      setEditingConnection(null);
+    }
+  }
+
+  const cableTypes = [
+    { value: 'power', label: '电源线' },
+    { value: 'hdmi', label: 'HDMI' },
+    { value: 'usb_c', label: 'USB-C' },
+    { value: 'ethernet', label: '网线' },
+    { value: 'displayport', label: 'DisplayPort' },
+    { value: 'other', label: '其他' }
+  ];
+
+  const relatedConnections = selectedObj
+    ? connections.filter(c => c.fromObjectId === selectedObj.id || c.toObjectId === selectedObj.id)
+    : [];
+  const isDraftActive = connectionDraft.fromPortId !== undefined && connectionDraft.fromPortId !== '';
+
+  const isPortOccupied = useCallback((objectId, portId) => connections.some(connection =>
+    (connection.fromObjectId === objectId && connection.fromPortId === portId) ||
+    (connection.toObjectId === objectId && connection.toPortId === portId)
+  ), [connections]);
+
+  const getAvailableTargetPorts = useCallback((fromPort, targetObject) =>
+    getCompatibleTargetPorts(fromPort, targetObject)
+      .filter(port => !isPortOccupied(targetObject.id, port.id)),
+  [isPortOccupied]);
+
+  useEffect(() => {
+    if (!shouldResetConnectionDraftForSelection(connectionDraft, selectedObj?.id)) return;
+    setConnectionDraft({});
+    setConnectionMode(false);
+  }, [connectionDraft, selectedObj?.id, setConnectionDraft, setConnectionMode]);
+
+
+  const renderPortOptions = (obj, role) => {
+    if (!obj) return <option value="">-- 请先选择设备 --</option>;
+    if (!obj.ports || obj.ports.length === 0) return <option value="">(该设备无可用端口/旧设备)</option>;
+    
+    let filteredPorts = [];
+    if (role === 'from') {
+      filteredPorts = obj.ports.filter(p =>
+        (p.direction === 'output' || p.direction === 'bidirectional') &&
+        isPortDirectionConsistent(p) &&
+        !isPortOccupied(obj.id, p.id)
+      );
+    } else if (role === 'to') {
+      const fromPort = selectedObj?.ports?.find(p => p.id === connectionDraft.fromPortId);
+      filteredPorts = getAvailableTargetPorts(fromPort, obj);
+    }
+
+    if (filteredPorts.length === 0) return <option value="">(无兼容或空闲端口)</option>;
+
+    return (
+      <>
+        <option value="">-- 选择端口 --</option>
+        {filteredPorts.map(p => <option key={p.id} value={p.id}>{p.name} ({p.type})</option>)}
+      </>
+    );
+  };
+
+  const handleStartConnection = () => {
+    setConnectionDraft({ fromObjectId: selectedObj.id, fromPortId: '' });
+  };
+
+  const handleCancelConnection = () => {
+    setConnectionDraft({});
+    setConnectionMode(false);
+  };
+
+  const toObj = connectionDraft.toObjectId ? objects.find(o => o.id === connectionDraft.toObjectId) : null;
+
+  useEffect(() => {
+    if (toObj && toObj.ports && connectionDraft.fromPortId) {
+      const fromPort = selectedObj?.ports?.find(p => p.id === connectionDraft.fromPortId);
+      if (fromPort) {
+        const compatiblePorts = getAvailableTargetPorts(fromPort, toObj);
+        if (compatiblePorts.length === 1 && connectionDraft.toPortId !== compatiblePorts[0].id) {
+           setConnectionDraft(prev => ({ ...prev, toPortId: compatiblePorts[0].id }));
+        }
+      }
+    }
+  }, [toObj, connectionDraft.fromPortId, connectionDraft.toPortId, selectedObj?.ports, setConnectionDraft, getAvailableTargetPorts]);
+
+  useEffect(() => {
+    if (connectionDraft.fromPortId && connectionDraft.toPortId && selectedObj && toObj) {
+      const fromPort = selectedObj.ports?.find(p => p.id === connectionDraft.fromPortId);
+      const toPort = toObj.ports?.find(p => p.id === connectionDraft.toPortId);
+      if (fromPort && toPort) {
+        const inferredCableType = inferCableType(fromPort, toPort);
+        if (connectionDraft.cableType !== inferredCableType) {
+          setConnectionDraft(prev => ({ ...prev, cableType: inferredCableType }));
+        }
+      }
+    }
+  }, [connectionDraft.cableType, connectionDraft.fromPortId, connectionDraft.toPortId, selectedObj, toObj, setConnectionDraft]);
+
+  if (!selectedObj) {
+    return (
+      <div className="empty-state">
+        <strong>请先在 3D 场景中选择设备</strong>
+      </div>
+    );
+  }
+
+  const handleAdd = () => {
+    if (!connectionDraft.toObjectId) return alert('请先选择目标设备');
+    if (!connectionDraft.fromPortId || !connectionDraft.toPortId) return alert('必须选择起点和终点的具体端口');
+    
+    const length = parsePositiveCableLength(connectionDraft.length || 1);
+    if (length === null) return alert('长度必须是有限且大于 0 的数字');
+    
+    const fromPort = selectedObj.ports?.find(p => p.id === connectionDraft.fromPortId);
+    const toPort = toObj?.ports?.find(p => p.id === connectionDraft.toPortId);
+
+    if (!fromPort || !toPort) return alert('端口不存在（可能是旧数据），无法连接');
+
+    if (isPortOccupied(selectedObj.id, fromPort.id) || isPortOccupied(toObj.id, toPort.id)) {
+      return alert('所选端口已被其它连接占用，请选择空闲端口');
+    }
+
+    const compPorts = getAvailableTargetPorts(fromPort, toObj);
+    if (!compPorts.some(p => p.id === toPort.id)) {
+       return alert(`端口类型不兼容或方向错误`);
+    }
+
+    const cableType = inferCableType(fromPort, toPort);
+    const typeLabel = cableTypes.find(c => c.value === cableType)?.label || '线材';
+    const name = connectionDraft.name || '';
+    const finalName = name.trim() ? name.trim() : typeLabel;
+
+    const newConn = {
+      id: createEntityId('connection'),
+      fromObjectId: selectedObj.id,
+      fromPortId: connectionDraft.fromPortId,
+      toObjectId: connectionDraft.toObjectId,
+      toPortId: connectionDraft.toPortId,
+      cableType,
+      length,
+      name: finalName
+    };
+
+    const lengthStatus = evaluateConnectionLength(newConn, objects);
+    if (lengthStatus && !lengthStatus.sufficient) {
+      const shouldCreate = window.confirm(
+        `当前线长 ${lengthStatus.cableLength.toFixed(2)}m，小于接口端点估算距离 ${lengthStatus.distance.toFixed(2)}m。\n仍要创建这条连接吗？`
+      );
+      if (!shouldCreate) return;
+    }
+    
+    setConnections(prev => [...prev, newConn]);
+    setConnectionDraft({});
+    setConnectionMode(false);
+  };
+
+  const handleDelete = (id) => setConnections(prev => prev.filter(c => c.id !== id));
+
+  const handleStartEdit = (connection) => {
+    setEditingConnection({
+      id: connection.id,
+      name: connection.name,
+      length: String(connection.length),
+    });
+  };
+
+  const handleSaveEdit = () => {
+    const length = parsePositiveCableLength(editingConnection?.length);
+    const name = editingConnection?.name?.trim();
+    if (!name) return alert('连接名称不能为空');
+    if (length === null) return alert('长度必须是有限且大于 0 的数字');
+
+    setConnections(prev => prev.map(connection =>
+      connection.id === editingConnection.id
+        ? { ...connection, name, length }
+        : connection
+    ));
+    setEditingConnection(null);
+  };
+
+  let hasCompatibleToPorts = true;
+  if (toObj && toObj.ports && connectionDraft.fromPortId) {
+     const fromPort = selectedObj.ports?.find(p => p.id === connectionDraft.fromPortId);
+     if (fromPort) {
+        const comp = getAvailableTargetPorts(fromPort, toObj);
+        hasCompatibleToPorts = comp.length > 0;
+     }
+  }
+
+  const draftLengthStatus = toObj
+    ? evaluateConnectionLength({
+        fromObjectId: selectedObj.id,
+        toObjectId: toObj.id,
+        length: Number(connectionDraft.length || 1),
+      }, objects)
+    : null;
+
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      <div className="panel-section">
+        <div className="panel-field">
+          <span className="panel-field-label">当前设备</span>
+          <div className="panel-field-content">
+            <div className="panel-text-readonly" style={{ fontWeight: 'bold', color: '#222' }}>{selectedObj.name}</div>
+          </div>
+        </div>
+      </div>
+
+      <div className="panel-section">
+      {!isDraftActive && Object.keys(connectionDraft).length === 0 ? (
+        <button onClick={handleStartConnection} className="ui-button ui-button-primary" style={{ width: '100%' }}>
+          新建连接
+        </button>
+      ) : (
+        <div style={{ padding: '12px', background: '#e3f2fd', border: '1px solid #90caf9', borderRadius: '4px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '16px' }}>
+            <div className="panel-section-title" style={{ margin: 0, color: '#1565c0' }}>创建新连接</div>
+            <button onClick={handleCancelConnection} className="side-panel-close">×</button>
+          </div>
+          
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
+            <div className="connection-step">
+              <div className="connection-step-label">1. 当前设备输出端口</div>
+              <select className="ui-select" style={{ width: '100%' }} value={connectionDraft.fromPortId || ''} onChange={e => setConnectionDraft({ fromObjectId: selectedObj.id, fromPortId: e.target.value })}>
+                {renderPortOptions(selectedObj, 'from')}
+              </select>
+            </div>
+
+            {connectionDraft.fromPortId && (
+              <div className="connection-step">
+                <div className="connection-step-label">2. 目标设备</div>
+                {!connectionDraft.toObjectId && (
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                    {!connectionMode ? (
+                      <>
+                        <button onClick={() => setConnectionMode(true)} className="ui-button" style={{ width: '100%', borderColor: '#007bff', color: '#007bff' }}>
+                          在场景中选择目标设备
+                        </button>
+                        <div style={{ textAlign: 'center', fontSize: '11px', color: '#888', margin: '2px 0' }}>─ 或在下拉列表中选择 ─</div>
+                        <select
+                          className="ui-select"
+                          style={{ width: '100%' }}
+                          value={connectionDraft.toObjectId || ''}
+                          onChange={e => {
+                            if (e.target.value) {
+                              setConnectionDraft(prev => ({ ...prev, toObjectId: e.target.value, toPortId: '' }));
+                              setConnectionMode(false);
+                            }
+                          }}
+                        >
+                          <option value="">-- 选择目标设备 --</option>
+                          {objects
+                            .filter(o => o.id !== selectedObj.id)
+                            .map(o => (
+                              <option key={o.id} value={o.id}>
+                                {o.name} ({o.type})
+                              </option>
+                            ))}
+                        </select>
+                      </>
+                    ) : (
+                      <div style={{ padding: '8px', background: '#ffecb3', color: '#ff8f00', fontSize: '13px', borderRadius: '3px', textAlign: 'center' }}>
+                        请点击 3D 画布中的目标设备 (Esc 取消)
+                      </div>
+                    )}
+                  </div>
+                )}
+                {connectionDraft.toObjectId && toObj && (
+                  <div style={{ background: '#ffffff', padding: '6px 10px', border: '1px solid #dddddd', borderRadius: '3px', fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>已选：<strong>{toObj.name}</strong></span>
+                    <button onClick={() => { setConnectionDraft({ fromObjectId: selectedObj.id, fromPortId: connectionDraft.fromPortId }); setConnectionMode(true); }} style={{ background: 'none', border: 'none', color: '#007bff', cursor: 'pointer', fontSize: '12px' }}>重选</button>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {connectionDraft.toObjectId && toObj && (
+              <div className="connection-step">
+                <div className="connection-step-label">3. 目标端口</div>
+                {!hasCompatibleToPorts ? (
+                  <div style={{ color: '#dc3545', fontSize: '13px' }}>目标设备没有兼容端口</div>
+                ) : (
+                  <select className="ui-select" style={{ width: '100%' }} value={connectionDraft.toPortId || ''} onChange={e => setConnectionDraft(prev => ({ ...prev, toPortId: e.target.value }))}>
+                    {renderPortOptions(toObj, 'to')}
+                  </select>
+                )}
+              </div>
+            )}
+
+            {connectionDraft.toPortId && hasCompatibleToPorts && (
+              <div className="connection-step">
+                <div style={{ display: 'flex', gap: '10px', marginBottom: '12px' }}>
+                  <div style={{ flex: 1 }}>
+                    <div className="connection-step-label">4. 线材类型</div>
+                    <div className="panel-text-readonly">
+                      {cableTypes.find(c => c.value === connectionDraft.cableType)?.label || '其他'}
+                    </div>
+                  </div>
+                  <div style={{ flex: 1 }}>
+                    <div className="connection-step-label">长度(m)</div>
+                    <input className="ui-input" type="number" step="0.1" min="0.1" value={connectionDraft.length || 1} onChange={e => setConnectionDraft(prev => ({ ...prev, length: e.target.value }))} style={{ width: '100%' }} />
+                  </div>
+                </div>
+                <div>
+                  <div className="connection-step-label">连接名称 (可选)</div>
+                  <input className="ui-input" type="text" placeholder="留空默认使用线材名" value={connectionDraft.name || ''} onChange={e => setConnectionDraft(prev => ({ ...prev, name: e.target.value }))} style={{ width: '100%' }} />
+                </div>
+                {draftLengthStatus && (
+                  <div className={`cable-distance ${draftLengthStatus.hasRecommendedSlack ? 'cable-distance-ok' : 'cable-distance-warning'}`}>
+                    端点距离 {draftLengthStatus.distance.toFixed(2)}m，建议至少 {draftLengthStatus.recommendedLength.toFixed(2)}m；
+                    {draftLengthStatus.hasRecommendedSlack
+                      ? `建议余量 ${draftLengthStatus.recommendedSlack.toFixed(2)}m`
+                      : draftLengthStatus.sufficient
+                        ? `维护余量不足 ${Math.abs(draftLengthStatus.recommendedSlack).toFixed(2)}m`
+                        : `直连不足 ${Math.abs(draftLengthStatus.slack).toFixed(2)}m`}
+                  </div>
+                )}
+                <button onClick={handleAdd} className="ui-button ui-button-primary" style={{ width: '100%', marginTop: '16px' }}>
+                  确认连接
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      </div>
+
+      {ethernetTopology.length > 0 && (
+        <div className="panel-section">
+          <div className="panel-section-title">以太网端口拓扑</div>
+          <div className="ethernet-topology-list">
+            {ethernetTopology.map(item => {
+              const isConnected = item.status === 'connected';
+              const devType = item.connectedDevice?.type;
+              
+              let badgeText = '';
+              let badgeClass = 'topo-badge';
+              if (item.connectedDevice) {
+                if (devType === 'router') {
+                  badgeText = '路由器';
+                  badgeClass += ' topo-badge-router';
+                } else if (devType === 'switch') {
+                  badgeText = '交换机';
+                  badgeClass += ' topo-badge-switch';
+                } else if (devType === 'desktop-pc') {
+                  badgeText = '台式机';
+                  badgeClass += ' topo-badge-pc';
+                } else if (devType === 'nas') {
+                  badgeText = 'NAS';
+                  badgeClass += ' topo-badge-nas';
+                } else if (devType === 'modem') {
+                  badgeText = '光猫';
+                  badgeClass += ' topo-badge-modem';
+                } else {
+                  badgeText = item.connectedDevice.type || '设备';
+                  badgeClass += ' topo-badge-other';
+                }
+              }
+
+              return (
+                <div key={item.portId} className="topo-item">
+                  <div className="topo-port-info">
+                    <span className="topo-port-icon">🔌</span>
+                    <span className="topo-port-name">{item.portName}</span>
+                  </div>
+                  <div className="topo-connection-path">
+                    {isConnected ? (
+                      <>
+                        <span className="topo-line active">──({item.connection.name || '网线'} {item.connection.length}m)──&gt;</span>
+                        <div className="topo-device-card">
+                          <span className="topo-device-name" title={item.connectedDevice?.name}>{item.connectedDevice?.name}</span>
+                          <span className={badgeClass}>{badgeText}</span>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <span className="topo-line idle">───────&gt;</span>
+                        <span className="topo-idle-text">🟢 空闲</span>
+                      </>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
+
+      <div className="panel-section">
+        <div className="panel-section-title">当前设备连接 ({relatedConnections.length})</div>
+        {relatedConnections.length === 0 ? <div style={{ fontSize: '13px', color: '#888888' }}>无连接</div> : null}
+        <div style={{ display: 'flex', flexDirection: 'column' }}>
+          {relatedConnections.map(c => {
+            const isFrom = c.fromObjectId === selectedObj.id;
+            const otherObjId = isFrom ? c.toObjectId : c.fromObjectId;
+            const otherPortId = isFrom ? c.toPortId : c.fromPortId;
+            const myPortId = isFrom ? c.fromPortId : c.toPortId;
+            
+            const otherObjItem = objects.find(o => o.id === otherObjId);
+            const otherName = otherObjItem?.name || '未知';
+            
+            const myPortName = selectedObj.ports?.find(p => p.id === myPortId)?.name || myPortId || '旧连接/设备中心';
+            const otherPortName = otherObjItem?.ports?.find(p => p.id === otherPortId)?.name || otherPortId || '旧连接/设备中心';
+            const lengthStatus = evaluateConnectionLength(c, objects);
+            const isEditing = editingConnection?.id === c.id;
+
+            return (
+              <div key={c.id} className="connection-list-item">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
+                  <strong style={{ color: isFrom ? '#007bff' : '#28a745' }}>
+                    {isFrom ? '📤 发送至' : '📥 接收自'} {otherName}
+                  </strong>
+                  <div className="connection-item-actions">
+                    <button
+                      type="button"
+                      onClick={() => isEditing ? setEditingConnection(null) : handleStartEdit(c)}
+                      className="ui-button"
+                    >
+                      {isEditing ? '取消' : '编辑'}
+                    </button>
+                    <button type="button" onClick={() => handleDelete(c.id)} className="ui-button ui-button-danger">删除</button>
+                  </div>
+                </div>
+                {isEditing ? (
+                  <div className="connection-edit-form">
+                    <label>
+                      <span>名称</span>
+                      <input
+                        className="ui-input"
+                        type="text"
+                        value={editingConnection.name}
+                        onChange={event => setEditingConnection(prev => ({ ...prev, name: event.target.value }))}
+                      />
+                    </label>
+                    <label>
+                      <span>长度 (m)</span>
+                      <input
+                        className="ui-input"
+                        type="number"
+                        min="0.1"
+                        step="0.1"
+                        value={editingConnection.length}
+                        onChange={event => setEditingConnection(prev => ({ ...prev, length: event.target.value }))}
+                      />
+                    </label>
+                    <button type="button" className="ui-button ui-button-primary" onClick={handleSaveEdit}>保存修改</button>
+                  </div>
+                ) : (
+                  <div style={{ color: '#222222', fontSize: '13px', marginBottom: '4px' }}>{c.name} ({c.length}m)</div>
+                )}
+                <div style={{ color: '#888888', fontSize: '11px' }}>
+                  本端: {myPortName} <br/>对端: {otherPortName}
+                </div>
+                {lengthStatus && (
+                  <div className={`cable-distance ${lengthStatus.hasRecommendedSlack ? 'cable-distance-ok' : 'cable-distance-warning'}`}>
+                    端点 {lengthStatus.distance.toFixed(2)}m / 建议 {lengthStatus.recommendedLength.toFixed(2)}m / 线长 {lengthStatus.cableLength.toFixed(2)}m
+                    {!lengthStatus.hasRecommendedSlack && (
+                      lengthStatus.sufficient
+                        ? `（维护余量不足 ${Math.abs(lengthStatus.recommendedSlack).toFixed(2)}m）`
+                        : `（直连不足 ${Math.abs(lengthStatus.slack).toFixed(2)}m）`
+                    )}
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default ConnectionsEditor;

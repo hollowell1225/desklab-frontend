@@ -1,0 +1,367 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import {
+  analyzeProjectWiring,
+  buildPowerGraph,
+  getInvalidConnectionIds,
+  summarizeWiringIssues,
+  computeDevicePowerLoad,
+} from '../src/domain/analysis.js';
+import { placeCatalogObject } from '../src/domain/placement.js';
+import { DEVICE_CATALOG } from '../src/domain/catalog.js';
+
+const port = (id, type, direction) => ({ id, name: id, type, direction });
+const object = (id, ports, overrides = {}) => ({
+  id,
+  name: id,
+  type: 'device',
+  position: { x: 0, y: 0, z: 0 },
+  ports,
+  ...overrides,
+});
+const connection = (id, fromObjectId, fromPortId, toObjectId, toPortId, length = 1) => ({
+  id,
+  name: id,
+  cableType: 'power',
+  fromObjectId,
+  fromPortId,
+  toObjectId,
+  toPortId,
+  length,
+});
+
+test('reports short cables and unconnected power inputs', () => {
+  const objects = [
+    object('source', [port('out', 'dc_output', 'output')]),
+    object('target', [port('in', 'dc_input', 'input')], { position: { x: 3, y: 4, z: 0 } }),
+    object('unpowered', [port('in', 'ac_input', 'input')]),
+  ];
+  const issues = analyzeProjectWiring(objects, [connection('c1', 'source', 'out', 'target', 'in', 4)]);
+  assert.ok(issues.some(issue => issue.code === 'short_cable'));
+  assert.ok(issues.some(issue => issue.id === 'unpowered:unpowered:in'));
+  assert.deepEqual(summarizeWiringIssues(issues), { error: 0, warning: 2, info: 0 });
+});
+
+test('reports cables that can connect but lack recommended service slack', () => {
+  const objects = [
+    object('source', [port('out', 'ethernet', 'output')]),
+    object('target', [port('in', 'ethernet', 'input')], { position: { x: 3, y: 4, z: 0 } }),
+  ];
+  const ethernetConnection = connection('c1', 'source', 'out', 'target', 'in', 5.2);
+  ethernetConnection.cableType = 'ethernet';
+  const issues = analyzeProjectWiring(objects, [ethernetConnection]);
+  assert.equal(issues.some(issue => issue.code === 'short_cable'), false);
+  assert.equal(issues.some(issue => issue.code === 'low_cable_slack'), true);
+});
+
+test('reports power-strip daisy chains and power cycles', () => {
+  const stripA = object('a', [
+    port('in', 'ac_input', 'input'),
+    port('out', 'ac_output', 'output'),
+  ], { type: 'power_strip', modelId: 'power-strip' });
+  const stripB = object('b', [
+    port('in', 'ac_input', 'input'),
+    port('out', 'ac_output', 'output'),
+  ], { type: 'power_strip', modelId: 'power-strip' });
+  const connections = [
+    connection('ab', 'a', 'out', 'b', 'in'),
+    connection('ba', 'b', 'out', 'a', 'in'),
+  ];
+  const issues = analyzeProjectWiring([stripA, stripB], connections);
+  assert.equal(issues.filter(issue => issue.code === 'power_strip_chain').length, 2);
+  assert.ok(issues.some(issue => issue.code === 'power_cycle'));
+});
+
+test('does not report a power cycle for a branching power tree', () => {
+  const objects = [
+    object('outlet', [
+      port('o1', 'ac_output', 'output'),
+      port('o2', 'ac_output', 'output'),
+    ], { type: 'outlet', modelId: 'wall-outlet' }),
+    object('deviceA', [port('in', 'ac_input', 'input')]),
+    object('deviceB', [port('in', 'ac_input', 'input')]),
+  ];
+  const connections = [
+    connection('a', 'outlet', 'o1', 'deviceA', 'in'),
+    connection('b', 'outlet', 'o2', 'deviceB', 'in'),
+  ];
+
+  const issues = analyzeProjectWiring(objects, connections);
+  assert.equal(issues.some(issue => issue.code === 'power_cycle'), false);
+  assert.equal(summarizeWiringIssues(issues).error, 0, JSON.stringify(issues));
+});
+
+test('detects a multi-hop power cycle spanning more than two devices', () => {
+  const strip = (id) => object(id, [
+    port('in', 'ac_input', 'input'),
+    port('out', 'ac_output', 'output'),
+  ], { type: 'power_strip', modelId: 'power-strip' });
+  const objects = [strip('a'), strip('b'), strip('c')];
+  const connections = [
+    connection('ab', 'a', 'out', 'b', 'in'),
+    connection('bc', 'b', 'out', 'c', 'in'),
+    connection('ca', 'c', 'out', 'a', 'in'),
+  ];
+
+  const issues = analyzeProjectWiring(objects, connections);
+  assert.ok(issues.some(issue => issue.code === 'power_cycle'));
+});
+
+test('reports legacy center-to-center connections as informational', () => {
+  const objects = [object('a', []), object('b', [])];
+  const issues = analyzeProjectWiring(objects, [{
+    id: 'legacy',
+    name: 'Legacy',
+    cableType: 'other',
+    fromObjectId: 'a',
+    toObjectId: 'b',
+    length: 1,
+  }]);
+  assert.equal(issues[0].code, 'legacy_connection');
+  assert.equal(issues[0].severity, 'info');
+  assert.deepEqual(getInvalidConnectionIds(issues), []);
+});
+
+test('reports stale object and port references as errors', () => {
+  const objects = [
+    object('source', [port('out', 'hdmi', 'output')]),
+    object('target', [port('in', 'hdmi', 'input')]),
+  ];
+  const danglingObject = connection('missing-object', 'source', 'out', 'ghost', 'in');
+  danglingObject.cableType = 'hdmi';
+  const missingPort = connection('missing-port', 'source', 'old-out', 'target', 'in');
+  missingPort.cableType = 'hdmi';
+  const partialPort = {
+    ...connection('partial', 'source', 'out', 'target', undefined),
+    cableType: 'hdmi',
+  };
+
+  const issues = analyzeProjectWiring(objects, [danglingObject, missingPort, partialPort]);
+  assert.ok(issues.some(issue => issue.code === 'dangling_connection_object'));
+  assert.ok(issues.some(issue => issue.code === 'missing_connection_port'));
+  assert.ok(issues.some(issue => issue.code === 'partial_port_binding'));
+});
+
+test('reports invalid semantics and duplicate physical port occupancy', () => {
+  const objects = [
+    object('source', [port('out', 'hdmi', 'output')]),
+    object('target-a', [port('in', 'hdmi', 'input')]),
+    object('target-b', [port('in', 'hdmi', 'input')]),
+  ];
+  const wrongCable = connection('wrong-cable', 'source', 'out', 'target-a', 'in');
+  wrongCable.cableType = 'power';
+  const valid = connection('valid', 'source', 'out', 'target-a', 'in');
+  valid.cableType = 'hdmi';
+  const duplicate = connection('duplicate', 'source', 'out', 'target-b', 'in');
+  duplicate.cableType = 'hdmi';
+
+  const issues = analyzeProjectWiring(objects, [wrongCable, valid, duplicate]);
+  assert.ok(issues.some(issue => issue.code === 'cable_type_mismatch'));
+  assert.ok(issues.some(issue => issue.code === 'port_overbooked'));
+  assert.deepEqual(getInvalidConnectionIds(issues).sort(), ['duplicate', 'wrong-cable']);
+});
+
+test('does not confuse distinct occupied ports whose ids contain the occupancy delimiter', () => {
+  const objects = [
+    object('source\0x', [port('out', 'hdmi', 'output')]),
+    object('source', [port('x\0out', 'hdmi', 'output')]),
+    object('target-a', [port('in', 'hdmi', 'input')]),
+    object('target-b', [port('in', 'hdmi', 'input')]),
+  ];
+  const first = connection('first', 'source\0x', 'out', 'target-a', 'in');
+  first.cableType = 'hdmi';
+  const second = connection('second', 'source', 'x\0out', 'target-b', 'in');
+  second.cableType = 'hdmi';
+
+  const issues = analyzeProjectWiring(objects, [first, second]);
+
+  assert.equal(issues.some(issue => issue.code === 'port_overbooked'), false);
+  assert.deepEqual(getInvalidConnectionIds(issues), []);
+});
+
+test('does not mark advisory wiring issues for automatic deletion', () => {
+  const issues = [
+    { code: 'short_cable', connectionIds: ['short'] },
+    { code: 'power_strip_chain', connectionIds: ['chain'] },
+    { code: 'legacy_connection', connectionIds: ['legacy'] },
+  ];
+  assert.deepEqual(getInvalidConnectionIds(issues), []);
+});
+
+test('shipped catalog devices connected through compatible ports raise no wiring errors', () => {
+  const room = { length: 100, width: 100, height: 100 };
+  const placeByModelId = (modelId, id) => {
+    for (const category of DEVICE_CATALOG) {
+      const model = category.models.find(candidate => candidate.modelId === modelId);
+      if (model) {
+        return placeCatalogObject({ modelTemplate: model, categoryId: category.category, room, id }).object;
+      }
+    }
+    throw new Error(`unknown model ${modelId}`);
+  };
+
+  const objects = [
+    placeByModelId('wall-outlet', 'outlet'),
+    placeByModelId('power-strip', 'strip'),
+    placeByModelId('monitor-24', 'monitor'),
+    placeByModelId('desktop-pc', 'pc'),
+  ];
+
+  const cable = (id, fromObjectId, fromPortId, toObjectId, toPortId, cableType) => ({
+    id, name: id, cableType, fromObjectId, fromPortId, toObjectId, toPortId, length: 2,
+  });
+  const connections = [
+    cable('outlet-strip', 'outlet', 'ac-out-1', 'strip', 'ac-in', 'power'),
+    cable('strip-monitor', 'strip', 'ac-out-1', 'monitor', 'ac-in', 'power'),
+    cable('strip-pc', 'strip', 'ac-out-2', 'pc', 'ac-in', 'power'),
+    cable('pc-monitor', 'pc', 'hdmi-out', 'monitor', 'hdmi-in', 'hdmi'),
+  ];
+
+  const issues = analyzeProjectWiring(objects, connections);
+  assert.equal(summarizeWiringIssues(issues).error, 0, JSON.stringify(issues.filter(i => i.severity === 'error')));
+  assert.deepEqual(getInvalidConnectionIds(issues), []);
+});
+
+test('does not flag matching custom/future port types carried as other cables', () => {
+  const objects = [
+    object('source', [port('out', 'thunderbolt', 'output')]),
+    object('target', [port('in', 'thunderbolt', 'input')]),
+  ];
+  const custom = connection('custom', 'source', 'out', 'target', 'in');
+  custom.cableType = 'other';
+
+  const issues = analyzeProjectWiring(objects, [custom]);
+  assert.equal(summarizeWiringIssues(issues).error, 0, JSON.stringify(issues));
+  assert.deepEqual(getInvalidConnectionIds(issues), []);
+});
+
+test('reports power ports whose direction contradicts their type', () => {
+  const objects = [
+    object('bad-source', [port('bad-out', 'ac_input', 'output')]),
+    object('bad-target', [port('bad-in', 'ac_output', 'input')]),
+  ];
+  const badPowerConnection = connection(
+    'bad-power',
+    'bad-source',
+    'bad-out',
+    'bad-target',
+    'bad-in'
+  );
+
+  const issues = analyzeProjectWiring(objects, [badPowerConnection]);
+  assert.ok(issues.some(issue => issue.code === 'invalid_power_port_direction'));
+  assert.ok(issues.some(issue => issue.code === 'invalid_power_port_definition'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['bad-power']);
+});
+
+test('reports power overload and power warning for power hubs', () => {
+  const ups = object('my-ups', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out-1', 'ac_output', 'output'),
+    port('ac-out-2', 'ac_output', 'output'),
+  ], { type: 'ups', modelId: 'ups', maxLoad: 500 });
+
+  const pc = object('my-pc', [
+    port('ac-in', 'ac_input', 'input')
+  ], { type: 'desktop-pc', modelId: 'desktop-pc', wattage: 350 });
+
+  const monitor = object('my-monitor', [
+    port('ac-in', 'ac_input', 'input')
+  ], { type: 'monitor', modelId: 'monitor-27', wattage: 200 });
+
+  const objects = [ups, pc, monitor];
+
+  const conns1 = [
+    connection('c1', 'my-ups', 'ac-out-1', 'my-pc', 'ac-in', 1.5)
+  ];
+  const issues1 = analyzeProjectWiring(objects, conns1);
+  assert.equal(issues1.some(i => i.code === 'power_overload' || i.code === 'power_warning'), false);
+
+  const conns2 = [
+    connection('c1', 'my-ups', 'ac-out-1', 'my-pc', 'ac-in', 1.5),
+    connection('c2', 'my-ups', 'ac-out-2', 'my-monitor', 'ac-in', 1.5)
+  ];
+  const issues2 = analyzeProjectWiring(objects, conns2);
+  assert.ok(issues2.some(i => i.code === 'power_overload'));
+  const overloadIssue = issues2.find(i => i.code === 'power_overload');
+  assert.deepEqual(overloadIssue.objectIds, ['my-ups']);
+
+  const lightMonitor = object('my-monitor', [
+    port('ac-in', 'ac_input', 'input')
+  ], { type: 'monitor', modelId: 'monitor-27', wattage: 120 });
+  const issues3 = analyzeProjectWiring([ups, pc, lightMonitor], conns2);
+  assert.ok(issues3.some(i => i.code === 'power_warning'));
+});
+
+test('computeDevicePowerLoad correctly aggregates power load recursively', () => {
+  const ups = object('my-ups', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out-1', 'ac_output', 'output'),
+  ], { type: 'ups', modelId: 'ups', maxLoad: 500 });
+
+  const strip = object('my-strip', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out-1', 'ac_output', 'output'),
+    port('ac-out-2', 'ac_output', 'output'),
+  ], { type: 'power_strip', modelId: 'power-strip', wattage: 0, maxLoad: 2500 });
+
+  const pc = object('my-pc', [
+    port('ac-in', 'ac_input', 'input')
+  ], { type: 'desktop-pc', wattage: 350 });
+
+  const monitor = object('my-monitor', [
+    port('ac-in', 'ac_input', 'input')
+  ], { type: 'monitor', wattage: 60 });
+
+  const objects = [ups, strip, pc, monitor];
+
+  // ups -> strip -> (pc, monitor)
+  const conns = [
+    connection('c1', 'my-ups', 'ac-out-1', 'my-strip', 'ac-in', 1.0),
+    connection('c2', 'my-strip', 'ac-out-1', 'my-pc', 'ac-in', 1.5),
+    connection('c3', 'my-strip', 'ac-out-2', 'my-monitor', 'ac-in', 1.5),
+  ];
+
+  const upsLoad = computeDevicePowerLoad('my-ups', objects, conns);
+  const stripLoad = computeDevicePowerLoad('my-strip', objects, conns);
+  const pcLoad = computeDevicePowerLoad('my-pc', objects, conns);
+
+  assert.equal(upsLoad, 350 + 60); // 410W
+  assert.equal(stripLoad, 350 + 60); // 410W
+  assert.equal(pcLoad, 0); // 没有外接设备，外接负载为0
+});
+
+test('shared power graph produces the same load totals as standalone load checks', () => {
+  const ups = object('my-ups', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out-1', 'ac_output', 'output'),
+  ], { type: 'ups', modelId: 'ups', maxLoad: 500 });
+
+  const strip = object('my-strip', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out-1', 'ac_output', 'output'),
+    port('ac-out-2', 'ac_output', 'output'),
+  ], { type: 'power_strip', modelId: 'power-strip', wattage: 0, maxLoad: 2500 });
+
+  const pc = object('my-pc', [
+    port('ac-in', 'ac_input', 'input')
+  ], { type: 'desktop-pc', wattage: 350 });
+
+  const monitor = object('my-monitor', [
+    port('ac-in', 'ac_input', 'input')
+  ], { type: 'monitor', wattage: 60 });
+
+  const objects = [ups, strip, pc, monitor];
+  const conns = [
+    connection('c1', 'my-ups', 'ac-out-1', 'my-strip', 'ac-in', 1.0),
+    connection('c2', 'my-strip', 'ac-out-1', 'my-pc', 'ac-in', 1.5),
+    connection('c3', 'my-strip', 'ac-out-2', 'my-monitor', 'ac-in', 1.5),
+  ];
+
+  const powerGraph = buildPowerGraph(objects, conns);
+
+  assert.equal(computeDevicePowerLoad('my-ups', objects, conns, powerGraph), computeDevicePowerLoad('my-ups', objects, conns));
+  assert.equal(computeDevicePowerLoad('my-strip', objects, conns, powerGraph), computeDevicePowerLoad('my-strip', objects, conns));
+  assert.equal(computeDevicePowerLoad('my-pc', objects, conns, powerGraph), computeDevicePowerLoad('my-pc', objects, conns));
+});
