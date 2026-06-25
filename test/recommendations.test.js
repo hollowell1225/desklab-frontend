@@ -126,6 +126,38 @@ test('is safe to call on empty or malformed mid-edit state', () => {
   assert.deepEqual(buildFreeImprovements(room, [{ id: 'y', name: 'y' }], []), []);
 });
 
+test('does not throw when a port-bearing object is missing its position', () => {
+  // analyzeProjectLayout flags such an object as invalid_geometry but keeps going,
+  // so a position-less device with ports can still reach the nearest-source loops.
+  // Those loops must tolerate it instead of crashing the recommendation panel.
+  const source = object('source', {
+    type: 'power_strip', modelId: 'power-strip',
+    position: { x: 0, y: 0, z: 0.1 },
+    ports: [{ id: 'out', name: 'out', type: 'ac_output', direction: 'output' }],
+  });
+  const noPositionPowered = { id: 'np', name: 'np', type: 'device', ports: [{ id: 'in', name: 'in', type: 'ac_input', direction: 'input' }] };
+  const noPositionNet = { id: 'nn', name: 'nn', type: 'device', ports: [{ id: 'eth', name: 'eth', type: 'ethernet', direction: 'bidirectional' }] };
+  const switchDev = object('sw', {
+    type: 'switch', modelId: 'switch',
+    position: { x: 1, y: 0, z: 0.1 },
+    ports: [{ id: 'p1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const monitor = object('mon', {
+    type: 'monitor', modelId: 'monitor-24',
+    position: { x: 1, y: 0, z: 1 },
+    ports: [{ id: 'hdmi-in', name: 'HDMI 输入', type: 'hdmi', direction: 'input' }],
+  });
+  const noPositionDisplay = { id: 'nd', name: 'nd', type: 'device', ports: [{ id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' }] };
+  const objects = [source, noPositionPowered, switchDev, noPositionNet, monitor, noPositionDisplay];
+
+  assert.doesNotThrow(() => buildFreeImprovements(room, objects, []));
+  assert.doesNotThrow(() => buildPurchaseSuggestions(objects, []));
+
+  // Objects with no usable position must not produce auto-connection suggestions.
+  const free = buildFreeImprovements(room, objects, []);
+  assert.equal(free.some(s => s.objectIds?.includes('np') || s.objectIds?.includes('nn') || s.objectIds?.includes('nd')), false);
+});
+
 test('produces a working fix for a real catalog wall outlet placed off-wall', () => {
   // Integration across catalog -> placement -> recommendations -> analysis.
   const outletTemplate = findModelTemplate({ modelId: 'wall-outlet' });

@@ -4,7 +4,7 @@ import {
   snapWallOutletToNearestWall,
 } from './layout-analysis.js';
 import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad } from './analysis.js';
-import { evaluateConnectionLength, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
+import { calculatePositionDistance, evaluateConnectionLength, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
 import { validateAndConstrainObject } from './geometry.js';
 import { findModelTemplate } from './catalog.js';
 
@@ -129,12 +129,9 @@ export function buildFreeImprovements(room, objects, connections = [], options =
                 isPortDirectionConsistent(candidatePort) &&
                 !(occupiedPorts.get(candidate.id)?.has(candidatePort.id)) &&
                 arePortTypesCompatible(candidatePort.type, port.type)) {
-              
-              const dx = candidate.position.x - object.position.x;
-              const dy = candidate.position.y - object.position.y;
-              const dz = candidate.position.z - object.position.z;
-              const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-              if (dist < minDistance) {
+
+              const dist = calculatePositionDistance(object.position, candidate.position);
+              if (dist !== null && dist < minDistance) {
                 minDistance = dist;
                 bestSource = { device: candidate, port: candidatePort, distance: dist };
               }
@@ -217,12 +214,8 @@ export function buildFreeImprovements(room, objects, connections = [], options =
           const isPortOccupied = occupiedPorts.get(candidate.id)?.has(candidatePort.id);
           if (isPortOccupied) continue;
 
-          const dx = candidate.position.x - object.position.x;
-          const dy = candidate.position.y - object.position.y;
-          const dz = candidate.position.z - object.position.z;
-          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-          if (dist < minDistance) {
+          const dist = calculatePositionDistance(object.position, candidate.position);
+          if (dist !== null && dist < minDistance) {
             minDistance = dist;
             bestDistributor = { device: candidate, port: candidatePort, distance: dist };
           }
@@ -291,12 +284,8 @@ export function buildFreeImprovements(room, objects, connections = [], options =
           const isPortOccupied = occupiedPorts.get(candidate.id)?.has(candidatePort.id);
           if (isPortOccupied) continue;
 
-          const dx = candidate.position.x - object.position.x;
-          const dy = candidate.position.y - object.position.y;
-          const dz = candidate.position.z - object.position.z;
-          const dist = Math.sqrt(dx * dx + dy * dy + dz * dz);
-
-          if (dist < minDistance) {
+          const dist = calculatePositionDistance(object.position, candidate.position);
+          if (dist !== null && dist < minDistance) {
             minDistance = dist;
             bestDisplay = { device: candidate, port: candidatePort, distance: dist };
           }
