@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { getLegacyModelInfo, findModelTemplate } from '../domain/catalog.js';
-import { computeDevicePowerLoad } from '../domain/analysis.js';
+import { computeDevicePowerLoad, classifyPowerLoad, toPowerValue } from '../domain/analysis.js';
 import {
   commitNumericInput,
   formatNumericInputValue,
@@ -84,10 +84,12 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
     || false;
 
   const wattage = obj.wattage ?? template?.wattage ?? 0;
-  const maxLoad = obj.maxLoad ?? template?.maxLoad ?? 0;
+  const maxLoad = toPowerValue(obj.maxLoad ?? template?.maxLoad);
 
   const currentLoad = hasPowerOutput ? computeDevicePowerLoad(obj.id, objects, connections) : 0;
   const percent = maxLoad > 0 ? Math.min(100, Math.round((currentLoad / maxLoad) * 100)) : 0;
+  const loadStatus = classifyPowerLoad(currentLoad, maxLoad);
+  const loadColor = loadStatus === 'overload' ? '#f44336' : loadStatus === 'warning' ? '#ff9800' : '#4caf50';
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column' }}>
@@ -130,7 +132,7 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
                 <div style={{ paddingLeft: '78px', marginTop: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', color: '#888' }}>
                     <span>外接负载: <strong>{currentLoad}W</strong> / {maxLoad}W</span>
-                    <span style={{ fontWeight: 'bold', color: currentLoad > maxLoad ? '#f44336' : currentLoad > maxLoad * 0.9 ? '#ff9800' : '#4caf50' }}>
+                    <span style={{ fontWeight: 'bold', color: loadColor }}>
                       {percent}%
                     </span>
                   </div>
@@ -138,15 +140,15 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
                     <div style={{
                       width: `${percent}%`,
                       height: '100%',
-                      backgroundColor: currentLoad > maxLoad ? '#f44336' : currentLoad > maxLoad * 0.9 ? '#ff9800' : '#4caf50',
+                      backgroundColor: loadColor,
                       transition: 'width 0.3s ease'
                     }} />
                   </div>
-                  {currentLoad > maxLoad ? (
+                  {loadStatus === 'overload' ? (
                     <div style={{ color: '#f44336', fontSize: '11px', marginTop: '6px', lineHeight: '1.3' }}>
                       ⚠️ 警告: 电源已过载！请减少外接用电器。
                     </div>
-                  ) : currentLoad > maxLoad * 0.9 ? (
+                  ) : loadStatus === 'warning' ? (
                     <div style={{ color: '#ff9800', fontSize: '11px', marginTop: '6px', lineHeight: '1.3' }}>
                       ⚠️ 提示: 负载较重，已接近承载上限。
                     </div>
