@@ -529,6 +529,35 @@ test('buildRecommendations aggregates free and purchase suggestions with a total
   assert.deepEqual(buildRecommendations({}), { freeImprovements: [], purchases: [], total: 0 });
 });
 
+test('buildRecommendations facade tolerates malformed-but-valid project data', () => {
+  // App.jsx calls buildRecommendations on every render with live state, which can
+  // briefly include a port-bearing object without a position or with a string
+  // wattage (neither is rejected by isProjectObject). The facade must not throw.
+  const project = {
+    room,
+    objects: [
+      object('strip', {
+        type: 'power_strip', modelId: 'power-strip', maxLoad: '2500',
+        position: { x: 0, y: 0, z: 0.1 },
+        ports: [{ id: 'out', name: 'out', type: 'ac_output', direction: 'output' }],
+      }),
+      object('heater', {
+        wattage: '900',
+        position: { x: 1, y: 0, z: 0.1 },
+        ports: [{ id: 'in', name: 'in', type: 'ac_input', direction: 'input' }],
+      }),
+      { id: 'noPos', name: 'noPos', type: 'device', ports: [{ id: 'in', name: 'in', type: 'ac_input', direction: 'input' }] },
+    ],
+    connections: [
+      { id: 'c', name: 'c', cableType: 'power', length: 2, fromObjectId: 'strip', fromPortId: 'out', toObjectId: 'heater', toPortId: 'in' },
+    ],
+  };
+
+  let result;
+  assert.doesNotThrow(() => { result = buildRecommendations(project); });
+  assert.equal(typeof result.total, 'number');
+});
+
 test('recommendation builders can reuse precomputed wiring issues', () => {
   const source = object('source', {
     type: 'outlet',
