@@ -407,6 +407,50 @@ function GenericSwitchModel({ obj, materialProps }) {
   );
 }
 
+function GenericUpsModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const ventCount = 5;
+  const ventSpacing = height * 0.22 / (ventCount - 1);
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.68}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.14, depth * 0.51]}>
+        <boxGeometry args={[width * 0.72, height * 0.5, depth * 0.08]} />
+        <meshStandardMaterial color="#263238" roughness={0.72} />
+      </mesh>
+      <mesh position={[0, height * 0.28, depth * 0.56]}>
+        <boxGeometry args={[width * 0.42, height * 0.16, depth * 0.06]} />
+        <meshStandardMaterial color="#111827" roughness={0.5} />
+      </mesh>
+      <mesh position={[0, height * 0.02, depth * 0.58]}>
+        <cylinderGeometry args={[width * 0.13, width * 0.13, depth * 0.08, 24]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.55} />
+      </mesh>
+      <mesh position={[0, height * 0.02, depth * 0.63]}>
+        <sphereGeometry args={[width * 0.04, 12, 8]} />
+        <meshStandardMaterial color="#76ff03" emissive="#76ff03" emissiveIntensity={0.45} />
+      </mesh>
+      {Array.from({ length: ventCount }, (_, index) => (
+        <mesh key={index} position={[0, -height * 0.24 + ventSpacing * index, depth * 0.56]}>
+          <boxGeometry args={[width * 0.5, height * 0.025, depth * 0.06]} />
+          <meshStandardMaterial color="#1f2937" roughness={0.8} />
+        </mesh>
+      ))}
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -419,6 +463,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-switch') {
     return <GenericSwitchModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-ups') {
+    return <GenericUpsModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

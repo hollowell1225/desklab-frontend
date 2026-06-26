@@ -28,6 +28,13 @@
 - **Added**: 2026-06-26
 - **Notes**: Generic unbranded switch used for `switch`.
 
+## Code-Native Generic UPS
+- **Model Name**: Generic low-poly UPS
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-06-26
+- **Notes**: Generic unbranded UPS used for `ups`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)
