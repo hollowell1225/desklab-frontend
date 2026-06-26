@@ -272,9 +272,58 @@ function GenericMonitorModel({ obj, materialProps }) {
   );
 }
 
+function GenericPowerStripModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const socketCount = 6;
+  const socketRadius = Math.min(depth * 0.14, width * 0.025);
+  const socketSpacing = width * 0.72 / (socketCount - 1);
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.62}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.51, 0]}>
+        <boxGeometry args={[width * 0.9, height * 0.06, depth * 0.72]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.5} />
+      </mesh>
+      {Array.from({ length: socketCount }, (_, index) => {
+        const x = -width * 0.36 + socketSpacing * index;
+        return (
+          <group key={index} position={[x, height * 0.56, depth * 0.12]} rotation={[-Math.PI / 2, 0, 0]}>
+            <mesh position={[-socketRadius * 0.8, 0, 0]}>
+              <cylinderGeometry args={[socketRadius, socketRadius, height * 0.035, 12]} />
+              <meshStandardMaterial color="#202124" roughness={0.7} />
+            </mesh>
+            <mesh position={[socketRadius * 0.8, 0, 0]}>
+              <cylinderGeometry args={[socketRadius, socketRadius, height * 0.035, 12]} />
+              <meshStandardMaterial color="#202124" roughness={0.7} />
+            </mesh>
+          </group>
+        );
+      })}
+      <mesh position={[-width * 0.47, height * 0.08, -depth * 0.52]}>
+        <boxGeometry args={[width * 0.08, height * 0.35, depth * 0.16]} />
+        <meshStandardMaterial color="#2f3a45" roughness={0.8} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-power-strip') {
+    return <GenericPowerStripModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

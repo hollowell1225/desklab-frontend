@@ -14,6 +14,15 @@ test('monitor catalog models resolve to the generic in-house monitor asset', () 
   }
 });
 
+test('power strip resolves to the generic in-house power asset', () => {
+  const asset = getGenericModelAsset('power-strip');
+
+  assert.equal(asset.id, 'generic-power-strip');
+  assert.equal(asset.source, 'in-house-generated');
+  assert.equal(asset.license, 'DeskLab-owned');
+  assert.equal(asset.category, 'power');
+});
+
 test('unknown or externally loaded models keep the fallback rendering path', () => {
   assert.equal(getGenericModelAsset('missing-model'), null);
   assert.equal(hasGenericModelAsset('missing-model'), false);

@@ -7,6 +7,13 @@
 - **Added**: 2026-06-26
 - **Notes**: Generic unbranded monitor family used for `monitor-24`, `monitor-27`, and `ultrawide-monitor`.
 
+## Code-Native Generic Power Strip
+- **Model Name**: Generic low-poly power strip
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-06-26
+- **Notes**: Generic unbranded power strip used for `power-strip`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)
