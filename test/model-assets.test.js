@@ -23,6 +23,15 @@ test('power strip resolves to the generic in-house power asset', () => {
   assert.equal(asset.category, 'power');
 });
 
+test('router resolves to the generic in-house network asset', () => {
+  const asset = getGenericModelAsset('router');
+
+  assert.equal(asset.id, 'generic-router');
+  assert.equal(asset.source, 'in-house-generated');
+  assert.equal(asset.license, 'DeskLab-owned');
+  assert.equal(asset.category, 'network');
+});
+
 test('unknown or externally loaded models keep the fallback rendering path', () => {
   assert.equal(getGenericModelAsset('missing-model'), null);
   assert.equal(hasGenericModelAsset('missing-model'), false);

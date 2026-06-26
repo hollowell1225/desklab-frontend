@@ -12,11 +12,19 @@ const GENERIC_POWER_STRIP_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
+const GENERIC_ROUTER_ASSET = Object.freeze({
+  id: 'generic-router',
+  category: 'network',
+  source: 'in-house-generated',
+  license: 'DeskLab-owned',
+});
+
 const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'monitor-24': GENERIC_MONITOR_ASSET,
   'monitor-27': GENERIC_MONITOR_ASSET,
   'ultrawide-monitor': GENERIC_MONITOR_ASSET,
   'power-strip': GENERIC_POWER_STRIP_ASSET,
+  router: GENERIC_ROUTER_ASSET,
 });
 
 export function getGenericModelAsset(modelId) {

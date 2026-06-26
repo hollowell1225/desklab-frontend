@@ -14,6 +14,13 @@
 - **Added**: 2026-06-26
 - **Notes**: Generic unbranded power strip used for `power-strip`.
 
+## Code-Native Generic Router
+- **Model Name**: Generic low-poly router
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-06-26
+- **Notes**: Generic unbranded router used for `router`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)

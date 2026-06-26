@@ -318,12 +318,60 @@ function GenericPowerStripModel({ obj, materialProps }) {
   );
 }
 
+function GenericRouterModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const portCount = 4;
+  const portWidth = width * 0.11;
+  const portSpacing = width * 0.5 / (portCount - 1);
+  const antennaHeight = height * 0.85;
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.58}
+        />
+      </mesh>
+      {Array.from({ length: portCount }, (_, index) => {
+        const x = -width * 0.25 + portSpacing * index;
+        return (
+          <mesh key={index} position={[x, height * 0.1, depth * 0.51]}>
+            <boxGeometry args={[portWidth, height * 0.36, depth * 0.08]} />
+            <meshStandardMaterial color="#102027" roughness={0.65} />
+          </mesh>
+        );
+      })}
+      <mesh position={[width * 0.35, height * 0.52, -depth * 0.2]} rotation={[0, 0, -0.45]}>
+        <cylinderGeometry args={[width * 0.012, width * 0.012, antennaHeight, 8]} />
+        <meshStandardMaterial color="#263238" roughness={0.7} />
+      </mesh>
+      <mesh position={[-width * 0.35, height * 0.52, -depth * 0.2]} rotation={[0, 0, 0.45]}>
+        <cylinderGeometry args={[width * 0.012, width * 0.012, antennaHeight, 8]} />
+        <meshStandardMaterial color="#263238" roughness={0.7} />
+      </mesh>
+      <mesh position={[width * 0.38, height * 0.52, depth * 0.2]}>
+        <sphereGeometry args={[Math.min(width, depth) * 0.035, 12, 8]} />
+        <meshStandardMaterial color="#76ff03" emissive="#76ff03" emissiveIntensity={0.45} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
   }
   if (asset?.id === 'generic-power-strip') {
     return <GenericPowerStripModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-router') {
+    return <GenericRouterModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }
