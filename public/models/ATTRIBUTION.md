@@ -21,6 +21,13 @@
 - **Added**: 2026-06-26
 - **Notes**: Generic unbranded router used for `router`.
 
+## Code-Native Generic Switch
+- **Model Name**: Generic low-poly network switch
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-06-26
+- **Notes**: Generic unbranded switch used for `switch`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)

@@ -32,6 +32,15 @@ test('router resolves to the generic in-house network asset', () => {
   assert.equal(asset.category, 'network');
 });
 
+test('switch resolves to the generic in-house network asset', () => {
+  const asset = getGenericModelAsset('switch');
+
+  assert.equal(asset.id, 'generic-switch');
+  assert.equal(asset.source, 'in-house-generated');
+  assert.equal(asset.license, 'DeskLab-owned');
+  assert.equal(asset.category, 'network');
+});
+
 test('unknown or externally loaded models keep the fallback rendering path', () => {
   assert.equal(getGenericModelAsset('missing-model'), null);
   assert.equal(hasGenericModelAsset('missing-model'), false);

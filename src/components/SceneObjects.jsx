@@ -363,6 +363,50 @@ function GenericRouterModel({ obj, materialProps }) {
   );
 }
 
+function GenericSwitchModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const portCount = 8;
+  const portWidth = width * 0.075;
+  const portSpacing = width * 0.72 / (portCount - 1);
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.6}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.02, depth * 0.51]}>
+        <boxGeometry args={[width * 0.88, height * 0.58, depth * 0.08]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.65} />
+      </mesh>
+      {Array.from({ length: portCount }, (_, index) => {
+        const x = -width * 0.36 + portSpacing * index;
+        return (
+          <mesh key={index} position={[x, height * 0.08, depth * 0.56]}>
+            <boxGeometry args={[portWidth, height * 0.34, depth * 0.08]} />
+            <meshStandardMaterial color="#111827" roughness={0.7} />
+          </mesh>
+        );
+      })}
+      <mesh position={[-width * 0.43, height * 0.36, depth * 0.18]}>
+        <sphereGeometry args={[Math.min(width, depth) * 0.018, 10, 8]} />
+        <meshStandardMaterial color="#76ff03" emissive="#76ff03" emissiveIntensity={0.4} />
+      </mesh>
+      <mesh position={[-width * 0.36, height * 0.36, depth * 0.18]}>
+        <sphereGeometry args={[Math.min(width, depth) * 0.018, 10, 8]} />
+        <meshStandardMaterial color="#ffd54f" emissive="#ffd54f" emissiveIntensity={0.3} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -372,6 +416,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-router') {
     return <GenericRouterModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-switch') {
+    return <GenericSwitchModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }
