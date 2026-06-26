@@ -7,6 +7,7 @@ import { getModelDefaultScale, findModelTemplate } from '../domain/catalog.js';
 import { evaluateConnectionLength, getConnectionEndpoints } from '../domain/connections.js';
 import { buildPowerGraph, computeDevicePowerLoad, classifyPowerLoad, toPowerValue } from '../domain/analysis.js';
 import { toThreePosition, toThreeZRotation } from '../domain/coordinates.js';
+import { getGenericModelAsset } from '../domain/model-assets.js';
 
 const CABLE_COLORS = {
   power: '#e53935',
@@ -206,6 +207,78 @@ function GLBModel({ url, scaleRatio, isSelected, isRelated, isHovered }) {
   return <primitive object={clonedScene} scale={[scaleRatio.x, scaleRatio.z, scaleRatio.y]} />;
 }
 
+function getHighlightMaterialProps({ isSelected, isRelated, isHovered }) {
+  if (isSelected) return { emissiveColor: 'white', emissiveIntensity: 0.3 };
+  if (isRelated) return { emissiveColor: '#ffeb3b', emissiveIntensity: 0.4 };
+  if (isHovered) return { emissiveColor: '#81c784', emissiveIntensity: 0.2 };
+  return { emissiveColor: 'black', emissiveIntensity: 0 };
+}
+
+function FallbackBox({ obj, materialProps }) {
+  return (
+    <mesh>
+      <boxGeometry args={[obj.scale.x, obj.scale.z, obj.scale.y]} />
+      <meshStandardMaterial
+        color={obj.color}
+        emissive={materialProps.emissiveColor}
+        emissiveIntensity={materialProps.emissiveIntensity}
+      />
+    </mesh>
+  );
+}
+
+function GenericMonitorModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const panelHeight = height * 0.68;
+  const panelDepth = depth * 0.45;
+  const bezelWidth = Math.min(width * 0.08, 0.045);
+  const standHeight = height * 0.26;
+
+  return (
+    <group>
+      <mesh position={[0, height * 0.12, 0]}>
+        <boxGeometry args={[width, panelHeight, panelDepth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.55}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.12, depth * 0.24]}>
+        <boxGeometry args={[width * 0.82, panelHeight * 0.72, depth * 0.12]} />
+        <meshStandardMaterial color="#111827" roughness={0.35} metalness={0.15} />
+      </mesh>
+      <mesh position={[0, height * 0.12, -depth * 0.33]}>
+        <boxGeometry args={[width * 0.52, panelHeight * 0.42, depth * 0.24]} />
+        <meshStandardMaterial color="#2f3a45" roughness={0.75} />
+      </mesh>
+      <mesh position={[0, -height * 0.25, 0]}>
+        <boxGeometry args={[Math.max(bezelWidth, width * 0.12), standHeight, depth * 0.52]} />
+        <meshStandardMaterial
+          color="#3b4652"
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity * 0.5}
+          roughness={0.65}
+        />
+      </mesh>
+      <mesh position={[0, -height * 0.43, 0]}>
+        <boxGeometry args={[width * 0.42, height * 0.07, depth * 0.92]} />
+        <meshStandardMaterial color="#202832" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
+function GenericModel({ asset, obj, materialProps }) {
+  if (asset?.id === 'generic-monitor') {
+    return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
+  }
+  return <FallbackBox obj={obj} materialProps={materialProps} />;
+}
+
 export function DeviceMesh({
   obj,
   isSelected,
@@ -222,30 +295,13 @@ export function DeviceMesh({
     y: obj.scale.y / defaultScale.y,
     z: obj.scale.z / defaultScale.z,
   } : { x: 1, y: 1, z: 1 };
+  const materialProps = getHighlightMaterialProps({ isSelected, isRelated, isHovered });
+  const genericAsset = obj.assetUrl ? null : getGenericModelAsset(obj.modelId);
 
-  const renderBox = () => {
-    let emissiveColor = 'black';
-    let emissiveIntensity = 0;
-    if (isSelected) {
-      emissiveColor = 'white';
-      emissiveIntensity = 0.3;
-    } else if (isRelated) {
-      emissiveColor = '#ffeb3b';
-      emissiveIntensity = 0.4;
-    } else if (isHovered) {
-      emissiveColor = '#81c784';
-      emissiveIntensity = 0.2;
-    }
-    return (
-      <>
-        <boxGeometry args={[obj.scale.x, obj.scale.z, obj.scale.y]} />
-        <meshStandardMaterial color={obj.color} emissive={emissiveColor} emissiveIntensity={emissiveIntensity} />
-      </>
-    );
-  };
+  const renderBox = () => <FallbackBox obj={obj} materialProps={materialProps} />;
 
   return (
-    <mesh
+    <group
       position={toThreePosition(obj.position)}
       rotation={toThreeZRotation(obj.rotation?.z)}
       onClick={onClick}
@@ -265,9 +321,11 @@ export function DeviceMesh({
             />
           </Suspense>
         </GLTFErrorBoundary>
+      ) : genericAsset ? (
+        <GenericModel asset={genericAsset} obj={obj} materialProps={materialProps} />
       ) : renderBox()}
       {isSelected ? <PortMarkers obj={obj} /> : null}
-    </mesh>
+    </group>
   );
 }
 
