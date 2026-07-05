@@ -96,12 +96,14 @@ npm start
 ## Current Git State (2026-06-26 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `23752a0 feat: add generic modem model asset`
-- Tests: `npm test` → 187 passed. Lint + build clean.
+- Feature HEAD: `53630cc feat: add generic all-in-one model asset`
+- Tests: `npm test` → 188 passed. Lint + build clean.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+53630cc feat: add generic all-in-one model asset
+44eecb2 docs: record generic modem asset slice
 23752a0 feat: add generic modem model asset
 4b93b25 docs: record generic nas asset slice
 dfceab9 feat: add generic two-bay nas model asset
@@ -147,8 +149,10 @@ Code-native generic model assets now exist for:
 - `laptop-15`
 - `nas-2bay`
 - `modem`
+- `all-in-one`
 
-The next likely model-asset target is `all-in-one`, followed by furniture.
+The next likely model-asset targets are the furniture models, starting with
+`office-desk`.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -413,6 +417,21 @@ The next likely model-asset target is `all-in-one`, followed by furniture.
   by missing `sandboxPolicy` metadata. No browser or visual QA is claimed.
 - Commit: `23752a0 feat: add generic modem model asset` (pushed).
 
+### Generic all-in-one model asset slice (2026-07-05)
+- Added a code-native, in-house, generic low-poly integrated computer render
+  path for `all-in-one`; no external meshes, logos, or branded silhouettes.
+- `src/domain/model-assets.js` maps `all-in-one` to `generic-all-in-one`.
+  `SceneObjects.jsx` renders the display, screen, lower chin, thick rear compute
+  enclosure, stand, and base while preserving GLB priority and box fallback.
+- Expanded `test/model-assets.test.js` test-first; the focused test failed on
+  the previous `null` mapping before implementation and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: focused tests 14/14; `npm test` 188/188; lint and build passed.
+  The existing large-chunk warning remains non-fatal.
+- Browser/visual QA: not completed because Browser bootstrap remained blocked
+  by missing `sandboxPolicy` metadata. No browser or visual QA is claimed.
+- Commit: `53630cc feat: add generic all-in-one model asset` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -591,7 +610,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 187 tests
+npm test          # 188 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -619,7 +638,7 @@ Remaining work:
 
 2. **If continuing autonomously without product direction**:
    - Continue generic, legally safe, code-native low-poly model assets.
-     Good next target: `all-in-one`, then furniture models.
+     Good next target: `office-desk`, then the other furniture models.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
