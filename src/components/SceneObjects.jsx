@@ -496,6 +496,46 @@ function GenericDesktopPcModel({ obj, materialProps }) {
   );
 }
 
+function GenericMiniPcModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.58}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.52, 0]}>
+        <cylinderGeometry args={[width * 0.28, width * 0.28, height * 0.05, 24]} />
+        <meshStandardMaterial color="#1f2937" roughness={0.75} />
+      </mesh>
+      <mesh position={[-width * 0.3, 0, depth * 0.51]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[height * 0.13, height * 0.13, depth * 0.04, 16]} />
+        <meshStandardMaterial color="#111827" roughness={0.55} />
+      </mesh>
+      <mesh position={[-width * 0.3, 0, depth * 0.55]}>
+        <sphereGeometry args={[height * 0.035, 10, 8]} />
+        <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.45} />
+      </mesh>
+      <mesh position={[width * 0.03, 0, depth * 0.53]}>
+        <boxGeometry args={[width * 0.18, height * 0.18, depth * 0.04]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.65} />
+      </mesh>
+      <mesh position={[width * 0.3, 0, depth * 0.53]}>
+        <boxGeometry args={[width * 0.18, height * 0.18, depth * 0.04]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.65} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -514,6 +554,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-desktop-pc') {
     return <GenericDesktopPcModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-mini-pc') {
+    return <GenericMiniPcModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

@@ -42,6 +42,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded tower PC used for `desktop-pc`.
 
+## Code-Native Generic Mini PC
+- **Model Name**: Generic low-poly mini PC
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded compact computer used for `mini-pc`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)
