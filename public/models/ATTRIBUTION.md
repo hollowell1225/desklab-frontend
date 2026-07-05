@@ -98,6 +98,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded four-leg desk with cable tray used for `office-desk`.
 
+## Code-Native Generic Gaming Desk
+- **Model Name**: Generic low-poly gaming desk
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded wide desk with angled legs, crossbar, and rear shelf used for `gaming-desk`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)

@@ -812,6 +812,43 @@ function GenericOfficeDeskModel({ obj, materialProps }) {
   );
 }
 
+function GenericGamingDeskModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const legWidth = Math.min(width, depth) * 0.1;
+
+  return (
+    <group>
+      <mesh position={[0, height * 0.42, 0]}>
+        <boxGeometry args={[width, height * 0.12, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.52}
+        />
+      </mesh>
+      <mesh position={[-width * 0.38, -height * 0.03, 0]} rotation={[0, 0, -0.1]}>
+        <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
+        <meshStandardMaterial color="#1f2937" metalness={0.25} roughness={0.58} />
+      </mesh>
+      <mesh position={[width * 0.38, -height * 0.03, 0]} rotation={[0, 0, 0.1]}>
+        <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
+        <meshStandardMaterial color="#1f2937" metalness={0.25} roughness={0.58} />
+      </mesh>
+      <mesh position={[0, -height * 0.15, -depth * 0.28]}>
+        <boxGeometry args={[width * 0.72, height * 0.08, legWidth]} />
+        <meshStandardMaterial color="#334155" metalness={0.2} roughness={0.62} />
+      </mesh>
+      <mesh position={[0, height * 0.47, -depth * 0.32]}>
+        <boxGeometry args={[width * 0.48, height * 0.05, depth * 0.22]} />
+        <meshStandardMaterial color="#111827" roughness={0.6} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -854,6 +891,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-office-desk') {
     return <GenericOfficeDeskModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-gaming-desk') {
+    return <GenericGamingDeskModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }
