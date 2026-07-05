@@ -96,12 +96,14 @@ npm start
 ## Current Git State (2026-06-26 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `6451fcc feat: add generic power adapter model asset`
-- Tests: `npm test` → 183 passed. Lint + build clean.
+- Feature HEAD: `1aa312e feat: add generic wall outlet model asset`
+- Tests: `npm test` → 184 passed. Lint + build clean.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+1aa312e feat: add generic wall outlet model asset
+82ec3b8 docs: record generic power adapter asset slice
 6451fcc feat: add generic power adapter model asset
 6ecc6c0 docs: record generic mini pc asset slice
 55b9ddb feat: add generic mini pc model asset
@@ -135,9 +137,10 @@ Code-native generic model assets now exist for:
 - `desktop-pc`
 - `mini-pc`
 - `power-adapter`
+- `wall-outlet`
 
-The next likely model-asset targets are `wall-outlet` and laptop asset
-cleanup/replacement.
+The next likely model-asset targets are laptop asset cleanup/replacement, then
+NAS/modem.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -332,6 +335,27 @@ cleanup/replacement.
 - Commit: `6451fcc feat: add generic power adapter model asset` (pushed to
   `origin/master`).
 
+### Generic wall outlet model asset slice (2026-07-05)
+- Added a code-native, in-house, generic low-poly dual wall outlet render path
+  for `wall-outlet`; no external meshes, scraped assets, logos, or branded
+  silhouettes were introduced.
+- `src/domain/model-assets.js` now maps `wall-outlet` to
+  `generic-wall-outlet`. `SceneObjects.jsx` renders a thin wall plate, inset
+  faceplate, two outlet rows, and a center fastener while preserving existing
+  wall-snap rotation, GLB `assetUrl` priority, and unknown-model box fallback.
+- Expanded `test/model-assets.test.js` test-first to lock the outlet mapping.
+  The focused test failed on the previous `null` mapping before implementation
+  and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: `node --test test\model-assets.test.js` (10 passed), `npm test`
+  (184 passed), `npm run lint`, `npm run build`. The existing large-chunk build
+  warning remains non-fatal.
+- Browser/visual QA: not completed because the same Browser runtime
+  `sandboxPolicy` metadata blocker remained active. No browser or visual QA is
+  claimed.
+- Commit: `1aa312e feat: add generic wall outlet model asset` (pushed to
+  `origin/master`).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -510,7 +534,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 183 tests
+npm test          # 184 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -538,7 +562,7 @@ Remaining work:
 
 2. **If continuing autonomously without product direction**:
    - Continue generic, legally safe, code-native low-poly model assets.
-     Good next targets: `wall-outlet`, then maybe NAS/modem.
+     Good next targets: laptop cleanup/replacement, then NAS/modem.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
