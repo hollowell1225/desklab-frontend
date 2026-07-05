@@ -96,12 +96,14 @@ npm start
 ## Current Git State (2026-06-26 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `4f4bd89 feat: add generic desktop pc model asset`
-- Tests: `npm test` → 181 passed. Lint + build clean.
+- Feature HEAD: `55b9ddb feat: add generic mini pc model asset`
+- Tests: `npm test` → 182 passed. Lint + build clean.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+55b9ddb feat: add generic mini pc model asset
+17a5ff0 docs: record generic desktop pc asset slice
 4f4bd89 feat: add generic desktop pc model asset
 3e3b2d7 docs: sync current DeskLab memory bank
 c9fff49 feat: add generic ups model asset
@@ -129,9 +131,10 @@ Code-native generic model assets now exist for:
 - `switch`
 - `ups`
 - `desktop-pc`
+- `mini-pc`
 
-The next likely model-asset targets are `mini-pc`, `power-adapter`,
-`wall-outlet`, and laptop asset cleanup/replacement.
+The next likely model-asset targets are `power-adapter`, `wall-outlet`, and
+laptop asset cleanup/replacement.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -281,6 +284,28 @@ The next likely model-asset targets are `mini-pc`, `power-adapter`,
   required sandbox metadata (`sandboxPolicy`). No browser or visual QA is
   claimed.
 - Commit: `4f4bd89 feat: add generic desktop pc model asset` (pushed to
+  `origin/master`).
+
+### Generic mini PC model asset slice (2026-07-05)
+- Added a code-native, in-house, generic low-poly compact computer render path
+  for `mini-pc`; no external meshes, scraped assets, logos, or branded
+  silhouettes were introduced.
+- `src/domain/model-assets.js` now maps `mini-pc` to `generic-mini-pc`.
+  `SceneObjects.jsx` renders a low compact body, top vent, power button/status
+  light, and two front ports while preserving GLB `assetUrl` priority and
+  unknown-model box fallback.
+- Expanded `test/model-assets.test.js` test-first to lock the mini PC mapping.
+  The focused test failed on the previous `null` mapping before implementation
+  and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: `node --test test\model-assets.test.js` (8 passed), `npm test`
+  (182 passed), `npm run lint`, `npm run build`. The existing large-chunk build
+  warning remains non-fatal.
+- Browser/visual QA: not completed. Both localhost services returned HTTP 200,
+  but Browser bootstrap again failed because the runtime request lacked
+  required sandbox metadata (`sandboxPolicy`). No browser or visual QA is
+  claimed.
+- Commit: `55b9ddb feat: add generic mini pc model asset` (pushed to
   `origin/master`).
 
 Notes on the power-load slices (2026-06-25):
@@ -461,7 +486,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 181 tests
+npm test          # 182 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -489,8 +514,7 @@ Remaining work:
 
 2. **If continuing autonomously without product direction**:
    - Continue generic, legally safe, code-native low-poly model assets.
-     Good next targets: `mini-pc`, `power-adapter`, `wall-outlet`, then maybe
-     NAS/modem.
+     Good next targets: `power-adapter`, `wall-outlet`, then maybe NAS/modem.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
