@@ -536,6 +536,43 @@ function GenericMiniPcModel({ obj, materialProps }) {
   );
 }
 
+function GenericPowerAdapterModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const pinWidth = width * 0.12;
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.65}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.52, 0]}>
+        <boxGeometry args={[width * 0.58, height * 0.04, depth * 0.52]} />
+        <meshStandardMaterial color="#475569" roughness={0.72} />
+      </mesh>
+      <mesh position={[-width * 0.22, 0, depth * 0.68]}>
+        <boxGeometry args={[pinWidth, height * 0.36, depth * 0.36]} />
+        <meshStandardMaterial color="#cbd5e1" metalness={0.65} roughness={0.32} />
+      </mesh>
+      <mesh position={[width * 0.22, 0, depth * 0.68]}>
+        <boxGeometry args={[pinWidth, height * 0.36, depth * 0.36]} />
+        <meshStandardMaterial color="#cbd5e1" metalness={0.65} roughness={0.32} />
+      </mesh>
+      <mesh position={[0, 0, -depth * 0.61]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[height * 0.23, height * 0.23, depth * 0.24, 12]} />
+        <meshStandardMaterial color="#111827" roughness={0.76} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -557,6 +594,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-mini-pc') {
     return <GenericMiniPcModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-power-adapter') {
+    return <GenericPowerAdapterModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

@@ -68,6 +68,15 @@ test('mini pc resolves to the generic in-house computer asset', () => {
   assert.equal(asset.category, 'computer');
 });
 
+test('power adapter resolves to the generic in-house power asset', () => {
+  const asset = getGenericModelAsset('power-adapter');
+
+  assert.equal(asset.id, 'generic-power-adapter');
+  assert.equal(asset.source, 'in-house-generated');
+  assert.equal(asset.license, 'DeskLab-owned');
+  assert.equal(asset.category, 'power');
+});
+
 test('unknown or externally loaded models keep the fallback rendering path', () => {
   assert.equal(getGenericModelAsset('missing-model'), null);
   assert.equal(hasGenericModelAsset('missing-model'), false);

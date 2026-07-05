@@ -49,6 +49,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded compact computer used for `mini-pc`.
 
+## Code-Native Generic Power Adapter
+- **Model Name**: Generic low-poly power adapter
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded AC-to-DC power adapter used for `power-adapter`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)
