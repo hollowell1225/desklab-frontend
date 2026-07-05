@@ -611,6 +611,47 @@ function GenericWallOutletModel({ obj, materialProps }) {
   );
 }
 
+function GenericLaptopModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+
+  return (
+    <group>
+      <mesh position={[0, -height * 0.42, depth * 0.04]}>
+        <boxGeometry args={[width, height * 0.12, depth * 0.9]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.55}
+        />
+      </mesh>
+      <mesh position={[0, -height * 0.35, depth * 0.07]}>
+        <boxGeometry args={[width * 0.78, height * 0.025, depth * 0.54]} />
+        <meshStandardMaterial color="#1f2937" roughness={0.68} />
+      </mesh>
+      <mesh position={[0, height * 0.02, -depth * 0.39]}>
+        <boxGeometry args={[width * 0.96, height * 0.78, depth * 0.06]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.58}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.02, -depth * 0.35]}>
+        <boxGeometry args={[width * 0.84, height * 0.62, depth * 0.025]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.34} metalness={0.12} />
+      </mesh>
+      <mesh position={[0, -height * 0.36, -depth * 0.36]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[height * 0.045, height * 0.045, width * 0.72, 12]} />
+        <meshStandardMaterial color="#334155" roughness={0.64} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -638,6 +679,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-wall-outlet') {
     return <GenericWallOutletModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-laptop') {
+    return <GenericLaptopModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

@@ -61,6 +61,13 @@ const GENERIC_WALL_OUTLET_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
+const GENERIC_LAPTOP_ASSET = Object.freeze({
+  id: 'generic-laptop',
+  category: 'computer',
+  source: 'in-house-generated',
+  license: 'DeskLab-owned',
+});
+
 const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'monitor-24': GENERIC_MONITOR_ASSET,
   'monitor-27': GENERIC_MONITOR_ASSET,
@@ -73,6 +80,7 @@ const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'mini-pc': GENERIC_MINI_PC_ASSET,
   'power-adapter': GENERIC_POWER_ADAPTER_ASSET,
   'wall-outlet': GENERIC_WALL_OUTLET_ASSET,
+  'laptop-15': GENERIC_LAPTOP_ASSET,
 });
 
 export function getGenericModelAsset(modelId) {

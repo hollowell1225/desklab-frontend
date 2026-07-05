@@ -63,6 +63,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded dual wall outlet used for `wall-outlet`.
 
+## Code-Native Generic Laptop
+- **Model Name**: Generic low-poly laptop
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded open laptop used for `laptop-15` when no external asset URL is configured.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)
