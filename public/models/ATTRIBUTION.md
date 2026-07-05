@@ -56,6 +56,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded AC-to-DC power adapter used for `power-adapter`.
 
+## Code-Native Generic Wall Outlet
+- **Model Name**: Generic low-poly wall outlet
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded dual wall outlet used for `wall-outlet`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)

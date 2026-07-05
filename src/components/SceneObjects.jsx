@@ -573,6 +573,44 @@ function GenericPowerAdapterModel({ obj, materialProps }) {
   );
 }
 
+function GenericWallOutletModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const slotWidth = width * 0.08;
+  const slotHeight = height * 0.16;
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.52}
+        />
+      </mesh>
+      <mesh position={[0, 0, depth * 0.53]}>
+        <boxGeometry args={[width * 0.82, height * 0.88, depth * 0.06]} />
+        <meshStandardMaterial color="#f8fafc" roughness={0.48} />
+      </mesh>
+      {[-height * 0.22, height * 0.22].flatMap((y, row) =>
+        [-width * 0.14, width * 0.14].map((x, column) => (
+          <mesh key={`${row}-${column}`} position={[x, y, depth * 0.58]}>
+            <boxGeometry args={[slotWidth, slotHeight, depth * 0.04]} />
+            <meshStandardMaterial color="#1f2937" roughness={0.72} />
+          </mesh>
+        ))
+      )}
+      <mesh position={[0, 0, depth * 0.6]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[width * 0.035, width * 0.035, depth * 0.04, 12]} />
+        <meshStandardMaterial color="#94a3b8" metalness={0.45} roughness={0.38} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -597,6 +635,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-power-adapter') {
     return <GenericPowerAdapterModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-wall-outlet') {
+    return <GenericWallOutletModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }
