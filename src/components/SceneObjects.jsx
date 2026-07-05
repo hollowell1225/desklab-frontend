@@ -451,6 +451,51 @@ function GenericUpsModel({ obj, materialProps }) {
   );
 }
 
+function GenericDesktopPcModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const ventRadius = Math.min(width, height) * 0.22;
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.62}
+        />
+      </mesh>
+      <mesh position={[0, 0, depth * 0.51]}>
+        <boxGeometry args={[width * 0.82, height * 0.88, depth * 0.04]} />
+        <meshStandardMaterial color="#20252b" roughness={0.7} />
+      </mesh>
+      <mesh position={[0, height * 0.27, depth * 0.55]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[ventRadius, ventRadius, depth * 0.05, 20]} />
+        <meshStandardMaterial color="#111827" roughness={0.78} />
+      </mesh>
+      <mesh position={[-width * 0.24, -height * 0.27, depth * 0.56]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[width * 0.07, width * 0.07, depth * 0.05, 20]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.55} />
+      </mesh>
+      <mesh position={[-width * 0.24, -height * 0.27, depth * 0.6]}>
+        <sphereGeometry args={[width * 0.022, 10, 8]} />
+        <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.45} />
+      </mesh>
+      <mesh position={[width * 0.18, -height * 0.27, depth * 0.56]}>
+        <boxGeometry args={[width * 0.16, height * 0.045, depth * 0.05]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.65} />
+      </mesh>
+      <mesh position={[width * 0.18, -height * 0.18, depth * 0.56]}>
+        <boxGeometry args={[width * 0.16, height * 0.045, depth * 0.05]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.65} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -466,6 +511,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-ups') {
     return <GenericUpsModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-desktop-pc') {
+    return <GenericDesktopPcModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

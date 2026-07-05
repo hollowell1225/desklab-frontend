@@ -35,6 +35,13 @@
 - **Added**: 2026-06-26
 - **Notes**: Generic unbranded UPS used for `ups`.
 
+## Code-Native Generic Desktop PC
+- **Model Name**: Generic low-poly desktop PC tower
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded tower PC used for `desktop-pc`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)

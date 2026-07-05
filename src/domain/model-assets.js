@@ -33,6 +33,13 @@ const GENERIC_UPS_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
+const GENERIC_DESKTOP_PC_ASSET = Object.freeze({
+  id: 'generic-desktop-pc',
+  category: 'computer',
+  source: 'in-house-generated',
+  license: 'DeskLab-owned',
+});
+
 const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'monitor-24': GENERIC_MONITOR_ASSET,
   'monitor-27': GENERIC_MONITOR_ASSET,
@@ -41,6 +48,7 @@ const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   router: GENERIC_ROUTER_ASSET,
   switch: GENERIC_SWITCH_ASSET,
   ups: GENERIC_UPS_ASSET,
+  'desktop-pc': GENERIC_DESKTOP_PC_ASSET,
 });
 
 export function getGenericModelAsset(modelId) {
