@@ -96,12 +96,14 @@ npm start
 ## Current Git State (2026-06-26 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `9c94b59 feat: add generic office desk model asset`
-- Tests: `npm test` → 189 passed. Lint + build clean.
+- Feature HEAD: `3a2e4d2 feat: add generic gaming desk model asset`
+- Tests: `npm test` → 190 passed. Lint + build clean.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+3a2e4d2 feat: add generic gaming desk model asset
+412e176 docs: record generic office desk asset slice
 9c94b59 feat: add generic office desk model asset
 12735b8 docs: record generic all-in-one asset slice
 53630cc feat: add generic all-in-one model asset
@@ -153,9 +155,9 @@ Code-native generic model assets now exist for:
 - `modem`
 - `all-in-one`
 - `office-desk`
+- `gaming-desk`
 
-The next likely model-asset targets are `gaming-desk`, `standing-desk`, and
-`l-desk`.
+The next likely model-asset targets are `standing-desk` and `l-desk`.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -451,6 +453,22 @@ The next likely model-asset targets are `gaming-desk`, `standing-desk`, and
   by missing `sandboxPolicy` metadata. No browser or visual QA is claimed.
 - Commit: `9c94b59 feat: add generic office desk model asset` (pushed).
 
+### Generic gaming desk model asset slice (2026-07-05)
+- Added a code-native, in-house, generic low-poly gaming desk render path for
+  `gaming-desk`; no external meshes, logos, or branded silhouettes.
+- `src/domain/model-assets.js` maps `gaming-desk` to `generic-gaming-desk`.
+  `SceneObjects.jsx` renders a wide desktop, angled legs, rear crossbar, and
+  monitor shelf, all kept within the catalog bounding box while preserving GLB
+  priority and box fallback.
+- Expanded `test/model-assets.test.js` test-first; the focused test failed on
+  the previous `null` mapping before implementation and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: focused tests 16/16; `npm test` 190/190; lint and build passed.
+  The existing large-chunk warning remains non-fatal.
+- Browser/visual QA: not completed because Browser bootstrap remained blocked
+  by missing `sandboxPolicy` metadata. No browser or visual QA is claimed.
+- Commit: `3a2e4d2 feat: add generic gaming desk model asset` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -629,7 +647,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 189 tests
+npm test          # 190 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -657,7 +675,7 @@ Remaining work:
 
 2. **If continuing autonomously without product direction**:
    - Continue generic, legally safe, code-native low-poly model assets.
-     Good next targets: `gaming-desk`, `standing-desk`, then `l-desk`.
+     Good next targets: `standing-desk`, then `l-desk`.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
