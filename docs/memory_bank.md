@@ -96,12 +96,14 @@ npm start
 ## Current Git State (2026-06-26 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `55b9ddb feat: add generic mini pc model asset`
-- Tests: `npm test` → 182 passed. Lint + build clean.
+- Feature HEAD: `6451fcc feat: add generic power adapter model asset`
+- Tests: `npm test` → 183 passed. Lint + build clean.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+6451fcc feat: add generic power adapter model asset
+6ecc6c0 docs: record generic mini pc asset slice
 55b9ddb feat: add generic mini pc model asset
 17a5ff0 docs: record generic desktop pc asset slice
 4f4bd89 feat: add generic desktop pc model asset
@@ -132,9 +134,10 @@ Code-native generic model assets now exist for:
 - `ups`
 - `desktop-pc`
 - `mini-pc`
+- `power-adapter`
 
-The next likely model-asset targets are `power-adapter`, `wall-outlet`, and
-laptop asset cleanup/replacement.
+The next likely model-asset targets are `wall-outlet` and laptop asset
+cleanup/replacement.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -306,6 +309,27 @@ laptop asset cleanup/replacement.
   required sandbox metadata (`sandboxPolicy`). No browser or visual QA is
   claimed.
 - Commit: `55b9ddb feat: add generic mini pc model asset` (pushed to
+  `origin/master`).
+
+### Generic power adapter model asset slice (2026-07-05)
+- Added a code-native, in-house, generic low-poly AC-to-DC adapter render path
+  for `power-adapter`; no external meshes, scraped assets, logos, or branded
+  silhouettes were introduced.
+- `src/domain/model-assets.js` now maps `power-adapter` to
+  `generic-power-adapter`. `SceneObjects.jsx` renders a compact power brick,
+  top label panel, two AC-side contacts, and a DC-side strain relief while
+  preserving GLB `assetUrl` priority and unknown-model box fallback.
+- Expanded `test/model-assets.test.js` test-first to lock the adapter mapping.
+  The focused test failed on the previous `null` mapping before implementation
+  and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: `node --test test\model-assets.test.js` (9 passed), `npm test`
+  (183 passed), `npm run lint`, `npm run build`. The existing large-chunk build
+  warning remains non-fatal.
+- Browser/visual QA: not completed. Both localhost services returned HTTP 200,
+  but Browser bootstrap remained blocked by missing runtime sandbox metadata
+  (`sandboxPolicy`). No browser or visual QA is claimed.
+- Commit: `6451fcc feat: add generic power adapter model asset` (pushed to
   `origin/master`).
 
 Notes on the power-load slices (2026-06-25):
@@ -486,7 +510,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 182 tests
+npm test          # 183 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -514,7 +538,7 @@ Remaining work:
 
 2. **If continuing autonomously without product direction**:
    - Continue generic, legally safe, code-native low-poly model assets.
-     Good next targets: `power-adapter`, `wall-outlet`, then maybe NAS/modem.
+     Good next targets: `wall-outlet`, then maybe NAS/modem.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
