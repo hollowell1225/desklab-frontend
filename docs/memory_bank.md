@@ -1,151 +1,495 @@
-# DeskLab Memory Bank
+# DeskLab Memory Bank for Claude
 
-> 最后更新: 2026-06-25T01:52 (UTC+8)
-> 对话 ID: `5f8b7330-8c07-499c-b481-5b3bd2473aae`
+Last updated: 2026-07-05, Asia/Shanghai
 
----
+## Mission
 
-## 1. 项目概况
+DeskLab is a connected 3D room desktop layout and cabling tool. The long-term product direction is:
 
-| 项 | 值 |
-|---|---|
-| 项目名称 | DeskLab |
-| 前端路径 | `C:\Users\lyj\.gemini\antigravity\scratch\DeskLab` |
-| 后端路径 | `D:\Claude` |
-| 技术栈 | React 19 + Three.js (react-three-fiber/drei) + Vite 8 |
-| 测试框架 | Node.js 内置 `node:test` |
-| 当前分支 | `master` |
-| 最新 Commit | `4d53bcc` |
-| 单元测试 | **151 全绿** |
-| ESLint | **0 问题** |
-| 生产构建 | **成功** |
-| 后端契约 | **全部通过** (`npm run check:contracts` @ `D:\Claude`) |
+- The user models their current room, furniture, devices, power strips, outlets, and cable connections.
+- AI later analyzes the model and proposes options:
+  - free layout/cabling improvements,
+  - paid purchase recommendations,
+  - step-by-step changes after purchase.
+- The product does not cover in-wall electrical work or construction.
+- Generic realistic device categories are enough. Do not spend excessive time chasing exact branded SKU models.
 
----
+The current work mode is autonomous engineering:
 
-## 2. 功能特性清单
+- Pick one high-value, reproducible vertical slice at a time.
+- Prefer test-first when fixing bugs or hardening behavior.
+- Make the smallest change that moves the product toward robustness.
+- Run the full relevant verification.
+- Commit only the files changed for that slice.
+- Do not ask the user technical questions unless there is a true product decision or irreversible action.
 
-### ✅ 已完成
+## Repositories
 
-| # | 功能 | 关键文件 | Commit |
-|---|------|---------|--------|
-| 1 | 以太网端口拓扑面板 | `connections.js`, `ConnectionsEditor.jsx` | `c674ecf` |
-| 2 | 一键自动网络连线 | `recommendations.js`, `App.jsx` | `2d8024a` |
-| 3 | 连线目标设备下拉选择 | `ConnectionsEditor.jsx` | `5d44f64` |
-| 4 | 设备功耗/安全承载模板配置 | `catalog.js` | `db3b846` |
-| 5 | 电力拓扑递归累加算法 | `analysis.js` (`analyzeProjectWiring` + `computeDevicePowerLoad`) | `db3b846` |
-| 6 | 过载 `power_overload` 错误 + `power_warning` 警告 | `analysis.js` | `db3b846` |
-| 7 | 属性面板"电力与负载"小节 + 实时彩色进度条 | `PropertiesEditor.jsx`, `App.jsx` | `c188d8d` |
-| 8 | 电源过载智能购买/分流建议 `buy_ups_overload` | `recommendations.js` | `5233f6f` |
-| 9 | 布线检查 & 改进建议面板 UI 接入过载操作按钮 | `App.jsx` | `b03fd92` |
-| 10 | 3D 场景电力状态浮标 `PowerStatusOverlay` | `SceneObjects.jsx`, `App.jsx` | `4d53bcc` |
-
-### 🔒 安全红线
-
-- **绝不触碰**：`.agents/`、`skills-lock.json`、`.vscode/`
-- 所有 `git add` 仅包含本次相关的源码 and 测试文件
-
----
-
-## 3. 核心算法
-
-### 电力负载递归累加
-
+Frontend:
 ```
-ExternalLoad(X) = Σ [ ExternalLoad(child) + child.wattage ]   ∀ child ∈ powerGraph[X]
+D:\desklab\frontend
 ```
 
-- 使用 `POWER_OUTPUT_TYPES` / `POWER_INPUT_TYPES` 有向边构建电力拓扑图
-- `findPowerCycle()` 检测环路，环路时跳过功耗计算返回 0
-- `loadCache` (Map) 做记忆化避免重复递归
-- 取值优先级：`object.wattage ?? template?.wattage ?? 0`（空值合并操作符 `??`）
-
-### 过载判定阈值
-
-| 条件 | 代码 | 级别 |
-|------|------|------|
-| `currentLoad > maxLoad` | `power_overload` | error |
-| `currentLoad > maxLoad * 0.9` | `power_warning` | warning |
-
----
-
-## 4. 关键文件索引
-
-### 前端 Domain 层 (`src/domain/`)
-
-| 文件 | 职责 |
-|------|------|
-| `analysis.js` | 布线分析引擎：端口方向/类型/占用/电源环路/功耗负载/过载检测 |
-| `catalog.js` | 设备模板目录 (DEVICE_CATALOG) + `findModelTemplate` |
-| `connections.js` | 连接工具函数：兼容性判断、长度评估、以太网拓扑构建 |
-| `recommendations.js` | 免费修复建议 + 购买建议引擎 |
-| `geometry.js` | 几何约束与碰撞检测 |
-| `layout-analysis.js` | 布局分析（出界/悬空/墙插） |
-| `placement.js` | 设备放置与约束 |
-| `identifiers.js` | 碰撞安全 ID 生成 |
-| `camera-snapshot.js` | 相机位姿同步 |
-| `coordinates.js` | 坐标系转换 |
-
-### 前端组件层 (`src/components/`)
-
-| 文件 | 职责 |
-|------|------|
-| `PropertiesEditor.jsx` | 属性编辑面板：名称、位置、旋转、尺寸 + **电力与负载** |
-| `ConnectionsEditor.jsx` | 连线编辑面板：端口级连接创建/编辑 + 以太网拓扑 |
-| `SceneObjects.jsx` | 3D 渲染组件：房间墙壁、设备网格、连接线、端口标记 + **PowerStatusOverlay** |
-
-### 测试 (`test/`)
-
-| 文件 | 用例数 |
-|------|--------|
-| `analysis.test.js` | 含 `power_overload`/`power_warning`/`computeDevicePowerLoad` 共 ~20 条 |
-| `recommendations.test.js` | 含 `buy_ups_overload` 共 ~15 条 |
-| 其余 16 个测试文件 | ~116 条 |
-
----
-
-## 5. 提交记录 (本轮)
-
+Backend:
 ```
-4d53bcc feat: add 3D power status overlay labels and overload quick-action buttons
-b03fd92 feat: wire up overload purchase suggestion UI with quick actions
-5233f6f feat: suggest purchasing UPS or splitting load when power hub is overloaded
-c188d8d feat: display real-time power load in properties panel with interactive inputs
-db3b846 feat: implement power consumption calculation and overload/warning analysis
+D:\desklab\backend
 ```
 
----
+GitHub backups (private):
+```text
+Frontend: https://github.com/hollowell1225/desklab-frontend
+Backend:  https://github.com/hollowell1225/desklab-backend
+```
 
-## 6. 验证命令
+Canonical tracked memory-bank copy:
+```text
+D:\desklab\frontend\docs\memory_bank.md
+```
 
+Keep this external handoff copy and the tracked copy synchronized whenever the
+memory bank is updated. The tracked copy is committed and pushed with the
+frontend repository so it is protected by the GitHub backup.
+
+Expected dev URLs:
+```
+Frontend: http://localhost:5173/
+Backend:  http://localhost:3001/api/projects/default
+```
+
+Services may or may not be running. Check and restart them when needed.
+
+Additional handoff docs:
+```
+D:\desklab\memory-bank\DeskLab-model-assets-plan.md
+D:\desklab\memory-bank\DeskLab-AI-handoff-template.md
+```
+
+Frontend commands:
 ```bash
-# 前端
-cd C:\Users\lyj\.gemini\antigravity\scratch\DeskLab
-npm test                   # 151 pass, 0 fail
-npm run lint               # 0 问题
-npm run build              # ✓ built
-
-# 后端契约
-cd D:\Claude
-npm run check:contracts    # All contract checks passed
+npm test
+npm run lint
+npm run build
+npm run dev
 ```
 
----
+Backend commands:
+```bash
+npm test
+npm run check:contracts
+npm start
+```
 
-## 7. 运行环境
+## Critical Safety Rules
 
-| 项 | 值 |
-|---|---|
-| 前端 dev server | `npm run dev` (Vite, 默认 port 5173) |
-| 后端 server | `npm start` @ `D:\Claude` (默认 port 3000) |
-| Node.js | v22+ (支持 `node:test`, `??`, `?.`) |
+- Frontend was moved to `D:\desklab\frontend` and rebaselined as a new git repository during the D-drive migration. The old frontend `.git` history could not be recovered after Windows partially moved hidden git files. Current frontend git history starts at `eef96fe`.
 
----
+- Backend untracked is local editor state. DO NOT touch:
+  ```
+  ?? .vscode/
+  ```
 
-## 8. 后续可选方向
+- Do NOT overwrite or delete: `D:\desklab\backend\data\default-project.json`
+  Backend tests that touch runtime data should back it up and restore it, or use isolated test storage.
 
-- [ ] 3D 场景中为过载设备添加脉冲发光动画（emissive pulse）
-- [ ] 电力拓扑树视图组件（可折叠的树状结构展示供电链路）
-- [ ] 导出功耗报告为 PDF/Markdown
-- [ ] 按设备类型批量编辑功耗参数
-- [ ] 后端持久化 `wattage` / `maxLoad` 字段（需同步更新 `project.schema.json`）
+- Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
+
+## Current Git State (2026-06-26 handoff)
+
+### Frontend `D:\desklab\frontend`
+- HEAD: `c9fff49 feat: add generic ups model asset`
+- Tests: `npm test` → 180 passed. Lint + build clean.
+- Untracked: none expected.
+
+Current commits (most recent first, baseline at bottom):
+```
+c9fff49 feat: add generic ups model asset
+6dcdd2f feat: add generic switch model asset
+c979589 feat: add generic router model asset
+1977ab1 feat: add generic power strip model asset
+8521765 feat: add generic monitor model asset
+114ed1b fix: pass inert as a boolean instead of an empty string
+5d39e0f test: lock distinct default port anchors per catalog model
+82463e4 refactor: route remaining power reads through shared helpers
+87ffc32 test: lock buildRecommendations facade against malformed live state
+f321ab7 refactor: use classifyPowerLoad in PropertiesEditor load badge
+47c987e refactor: centralize power-load classification in a tested domain helper
+41c57d1 fix: coerce wattage and maxLoad to numbers in power-load analysis
+7c7bded fix: guard recommendation distance loops against missing positions
+eef96fe chore: rebaseline frontend after D drive move
+```
+Power-load reads are fully centralized: an audit of `src/` for raw
+`maxLoad ??` / `wattage ??` reads or inlined `> maxLoad * 0.9` thresholds is clean.
+
+Code-native generic model assets now exist for:
+- `monitor-24`, `monitor-27`, `ultrawide-monitor`
+- `power-strip`
+- `router`
+- `switch`
+- `ups`
+
+The next likely model-asset targets are `desktop-pc`, `mini-pc`,
+`power-adapter`, `wall-outlet`, and laptop asset cleanup/replacement.
+
+### Runtime QA performed (2026-06-25, real, not faked)
+- Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
+  both HTTP 200. Backend was already running once during the session (a duplicate
+  start hit `EADDRINUSE` — harmless).
+- Loaded the app via the Claude_Preview MCP. DOM mounts (`title=DeskLab`), and the
+  UI header showed `布局检查 (2)`, `布线检查 (5)`, `改进建议 (6)` against the real
+  `default-project.json` (7 objects, 2 connections) — i.e. the analysis +
+  recommendation engine works end-to-end on real data.
+- LIMITATION: `preview_screenshot` times out — the react-three-fiber WebGL canvas
+  stays at default 300x150 in the headless preview (no GPU). DOM/console QA works;
+  pixel screenshots of the 3D scene do not. Use a real browser for visual model QA.
+- Console QA surfaced and fixed a real React 19 warning (`inert=""`); after the fix
+  a fresh preview load reports zero console errors.
+- Preview launch config lives at `D:\.claude\.claude\launch.json` (name
+  `desklab-frontend`, runs `npm --prefix D:\desklab\frontend run dev`, port 5173,
+  `autoPort:false`). It is outside both repos, so the "no untracked files"
+  invariant for the frontend repo still holds.
+
+### Generic monitor model asset slice (2026-06-26)
+- Added a code-native, in-house, generic low-poly monitor render path for
+  `monitor-24`, `monitor-27`, and `ultrawide-monitor`; no external meshes,
+  scraped assets, logos, or branded silhouettes were introduced.
+- `src/domain/model-assets.js` owns the lightweight generic asset registry.
+  `SceneObjects.jsx` keeps GLB `assetUrl` rendering first, uses the generic
+  monitor only when no external asset URL is present, and preserves the box
+  fallback for unknown models.
+- Added `test/model-assets.test.js` to lock the monitor asset mapping and
+  unknown-model fallback behavior.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes for
+  the code-native monitor.
+- Verification: `node --test test\model-assets.test.js`, `npm test` (176
+  passed), `npm run lint`, `npm run build`.
+- Browser/visual QA: Browser plugin bootstrap failed in this Codex environment
+  because the Node browser runtime reported missing sandbox metadata, so QA
+  used local Chrome headless via DevTools Protocol against
+  `http://127.0.0.1:5173/` with the local backend on `http://localhost:3001`.
+  Desktop 1440x900 and mobile 390x844 loaded with no error overlay and no
+  console errors; adding "24 英寸显示器" from the asset library selected
+  `monitor-24` and showed the monitor in the canvas. Console warnings were
+  limited to the existing `THREE.Clock` deprecation from Three/Drei.
+
+### Generic power-strip model asset slice (2026-06-26)
+- Added a code-native, in-house, generic low-poly power strip render path for
+  `power-strip`; no external meshes, scraped assets, logos, or branded
+  silhouettes were introduced.
+- `src/domain/model-assets.js` now maps `power-strip` to
+  `generic-power-strip`. `SceneObjects.jsx` renders a long body, top socket
+  plate, six generic socket pairs, and an input end block while preserving GLB
+  `assetUrl` priority and unknown-model box fallback.
+- Expanded `test/model-assets.test.js` to lock the power-strip asset mapping.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes for
+  the code-native power strip.
+- Verification: `node --test test\model-assets.test.js`, `npm test` (177
+  passed), `npm run lint`, `npm run build`.
+- Browser/visual QA: Browser plugin bootstrap still failed because the Node
+  browser runtime reported missing sandbox metadata, so QA used local Chrome
+  headless via DevTools Protocol against `http://127.0.0.1:5173/` with the
+  local backend on `http://localhost:3001`. Desktop 1440x900 and mobile 390x844
+  loaded with no error overlay and no console errors; adding "插排" from the
+  "电源" asset category selected `power-strip` and showed the model in the
+  canvas. Console warnings were limited to the existing `THREE.Clock`
+  deprecation from Three/Drei.
+
+### Generic router model asset slice (2026-06-26)
+- Added a code-native, in-house, generic low-poly router render path for
+  `router`; no external meshes, scraped assets, logos, or branded silhouettes
+  were introduced.
+- `src/domain/model-assets.js` now maps `router` to `generic-router`.
+  `SceneObjects.jsx` renders a compact router body, front network ports,
+  two simple antennas, and a status light while preserving GLB `assetUrl`
+  priority and unknown-model box fallback.
+- Expanded `test/model-assets.test.js` to lock the router asset mapping.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes for
+  the code-native router.
+- Verification: `node --test test\model-assets.test.js`, `npm test` (178
+  passed), `npm run lint`, `npm run build`.
+- Browser/visual QA: after the same Browser plugin bootstrap failure already
+  observed this session, QA used local Chrome headless via DevTools Protocol
+  against `http://127.0.0.1:5173/` with the local backend on
+  `http://localhost:3001`. Desktop 1440x900 and mobile 390x844 loaded with no
+  error overlay and no console errors; adding "路由器" from the "网络" asset
+  category selected `router` and showed the model in the canvas. Console
+  warnings were limited to the existing `THREE.Clock` deprecation from
+  Three/Drei.
+
+### Generic switch model asset slice (2026-06-26)
+- Added a code-native, in-house, generic low-poly network switch render path for
+  `switch`; no external meshes, scraped assets, logos, or branded silhouettes
+  were introduced.
+- `src/domain/model-assets.js` now maps `switch` to `generic-switch`.
+  `SceneObjects.jsx` renders a long switch body, dark front panel, eight
+  generic Ethernet ports, and small status LEDs while preserving GLB `assetUrl`
+  priority and unknown-model box fallback.
+- Expanded `test/model-assets.test.js` to lock the switch asset mapping.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes for
+  the code-native switch.
+- Verification: `node --test test\model-assets.test.js`, `npm test` (179
+  passed), `npm run lint`, `npm run build`.
+- Browser/visual QA: using local Chrome headless via DevTools Protocol against
+  `http://127.0.0.1:5173/` with the local backend on `http://localhost:3001`,
+  desktop 1440x900 and mobile 390x844 loaded with no error overlay and no
+  console errors; adding "交换机" from the "网络" asset category selected
+  `switch` and showed the model in the canvas. Console warnings were limited
+  to the existing `THREE.Clock` deprecation from Three/Drei.
+
+### Generic UPS model asset slice (2026-06-26)
+- Added a code-native, in-house, generic low-poly UPS render path for `ups`;
+  no external meshes, scraped assets, logos, or branded silhouettes were
+  introduced.
+- `src/domain/model-assets.js` now maps `ups` to `generic-ups`.
+  `SceneObjects.jsx` renders a vertical UPS body, front panel, display area,
+  power button, status light, and vent slots while preserving GLB `assetUrl`
+  priority and unknown-model box fallback.
+- Expanded `test/model-assets.test.js` to lock the UPS asset mapping.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes for
+  the code-native UPS.
+- Verification: `node --test test\model-assets.test.js`, `npm test` (180
+  passed), `npm run lint`, `npm run build`.
+- Browser/visual QA: Browser plugin bootstrap still failed because the Node
+  browser runtime reported missing sandbox metadata, so QA used local Chrome
+  headless via DevTools Protocol against `http://127.0.0.1:5173/` with the
+  local backend on `http://localhost:3001`. Desktop 1440x900 and mobile 390x844
+  loaded with no error overlay and no console errors; adding "UPS" from the
+  "电源" asset category selected `ups` and showed the model in the canvas.
+  Console warnings were limited to the existing `THREE.Clock` deprecation from
+  Three/Drei.
+
+Notes on the power-load slices (2026-06-25):
+- `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
+  non-negative number — drafts/imports can carry them as strings, which
+  `isProjectObject` does not validate) and `classifyPowerLoad(currentLoad, maxLoad)`
+  → `'overload' | 'warning' | 'ok'` (with `POWER_WARNING_RATIO = 0.9`).
+- Both helpers are the single source of truth for overload/warning thresholds.
+  Consumers: `analyzeProjectWiring`, `recommendations.js`, `SceneObjects.jsx`
+  `PowerStatusOverlay`, and `PropertiesEditor.jsx` load badge. Do not re-inline
+  `currentLoad > maxLoad * 0.9` style math in new UI — reuse `classifyPowerLoad`.
+- `recommendations.js` nearest-device loops now use `calculatePositionDistance`
+  (from `connections.js`) so a port-bearing object with no/NaN position no longer
+  throws — it is simply skipped.
+
+Pre-migration frontend commits preserved in this memory bank for reference only:
+```
+0e325f6 perf: reuse power graph in overlay
+a3dfe4f perf: share power load graph
+3e40649 perf: reuse project analysis results
+03fc487 fix: clamp property numeric edits
+c14f5d2 feat: auto-connect USB-C displays
+2468840 test: add DisplayPort coverage for auto_connect_display
+```
+
+### Backend `D:\desklab\backend`
+- HEAD: `967bfcf contract: add wattage and maxLoad to Object schema`
+- Tests: `npm test` → 30 passed. Contracts check passed.
+- Untracked (DO NOT touch): `?? .vscode/`
+
+Last 5 commits:
+```
+967bfcf contract: add wattage and maxLoad to Object schema
+e15b9de fix: preserve wattage and maxLoad through backend validation
+cabed03 test: lock multi-value If-Match version preconditions
+96aa66c test: lock normalization idempotency for ETag stability
+e667c63 test: lock malformed port anchor rejection
+```
+
+Always re-check `git status` and recent commits before making changes.
+
+## Frontend Architecture
+
+### Domain modules (`src/domain/`)
+
+Core modules:
+- `recommendations.js` — **free improvements + purchase suggestions engine** (see below)
+- `analysis.js` — wiring analysis: port validation, power cycle detection, overload/warning, shared `buildPowerGraph()` for load aggregation
+- `layout-analysis.js` — layout analysis: overlap, out-of-bounds, floating, outlet-off-wall
+- `connections.js` — port compatibility, cable type inference, distance/length evaluation, ethernet topology
+- `catalog.js` — device catalog (17 models across 5 categories), hydration, port anchors
+- `geometry.js` — 3D bounds, overlap detection, footprint rotation
+- `placement.js` — catalog object placement with room constraints
+- `project-validation.js` — `isProjectEnvelope()` shared by draft.js and project-client.js
+- `project-client.js` — versioned load/save/validate/recovery HTTP client
+- `project-history.js` — undo/redo with grouping and camera awareness
+- `project-access.js` — editability gates for canvas interactions
+- `draft.js` / `draft-storage.js` — local draft persistence and recovery
+- `identifiers.js` — collision-resistant entity IDs
+- `status-notifier.js` — stale-timer-safe status messages
+- `keyboard-controls.js` — keyboard shortcuts for object manipulation
+- `camera-snapshot.js` / `coordinates.js` / `project-export.js`
+
+Test files under `test/` mirror the domain modules.
+
+### Recommendations Module (`recommendations.js`)
+
+**Free improvements** (`buildFreeImprovements(room, objects, connections)`):
+| Code | Rank | Description |
+|------|------|-------------|
+| `move_inside_room` | 0 | Move out-of-bounds object inside room |
+| `drop_to_support` | 1 | Drop floating object to support/floor |
+| `snap_outlet_to_wall` | 2 | Snap wall outlet to nearest wall |
+| `auto_power_device` | 3 | Connect unpowered device to nearest power source |
+| `auto_network_device` | 4 | Connect unnetworked device to nearest switch/router |
+| `auto_connect_display` | 5 | Connect HDMI/DP/USB-C output to nearest monitor |
+| `extend_cable` | 6 | Extend cable to recommended length |
+
+**Purchase suggestions** (`buildPurchaseSuggestions(objects, connections)`):
+| Code | Trigger |
+|------|---------|
+| `buy_power_source` | Daisy-chained power strips → UPS |
+| `buy_cable` | Short cable / low slack → longer cable |
+| `buy_switch` | Unconnected ethernet devices > free LAN ports |
+| `buy_power_strip` | Power strip all AC outputs occupied |
+| `buy_ups_overload` | Power hub external load > maxLoad |
+| `buy_power_for_unpowered` | Unpowered device with no nearby free port → strip/UPS |
+
+**Patch application**:
+- `applyImprovement(project, suggestion)` — apply single patch (layout/cable/newConnection)
+- `applyAllImprovements(project, suggestions)` — apply all sequentially
+- `buildRecommendations(project, options?)` — facade returning `{ freeImprovements, purchases, total }`; accepts precomputed `wiringIssues` to avoid repeated analysis in UI render paths.
+
+All suggestion types are round-trip tested: applying the suggested patch clears the corresponding analysis issue.
+
+### Key architectural patterns:
+- Nested `Map<string, Map<string, *>>` for port occupancy tracking (NOT string-key concatenation)
+- `isProjectEnvelope()` shared by draft.js and project-client.js for validation parity
+- UI delegates to domain logic; no duplicated math in components
+- Cable types inferred via `inferCableType()`, not hardcoded
+
+## Backend Architecture
+
+Source:
+```
+D:\desklab\backend\src\store.js     — atomic file writes, backup/recovery, ETag versioning
+D:\desklab\backend\src\validate.js  — request body validation and normalization
+```
+
+Tests: `D:\desklab\backend\test\server.test.js`, `D:\desklab\backend\test\validate.test.js`
+Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
+
+### Key backend facts:
+- `validateProjectBody` normalizes and strips unknown fields. Known optional fields: `category`, `modelId`, `assetUrl`, `color`, `wattage`, `maxLoad`, `ports`, `camera`, `connections`.
+- `wattage` and `maxLoad` are validated as non-negative finite numbers when present (fixed in `e15b9de`).
+- Port occupancy uses nested Maps (matching frontend pattern).
+- 5MB request body limit. Optimistic concurrency with `If-Match` / `ETag`.
+- Backup recovery via `/api/projects/default/recover-backup`.
+
+## Tokyo VPS Demo Deployment
+
+Last deployed: 2026-06-26, Asia/Shanghai.
+
+Important development policy:
+- The Tokyo VPS is **not** the primary development backend.
+- During normal development, run the backend locally from `D:\desklab\backend` on port `3001`.
+- Do **not** deploy to, restart, or depend on the VPS backend unless the user explicitly asks for remote deployment/demo.
+- Treat the VPS as a temporary demo/preview environment only; it can lag behind local development.
+
+SSH:
+```bash
+ssh -i "D:\桌面\claude.pem" ubuntu@43.165.178.199
+```
+
+DeskLab backend is deployed on the Tokyo VPS at:
+```text
+/home/ubuntu/desklab-backend
+```
+
+Systemd services:
+```bash
+sudo systemctl status desklab-backend
+sudo systemctl status desklab-backend-tunnel
+```
+
+Demo runtime:
+- DeskLab backend service: `desklab-backend`
+- Internal port: `3011`
+- Public Quick Tunnel: `https://facing-continuing-locks-boats.trycloudflare.com`
+- Health/API check: `https://facing-continuing-locks-boats.trycloudflare.com/api/projects/default`
+
+Important VPS port note:
+- Do **not** use port `3001` for DeskLab on this VPS. Existing MCP services already use the 3000/3001 area:
+  - `mcd-mcp` on local port 3000
+  - `luckin-mcp` on local port 3001
+- DeskLab uses `PORT=3011` to avoid disrupting those services.
+
+Quick Tunnel caveat:
+- The `trycloudflare.com` URL can change if `desklab-backend-tunnel` restarts. For a stable production URL, replace it later with a Cloudflare named tunnel.
+
+Deploy/update sketch, only when explicitly requested by the user:
+```powershell
+cd D:\desklab\backend
+npm test
+npm run check:contracts
+tar -czf D:\desklab\deploy\desklab-backend.tgz --exclude .git --exclude .vscode --exclude node_modules --exclude "*.log" -C D:\desklab\backend .
+scp -i "D:\桌面\claude.pem" D:\desklab\deploy\desklab-backend.tgz ubuntu@43.165.178.199:/home/ubuntu/desklab-backend.tgz
+```
+
+On the VPS, extract into `/home/ubuntu/desklab-backend`, run `npm ci --omit=dev`, and restart:
+```bash
+sudo systemctl restart desklab-backend
+sudo systemctl restart desklab-backend-tunnel
+```
+
+## Verification Gates
+
+Frontend:
+```bash
+cd D:\desklab\frontend
+npm test          # 169 tests
+npm run lint      # eslint .
+npm run build     # vite build (known large chunk warning is OK)
+```
+
+Backend:
+```bash
+cd D:\desklab\backend
+npm test              # 30 tests
+npm run check:contracts  # schema + openapi checks
+```
+
+If rendered UI behavior changes, do browser QA against localhost if browser runtime works.
+
+## High-Value Next Work
+
+The autonomous hardening backlog and recommendation foundation are complete.
+Generic model-asset work is now active and safe to continue in small slices.
+Remaining work:
+
+1. **Product-design-dependent** (confirm intent with product owner first):
+   - Dedicated "改进建议" summary panel/badge
+   - Richer paid purchase recommendations (which products, when, quantities)
+   - "Step-by-step changes after purchase" flow
+   - Browser/visual QA of the new fix buttons
+
+2. **If continuing autonomously without product direction**:
+   - Continue generic, legally safe, code-native low-poly model assets.
+     Good next targets: `desktop-pc`, `mini-pc`, `power-adapter`,
+     `wall-outlet`, then maybe NAS/modem.
+   - Browser/visual QA for rendered UI behavior.
+   - Small focused hardening found from current code evidence.
+
+3. **Always start from current evidence**:
+```bash
+cd D:\desklab\frontend
+git status --short
+git log -5 --oneline
+
+cd D:\desklab\backend
+git status --short
+git log -5 --oneline
+```
+
+## Communication Style
+
+The user is the product owner. Keep updates brief: what was found, what was changed, files changed, verification run, commit SHA. Do not ask for "Proceed" on ordinary code work.
+
+## Quick Start for Next Agent
+
+1. Re-check git state and recent commits for both repos.
+2. Check or start services as needed (frontend :5173, backend :3001).
+3. Pick one high-value, reproducible issue.
+4. Write a failing test first where practical.
+5. Make the smallest fix.
+6. Run full verification.
+7. Commit only relevant files.
+8. Update this memory bank only at handoff, quota low, or model switch.
