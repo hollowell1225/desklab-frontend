@@ -75,6 +75,13 @@ const GENERIC_NAS_2BAY_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
+const GENERIC_MODEM_ASSET = Object.freeze({
+  id: 'generic-modem',
+  category: 'network',
+  source: 'in-house-generated',
+  license: 'DeskLab-owned',
+});
+
 const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'monitor-24': GENERIC_MONITOR_ASSET,
   'monitor-27': GENERIC_MONITOR_ASSET,
@@ -89,6 +96,7 @@ const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'wall-outlet': GENERIC_WALL_OUTLET_ASSET,
   'laptop-15': GENERIC_LAPTOP_ASSET,
   'nas-2bay': GENERIC_NAS_2BAY_ASSET,
+  modem: GENERIC_MODEM_ASSET,
 });
 
 export function getGenericModelAsset(modelId) {

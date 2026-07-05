@@ -696,6 +696,48 @@ function GenericNasModel({ obj, materialProps }) {
   );
 }
 
+function GenericModemModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const ledColors = ['#4ade80', '#4ade80', '#60a5fa', '#facc15'];
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.62}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.52, 0]}>
+        <boxGeometry args={[width * 0.72, height * 0.05, depth * 0.5]} />
+        <meshStandardMaterial color="#475569" roughness={0.7} />
+      </mesh>
+      {ledColors.map((color, index) => (
+        <mesh
+          key={color + index}
+          position={[-width * 0.3 + index * width * 0.2, height * 0.57, depth * 0.08]}
+        >
+          <sphereGeometry args={[width * 0.025, 10, 8]} />
+          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4} />
+        </mesh>
+      ))}
+      <mesh position={[-width * 0.2, 0, depth * 0.52]}>
+        <boxGeometry args={[width * 0.26, height * 0.42, depth * 0.06]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.7} />
+      </mesh>
+      <mesh position={[width * 0.25, 0, depth * 0.52]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[height * 0.13, height * 0.13, depth * 0.06, 12]} />
+        <meshStandardMaterial color="#111827" roughness={0.72} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -729,6 +771,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-nas-2bay') {
     return <GenericNasModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-modem') {
+    return <GenericModemModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

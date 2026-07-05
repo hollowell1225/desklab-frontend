@@ -77,6 +77,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded network storage enclosure used for `nas-2bay`.
 
+## Code-Native Generic Modem
+- **Model Name**: Generic low-poly modem/optical network terminal
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded network terminal used for `modem`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)
