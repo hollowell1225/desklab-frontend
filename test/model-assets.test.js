@@ -95,6 +95,15 @@ test('laptop resolves to the generic in-house computer asset', () => {
   assert.equal(asset.category, 'computer');
 });
 
+test('two-bay nas resolves to the generic in-house network asset', () => {
+  const asset = getGenericModelAsset('nas-2bay');
+
+  assert.equal(asset.id, 'generic-nas-2bay');
+  assert.equal(asset.source, 'in-house-generated');
+  assert.equal(asset.license, 'DeskLab-owned');
+  assert.equal(asset.category, 'network');
+});
+
 test('unknown or externally loaded models keep the fallback rendering path', () => {
   assert.equal(getGenericModelAsset('missing-model'), null);
   assert.equal(hasGenericModelAsset('missing-model'), false);

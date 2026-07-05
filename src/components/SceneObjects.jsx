@@ -652,6 +652,50 @@ function GenericLaptopModel({ obj, materialProps }) {
   );
 }
 
+function GenericNasModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+
+  return (
+    <group>
+      <mesh>
+        <boxGeometry args={[width, height, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.64}
+        />
+      </mesh>
+      <mesh position={[0, 0, depth * 0.51]}>
+        <boxGeometry args={[width * 0.88, height * 0.84, depth * 0.06]} />
+        <meshStandardMaterial color="#1f2937" roughness={0.7} />
+      </mesh>
+      {[-width * 0.23, width * 0.23].map((x, index) => (
+        <group key={index} position={[x, -height * 0.04, depth * 0.56]}>
+          <mesh>
+            <boxGeometry args={[width * 0.34, height * 0.62, depth * 0.05]} />
+            <meshStandardMaterial color="#0f172a" roughness={0.76} />
+          </mesh>
+          <mesh position={[0, -height * 0.22, depth * 0.04]}>
+            <boxGeometry args={[width * 0.18, height * 0.045, depth * 0.025]} />
+            <meshStandardMaterial color="#64748b" metalness={0.35} roughness={0.45} />
+          </mesh>
+        </group>
+      ))}
+      <mesh position={[-width * 0.27, height * 0.38, depth * 0.58]}>
+        <sphereGeometry args={[width * 0.035, 10, 8]} />
+        <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={0.4} />
+      </mesh>
+      <mesh position={[-width * 0.12, height * 0.38, depth * 0.58]}>
+        <sphereGeometry args={[width * 0.035, 10, 8]} />
+        <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.35} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -682,6 +726,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-laptop') {
     return <GenericLaptopModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-nas-2bay') {
+    return <GenericNasModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }
