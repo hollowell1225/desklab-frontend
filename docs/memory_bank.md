@@ -96,12 +96,14 @@ npm start
 ## Current Git State (2026-06-26 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `53630cc feat: add generic all-in-one model asset`
-- Tests: `npm test` → 188 passed. Lint + build clean.
+- Feature HEAD: `9c94b59 feat: add generic office desk model asset`
+- Tests: `npm test` → 189 passed. Lint + build clean.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+9c94b59 feat: add generic office desk model asset
+12735b8 docs: record generic all-in-one asset slice
 53630cc feat: add generic all-in-one model asset
 44eecb2 docs: record generic modem asset slice
 23752a0 feat: add generic modem model asset
@@ -150,9 +152,10 @@ Code-native generic model assets now exist for:
 - `nas-2bay`
 - `modem`
 - `all-in-one`
+- `office-desk`
 
-The next likely model-asset targets are the furniture models, starting with
-`office-desk`.
+The next likely model-asset targets are `gaming-desk`, `standing-desk`, and
+`l-desk`.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -432,6 +435,22 @@ The next likely model-asset targets are the furniture models, starting with
   by missing `sandboxPolicy` metadata. No browser or visual QA is claimed.
 - Commit: `53630cc feat: add generic all-in-one model asset` (pushed).
 
+### Generic office desk model asset slice (2026-07-05)
+- Added a code-native, in-house, generic low-poly office desk render path for
+  `office-desk`; no external meshes, logos, or branded silhouettes.
+- `src/domain/model-assets.js` maps `office-desk` to `generic-office-desk`.
+  `SceneObjects.jsx` renders a full desktop, four metal-style legs, and a rear
+  cable tray while retaining the catalog dimensions used by support/collision
+  logic and preserving GLB priority and box fallback.
+- Expanded `test/model-assets.test.js` test-first; the focused test failed on
+  the previous `null` mapping before implementation and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: focused tests 15/15; `npm test` 189/189; lint and build passed.
+  The existing large-chunk warning remains non-fatal.
+- Browser/visual QA: not completed because Browser bootstrap remained blocked
+  by missing `sandboxPolicy` metadata. No browser or visual QA is claimed.
+- Commit: `9c94b59 feat: add generic office desk model asset` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -610,7 +629,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 188 tests
+npm test          # 189 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -638,7 +657,7 @@ Remaining work:
 
 2. **If continuing autonomously without product direction**:
    - Continue generic, legally safe, code-native low-poly model assets.
-     Good next target: `office-desk`, then the other furniture models.
+     Good next targets: `gaming-desk`, `standing-desk`, then `l-desk`.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
