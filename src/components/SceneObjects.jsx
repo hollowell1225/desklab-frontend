@@ -738,6 +738,47 @@ function GenericModemModel({ obj, materialProps }) {
   );
 }
 
+function GenericAllInOneModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const panelHeight = height * 0.68;
+
+  return (
+    <group>
+      <mesh position={[0, height * 0.1, 0]}>
+        <boxGeometry args={[width, panelHeight, depth * 0.5]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.5}
+        />
+      </mesh>
+      <mesh position={[0, height * 0.15, depth * 0.27]}>
+        <boxGeometry args={[width * 0.86, panelHeight * 0.72, depth * 0.08]} />
+        <meshStandardMaterial color="#0f172a" roughness={0.32} metalness={0.12} />
+      </mesh>
+      <mesh position={[0, -height * 0.13, depth * 0.27]}>
+        <boxGeometry args={[width * 0.86, panelHeight * 0.13, depth * 0.08]} />
+        <meshStandardMaterial color="#334155" roughness={0.64} />
+      </mesh>
+      <mesh position={[0, height * 0.1, -depth * 0.34]}>
+        <boxGeometry args={[width * 0.58, panelHeight * 0.56, depth * 0.3]} />
+        <meshStandardMaterial color="#374151" roughness={0.72} />
+      </mesh>
+      <mesh position={[0, -height * 0.27, 0]}>
+        <boxGeometry args={[width * 0.12, height * 0.24, depth * 0.38]} />
+        <meshStandardMaterial color="#475569" roughness={0.64} />
+      </mesh>
+      <mesh position={[0, -height * 0.43, 0]}>
+        <boxGeometry args={[width * 0.42, height * 0.06, depth * 0.72]} />
+        <meshStandardMaterial color="#27303a" roughness={0.68} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -774,6 +815,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-modem') {
     return <GenericModemModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-all-in-one') {
+    return <GenericAllInOneModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

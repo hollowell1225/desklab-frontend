@@ -84,6 +84,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded network terminal used for `modem`.
 
+## Code-Native Generic All-in-One Computer
+- **Model Name**: Generic low-poly all-in-one computer
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded integrated desktop computer used for `all-in-one`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)
