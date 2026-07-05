@@ -91,6 +91,13 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded integrated desktop computer used for `all-in-one`.
 
+## Code-Native Generic Office Desk
+- **Model Name**: Generic low-poly office desk
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-05
+- **Notes**: Generic unbranded four-leg desk with cable tray used for `office-desk`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)

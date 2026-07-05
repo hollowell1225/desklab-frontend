@@ -122,6 +122,15 @@ test('all-in-one resolves to the generic in-house computer asset', () => {
   assert.equal(asset.category, 'computer');
 });
 
+test('office desk resolves to the generic in-house furniture asset', () => {
+  const asset = getGenericModelAsset('office-desk');
+
+  assert.equal(asset.id, 'generic-office-desk');
+  assert.equal(asset.source, 'in-house-generated');
+  assert.equal(asset.license, 'DeskLab-owned');
+  assert.equal(asset.category, 'furniture');
+});
+
 test('unknown or externally loaded models keep the fallback rendering path', () => {
   assert.equal(getGenericModelAsset('missing-model'), null);
   assert.equal(hasGenericModelAsset('missing-model'), false);

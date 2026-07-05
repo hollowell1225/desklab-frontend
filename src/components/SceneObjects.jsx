@@ -779,6 +779,39 @@ function GenericAllInOneModel({ obj, materialProps }) {
   );
 }
 
+function GenericOfficeDeskModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const legWidth = Math.min(width, depth) * 0.09;
+
+  return (
+    <group>
+      <mesh position={[0, height * 0.44, 0]}>
+        <boxGeometry args={[width, height * 0.12, depth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.58}
+        />
+      </mesh>
+      {[-width * 0.42, width * 0.42].flatMap((x, xIndex) =>
+        [-depth * 0.38, depth * 0.38].map((z, zIndex) => (
+          <mesh key={`${xIndex}-${zIndex}`} position={[x, -height * 0.03, z]}>
+            <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
+            <meshStandardMaterial color="#475569" metalness={0.18} roughness={0.62} />
+          </mesh>
+        ))
+      )}
+      <mesh position={[0, height * 0.31, -depth * 0.42]}>
+        <boxGeometry args={[width * 0.62, height * 0.1, depth * 0.08]} />
+        <meshStandardMaterial color="#334155" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -818,6 +851,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-all-in-one') {
     return <GenericAllInOneModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-office-desk') {
+    return <GenericOfficeDeskModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }
