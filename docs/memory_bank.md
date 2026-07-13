@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `18ce68a feat: add generic standing desk model asset`
-- Tests: `npm test` → 191 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `13d483d feat: add generic l-desk model asset`
+- Tests: `npm test` → 192 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+13d483d feat: add generic l-desk model asset
 18ce68a feat: add generic standing desk model asset
 e707b9c docs: record generic gaming desk asset slice
 3a2e4d2 feat: add generic gaming desk model asset
@@ -159,8 +160,11 @@ Code-native generic model assets now exist for:
 - `office-desk`
 - `gaming-desk`
 - `standing-desk`
+- `l-desk`
 
-The next likely model-asset target is `l-desk`.
+The generic model-asset backlog for catalog models with `assetUrl: null` is now
+covered. The next safe target is a focused geometry-bound regression test for
+generic assets.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -496,6 +500,26 @@ The next likely model-asset target is `l-desk`.
   no browser or visual QA is claimed for this slice.
 - Commit: `18ce68a feat: add generic standing desk model asset` (pushed).
 
+### Generic L desk model asset slice (2026-07-13)
+- Added a code-native, in-house, generic low-poly L-shaped desk render path for
+  `l-desk`; no external meshes, logos, or branded silhouettes were introduced.
+- `src/domain/model-assets.js` maps `l-desk` to `generic-l-desk`.
+  `SceneObjects.jsx` renders intersecting desktop slabs, four legs, and rear
+  cable trays while preserving GLB priority and box fallback.
+- Expanded `test/model-assets.test.js` test-first; the focused test failed on
+  the previous `null` mapping before implementation and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: focused `node --test test\model-assets.test.js` passed 18/18;
+  `npm test` passed 192/192; `npm run lint` passed; `npm run build` passed
+  with the existing non-fatal large chunk warning.
+- Runtime endpoint QA: `curl.exe -sS -I http://127.0.0.1:5173/` returned
+  HTTP 200, and `curl.exe -sS http://localhost:3001/api/projects/default`
+  returned the default project JSON. No backend write/save was performed.
+- Browser/visual QA: not completed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output; no browser or visual
+  QA is claimed for this slice.
+- Commit: `13d483d feat: add generic l-desk model asset` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -701,8 +725,8 @@ Remaining work:
    - Browser/visual QA of the new fix buttons
 
 2. **If continuing autonomously without product direction**:
-   - Continue generic, legally safe, code-native low-poly model assets.
-     Good next target: `l-desk`.
+   - Add focused geometry-bound regression coverage for the generic model
+     render paths, keeping catalog bounds and fallback behavior stable.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
