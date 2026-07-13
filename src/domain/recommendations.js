@@ -267,7 +267,9 @@ export function buildFreeImprovements(room, objects, connections = [], options =
         if (!(routerPort.direction === 'output' || routerPort.direction === 'bidirectional') || !isPortDirectionConsistent(routerPort)) continue;
         if (occupiedPorts.get(router.id)?.has(routerPort.id)) continue;
         for (const switchPort of switchDevice.ports || []) {
-          if (switchPort.type !== 'ethernet' || !isPortDirectionConsistent(switchPort)) continue;
+          if (switchPort.type !== 'ethernet'
+            || !(switchPort.direction === 'input' || switchPort.direction === 'bidirectional')
+            || !isPortDirectionConsistent(switchPort)) continue;
           if (occupiedPorts.get(switchDevice.id)?.has(switchPort.id)) continue;
           const distance = calculatePositionDistance(router.position, switchDevice.position);
           if (distance === null) continue;
