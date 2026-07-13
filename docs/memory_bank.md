@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `7adc0db fix: keep generic ups within catalog bounds`
-- Tests: `npm test` → 207 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `67d30cf fix: keep generic power strip within catalog bounds`
+- Tests: `npm test` → 208 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+67d30cf fix: keep generic power strip within catalog bounds
 7adc0db fix: keep generic ups within catalog bounds
 257d1df fix: keep generic switch within catalog bounds
 4770cb1 fix: keep generic router within catalog bounds
@@ -180,9 +181,9 @@ Code-native generic model assets now exist for:
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
 covered. All generic furniture, monitors, computers, power adapters, wall
-outlets, NAS, modem, router, switch, and UPS geometry is now constrained
-through a shared normalized layout module. The next safe target is the power
-strip input-end geometry audit.
+outlets, NAS, modem, router, switch, UPS, and power-strip geometry is now
+constrained through a shared normalized layout module. The next safe target is
+a full shared-layout coverage audit for the remaining catalog models.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -767,6 +768,15 @@ strip input-end geometry audit.
   Verification: focused 14/14; `npm test` 207/207; lint, build, and local
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `7adc0db fix: keep generic ups within catalog bounds` (pushed).
+
+### Generic power strip geometry-bound regression fix (2026-07-14)
+- Added normalized layout data for the strip body, top plate, six socket pairs,
+  and input end. The input end moved from `x=-0.47,z=-0.52` to `x=-0.45,z=-0.42`,
+  keeping its full visible geometry inside the footprint.
+- Test-first `power-strip` assertion failed before registration and passed after.
+  Verification: focused 15/15; `npm test` 208/208; lint, build, and local
+  frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `67d30cf fix: keep generic power strip within catalog bounds` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
