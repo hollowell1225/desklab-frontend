@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `bb3d27b fix: validate auto-network port directions`
-- Tests: `npm test` → 217 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `a90dab6 fix: filter invalid switch recommendations`
+- Tests: `npm test` → 218 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+a90dab6 fix: filter invalid switch recommendations
 bb3d27b fix: validate auto-network port directions
 51f12ba fix: validate optional power metadata
 cfd9581 fix: prevent clock rollback history grouping
@@ -908,6 +909,20 @@ code evidence.
 - Verification: recommendations 36/36; `npm test` 217/217; lint, build, and
   local frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `bb3d27b fix: validate auto-network port directions` (pushed).
+
+### Switch purchase direction guard (2026-07-14)
+- Fixed an invalid `buy_switch` purchase suggestion for custom/imported
+  ethernet ports. The capacity calculation previously counted an output-only
+  device uplink as an unconnected client port, which could recommend a switch
+  even when no device could receive a LAN connection.
+- Device ports now count only when they can receive network traffic; router LAN
+  ports count only when they can provide it. Both paths reuse the existing
+  port-semantics consistency guard.
+- Regression coverage was added test-first: it fails against the prior logic
+  for an output-only ethernet device and passes after the guard.
+- Verification: recommendations 37/37; `npm test` 218/218; lint, build, and
+  local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `a90dab6 fix: filter invalid switch recommendations` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
