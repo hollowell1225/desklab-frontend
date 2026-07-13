@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `373067b fix: flag duplicate connection ids`
+- Feature HEAD: `3d39356 fix: apply display connection recommendations`
 - Tests: `npm test` → 227 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+3d39356 fix: apply display connection recommendations
 373067b fix: flag duplicate connection ids
 a163378 fix: reject blank connection port ids
 a85b16a fix: ignore invalid connection occupancy
@@ -1082,6 +1083,20 @@ code evidence.
   checks passed. No browser or visual QA was performed.
 - Commit: `373067b fix: flag duplicate connection ids` (pushed).
 
+### Display-recommendation UI action (2026-07-14)
+
+- Problem: the recommendation engine created valid `auto_connect_display`
+  patches (HDMI, DisplayPort, and USB-C) and the modal listed them, but the UI
+  offered no action button. Users could not apply a displayed recommendation.
+- Fix: `App.jsx` now renders a “连接显示器” button for that code and applies the
+  existing tested patch through history, connection state, and a success notice,
+  matching the power/network action paths.
+- Verification: the existing recommendation tests cover generated and applied
+  HDMI/USB-C display links; `npm test` 227/227; lint; build (known non-fatal
+  large-chunk warning); local frontend/backend HTTP checks passed. No browser or
+  visual QA was performed.
+- Commit: `3d39356 fix: apply display connection recommendations` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1282,7 +1297,6 @@ currently audited cases and safe to continue in small slices.
 Remaining work:
 
 1. **Product-design-dependent** (confirm intent with product owner first):
-   - Dedicated "改进建议" summary panel/badge
    - Richer paid purchase recommendations (which products, when, quantities)
    - "Step-by-step changes after purchase" flow
    - Browser/visual QA of the new fix buttons
