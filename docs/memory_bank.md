@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `f69fec0 fix: match LAN port ids case-insensitively`
+- Feature HEAD: `cf36b14 fix: tolerate null recommendation state`
 - Tests: `npm test` → 219 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+cf36b14 fix: tolerate null recommendation state
 f69fec0 fix: match LAN port ids case-insensitively
 a90dab6 fix: filter invalid switch recommendations
 bb3d27b fix: validate auto-network port directions
@@ -936,6 +937,19 @@ code evidence.
 - Verification: recommendations 38/38; `npm test` 219/219; lint, build, and
   local frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `f69fec0 fix: match LAN port ids case-insensitively` (pushed).
+
+### Null recommendation-state guard (2026-07-14)
+- Fixed a recommendation-panel crash when a transient project state supplied
+  `null` for the project itself, `objects`, or `connections`. Default
+  destructuring handles only `undefined`, so `null` previously reached wiring
+  analysis and failed on an array operation.
+- The facade now normalizes those two collections to empty arrays and safely
+  destructures a nullable project, returning a stable empty recommendation set.
+- Regression coverage confirms the facade remains safe for both forms of null
+  live state.
+- Verification: recommendations 38/38; `npm test` 219/219; lint, build, and
+  local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `cf36b14 fix: tolerate null recommendation state` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
