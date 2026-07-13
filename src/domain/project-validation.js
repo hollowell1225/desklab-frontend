@@ -56,6 +56,8 @@ function isProjectObject(object) {
     && isOptionalNonBlankString(object.modelId)
     && isOptionalString(object.assetUrl)
     && isOptionalString(object.color)
+    && isOptionalNonNegativeFiniteNumber(object.wattage)
+    && isOptionalNonNegativeFiniteNumber(object.maxLoad)
     && (
       object.ports === undefined
       || object.ports === null
@@ -178,6 +180,10 @@ function isOptionalNonBlankString(value) {
 
 function isOptionalString(value) {
   return value === undefined || value === null || typeof value === 'string';
+}
+
+function isOptionalNonNegativeFiniteNumber(value) {
+  return value === undefined || value === null || (Number.isFinite(value) && value >= 0);
 }
 
 function hasUniqueIds(items) {

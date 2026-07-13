@@ -624,3 +624,22 @@ test('accepts a project load response with wattage and maxLoad on objects', asyn
   assert.equal(result.project.objects[0].wattage, 350);
   assert.equal(result.project.objects[0].maxLoad, 1000);
 });
+
+test('rejects project loads with invalid optional power metadata', async () => {
+  for (const powerMetadata of [
+    { wattage: '350' },
+    { wattage: -1 },
+    { maxLoad: '1000' },
+    { maxLoad: -1 },
+  ]) {
+    const client = createProjectClient(async () => new Response(JSON.stringify({
+      ...storedProject,
+      objects: [{ ...object, ...powerMetadata }],
+    }), {
+      status: 200,
+      headers: { ETag: '"v1"' },
+    }));
+
+    await assert.rejects(() => client.load(), /项目读取响应结构无效/);
+  }
+});
