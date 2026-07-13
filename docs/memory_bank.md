@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `206adcd fix: require rooted power paths`
+- Feature HEAD: `33eff79 fix: preserve independent power loads`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+33eff79 fix: preserve independent power loads
 206adcd fix: require rooted power paths
 797fbdc fix: require powered auto power sources
 89097cd fix: reapply changed free improvements
@@ -1414,6 +1415,22 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `206adcd fix: require rooted power paths` (pushed).
+
+### Independent power-load guard (2026-07-14)
+
+- Fixed an unrelated power-cycle fault suppressing all power-load calculations.
+  Previously `computeDevicePowerLoad()` returned zero whenever the global power
+  graph contained any cycle, hiding overloads on separate valid branches.
+- Load traversal now cuts only a back edge on its active recursion path. Valid
+  independent branches continue to contribute their known load, while cyclic
+  paths still terminate safely without recursion.
+- Test-first regression creates a separate two-device cycle beside a 300W hub
+  branch and verifies the hub still reports 300W.
+- Verification: focused analysis 25/25; `npm test` 249/249; `npm run lint`;
+  `npm run build` (known non-fatal large-chunk warning only); local frontend `/`
+  and backend `/api/projects/default` HTTP checks both 200. No browser or visual
+  QA was performed.
+- Commit: `33eff79 fix: preserve independent power loads` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
