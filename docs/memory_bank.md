@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `f26c112 fix: validate stale connection ports`
+- Feature HEAD: `d36aecf fix: ignore missing improvement targets`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+d36aecf fix: ignore missing improvement targets
 f26c112 fix: validate stale connection ports
 8f6ca7c fix: reject deleted connection endpoints
 cc991f7 fix: reject stale connection port conflicts
@@ -1521,6 +1522,23 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No new
   browser or visual QA was performed for this domain-only change.
 - Commit: `f26c112 fix: validate stale connection ports` (pushed).
+
+### Missing improvement-target guard (2026-07-14)
+
+- Completed the stale-patch no-op boundary for layout and cable patches. When a
+  suggestion targets an object or connection that was deleted before the action
+  runs, `applyImprovement()` now returns the exact existing project instead of
+  allocating an unchanged project state.
+- This prevents stale callbacks from creating misleading undo/history entries
+  or success feedback when nothing can actually be changed. Existing valid
+  layout and cable applications still create immutable updates.
+- Test-first regression covers both a deleted object layout patch and a deleted
+  connection cable patch; each is a strict no-op.
+- Verification: focused recommendations 64/64; `npm test` 255/255; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No new
+  browser or visual QA was performed for this domain-only change.
+- Commit: `d36aecf fix: ignore missing improvement targets` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
