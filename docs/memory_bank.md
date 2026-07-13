@@ -875,6 +875,17 @@ code evidence.
   browser or visual QA performed.
 - Commit: backend `ddf4c1e contract: allow null port anchors` (pushed).
 
+### OpenAPI power-metadata contract guard (2026-07-14)
+- Added missing `wattage` and `maxLoad` fields (non-negative numbers) to the
+  OpenAPI Object schema, matching the persisted JSON Schema and runtime
+  validation.
+- The read-only contract checker now requires both fields; it failed before
+  the OpenAPI update and passed afterward.
+- Verification: `npm run check:contracts`; backend `npm test` 31/31. No
+  browser or visual QA performed.
+- Commit: backend `2aa0943 contract: document power metadata in openapi`
+  (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -899,17 +910,17 @@ c14f5d2 feat: auto-connect USB-C displays
 ```
 
 ### Backend `D:\desklab\backend`
-- HEAD: `ddf4c1e contract: allow null port anchors`
+- HEAD: `2aa0943 contract: document power metadata in openapi`
 - Tests: `npm test` → 31 passed. Contracts check passed.
 - Untracked (DO NOT touch): `?? .vscode/`
 
 Last 5 commits:
 ```
+2aa0943 contract: document power metadata in openapi
 ddf4c1e contract: allow null port anchors
 fd2eb33 fix: preserve null port anchors
 967bfcf contract: add wattage and maxLoad to Object schema
 e15b9de fix: preserve wattage and maxLoad through backend validation
-cabed03 test: lock multi-value If-Match version preconditions
 ```
 
 Always re-check `git status` and recent commits before making changes.
