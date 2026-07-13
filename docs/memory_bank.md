@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `1bde233 feat: suggest switch uplinks`
-- Tests: `npm test` → 236 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `a8c0ef9 fix: preserve uplinks with spare router capacity`
+- Tests: `npm test` → 237 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+a8c0ef9 fix: preserve uplinks with spare router capacity
 1bde233 feat: suggest switch uplinks
 f08c985 fix: clarify full-router switch guidance
 bbf0291 feat: guide switch purchases when router is full
@@ -1407,7 +1408,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 236 tests
+npm test          # 237 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
