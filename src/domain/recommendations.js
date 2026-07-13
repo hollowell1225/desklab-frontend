@@ -531,8 +531,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
   }
 
   // 3. 加购交换机：仅统计未连接网口的设备，与路由器空闲 LAN 口比较
-  const hasSwitch = objects.some(obj => obj.modelId === 'switch' || obj.type === 'switch');
-  if (!hasSwitch) {
+  {
     const isNetworkDistributor = (obj) =>
       obj.modelId === 'router' || obj.type === 'router'
       || obj.modelId === 'modem' || obj.type === 'modem'
@@ -566,8 +565,17 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       }
     }
     const freeLanPorts = Math.max(0, availableLanPorts - occupiedLanCount);
+    const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds);
+    const freeSwitchPorts = objects
+      .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
+      .reduce((count, switchDevice) => count + (switchDevice.ports || []).filter(port =>
+        port.type === 'ethernet'
+        && (port.direction === 'output' || port.direction === 'bidirectional')
+        && isPortDirectionConsistent(port)
+        && !occupiedPorts.get(switchDevice.id)?.has(port.id)
+      ).length, 0);
 
-    if (unconnectedEthernetDevices.length > freeLanPorts) {
+    if (unconnectedEthernetDevices.length > freeLanPorts + freeSwitchPorts) {
       const key = 'buy-switch';
       if (!seen.has(key)) {
         seen.add(key);

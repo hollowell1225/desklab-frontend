@@ -255,10 +255,10 @@ test('recommends a switch purchase when ethernet endpoints exceed router LAN por
   assert.equal(buySwitch.product.category, 'network');
   assert.equal(buySwitch.product.modelId, 'switch');
 
-  // Verify it doesn't recommend if a switch already exists
+  // A switch with no usable ports cannot satisfy the missing capacity.
   const objectsWithSwitch = [...objects, object('switch-1', { modelId: 'switch' })];
   const purchasesWithSwitch = buildPurchaseSuggestions(objectsWithSwitch, []);
-  assert.equal(purchasesWithSwitch.some(item => item.code === 'buy_switch'), false);
+  assert.equal(purchasesWithSwitch.some(item => item.code === 'buy_switch'), true);
 });
 
 test('does not recommend a switch for an output-only ethernet device port', () => {
