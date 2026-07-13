@@ -110,6 +110,25 @@ const GENERIC_DESKTOP_PC_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_MINI_PC_LAYOUT = Object.freeze({
+  bodies: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
+  ]),
+  topVents: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 0.56, depth: 0.56 }),
+  ]),
+  powerButtons: Object.freeze([
+    Object.freeze({ x: -0.3, z: 0.48, width: 0.08666666666666667, depth: 0.04 }),
+  ]),
+  statusLights: Object.freeze([
+    Object.freeze({ x: -0.3, z: 0.484, width: 0.023333333333333334, depth: 0.023333333333333334 }),
+  ]),
+  frontPorts: Object.freeze([
+    Object.freeze({ x: 0.03, z: 0.48, width: 0.18, depth: 0.04 }),
+    Object.freeze({ x: 0.3, z: 0.48, width: 0.18, depth: 0.04 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -119,6 +138,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'monitor-27': GENERIC_MONITOR_LAYOUT,
   'ultrawide-monitor': GENERIC_MONITOR_LAYOUT,
   'desktop-pc': GENERIC_DESKTOP_PC_LAYOUT,
+  'mini-pc': GENERIC_MINI_PC_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {

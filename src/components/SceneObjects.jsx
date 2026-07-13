@@ -513,11 +513,17 @@ function GenericMiniPcModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [topVent] = layout.topVents;
+  const [powerButton] = layout.powerButtons;
+  const [statusLight] = layout.statusLights;
+  const frontPorts = layout.frontPorts;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -525,26 +531,34 @@ function GenericMiniPcModel({ obj, materialProps }) {
           roughness={0.58}
         />
       </mesh>
-      <mesh position={[0, height * 0.52, 0]}>
-        <cylinderGeometry args={[width * 0.28, width * 0.28, height * 0.05, 24]} />
+      <mesh
+        position={[width * topVent.x, height * 0.52, depth * topVent.z]}
+        scale={[width * topVent.width / 2, 1, depth * topVent.depth / 2]}
+      >
+        <cylinderGeometry args={[1, 1, height * 0.05, 24]} />
         <meshStandardMaterial color="#1f2937" roughness={0.75} />
       </mesh>
-      <mesh position={[-width * 0.3, 0, depth * 0.51]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[height * 0.13, height * 0.13, depth * 0.04, 16]} />
+      <mesh
+        position={[width * powerButton.x, 0, depth * powerButton.z]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[width * powerButton.width / 2, depth * powerButton.depth, height * 0.13]}
+      >
+        <cylinderGeometry args={[1, 1, 1, 16]} />
         <meshStandardMaterial color="#111827" roughness={0.55} />
       </mesh>
-      <mesh position={[-width * 0.3, 0, depth * 0.55]}>
-        <sphereGeometry args={[height * 0.035, 10, 8]} />
+      <mesh
+        position={[width * statusLight.x, 0, depth * statusLight.z]}
+        scale={[width * statusLight.width / 2, height * 0.035, depth * statusLight.depth / 2]}
+      >
+        <sphereGeometry args={[1, 10, 8]} />
         <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.45} />
       </mesh>
-      <mesh position={[width * 0.03, 0, depth * 0.53]}>
-        <boxGeometry args={[width * 0.18, height * 0.18, depth * 0.04]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.65} />
-      </mesh>
-      <mesh position={[width * 0.3, 0, depth * 0.53]}>
-        <boxGeometry args={[width * 0.18, height * 0.18, depth * 0.04]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.65} />
-      </mesh>
+      {frontPorts.map((port, index) => (
+        <mesh key={index} position={[width * port.x, 0, depth * port.z]}>
+          <boxGeometry args={[width * port.width, height * 0.18, depth * port.depth]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.65} />
+        </mesh>
+      ))}
     </group>
   );
 }
