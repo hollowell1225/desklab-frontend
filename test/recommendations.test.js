@@ -371,6 +371,24 @@ test('recommends a power strip purchase when a power strip is fully occupied', (
   assert.equal(purchasesVacant.some(item => item.code === 'buy_power_strip'), false);
 });
 
+test('does not count directionally invalid AC outputs as occupied strip capacity', () => {
+  const strip = object('strip-1', {
+    type: 'power_strip',
+    modelId: 'power-strip',
+    ports: [{ id: 'ac-out-1', name: 'AC OUT 1', type: 'ac_output', direction: 'input' }],
+  });
+  const device = object('device-1', {
+    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
+  });
+  const connections = [{
+    id: 'invalid-power', name: 'Invalid power', cableType: 'power', length: 1,
+    fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'device-1', toPortId: 'ac-in',
+  }];
+
+  const purchases = buildPurchaseSuggestions([strip, device], connections);
+  assert.equal(purchases.some(item => item.code === 'buy_power_strip'), false);
+});
+
 test('suggests powering an unpowered device and the fix creates a valid connection', () => {
   // 1. Create a power strip with a vacant ac_output
   const strip = object('strip1', {

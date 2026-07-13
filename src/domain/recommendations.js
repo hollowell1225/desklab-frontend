@@ -473,7 +473,9 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
   for (const object of objects) {
     const isPowerStrip = object?.modelId === 'power-strip' || object?.type === 'power_strip';
     if (isPowerStrip) {
-      const acOutputs = (object.ports || []).filter(p => p.type === 'ac_output');
+      const acOutputs = (object.ports || []).filter(p =>
+        p.type === 'ac_output' && isPortDirectionConsistent(p)
+      );
       if (acOutputs.length > 0) {
         const occupied = occupiedPorts.get(object.id) || new Set();
         const allOccupied = acOutputs.every(p => occupied.has(p.id));
