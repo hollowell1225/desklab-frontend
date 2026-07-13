@@ -997,6 +997,17 @@ export default function App() {
     showStatus({ text: '已自动连接网络', type: 'success' });
   };
 
+  const handleAutoConnectDisplay = (suggestionId) => {
+    if (!projectEditable) return;
+    const suggestion = buildFreeImprovements(room, objects, connections)
+      .find(item => item.id === suggestionId);
+    if (!suggestion) return;
+    recordHistory();
+    const next = applyImprovement({ room, objects, connections }, suggestion);
+    setConnections(next.connections);
+    showStatus({ text: '已自动连接显示器', type: 'success' });
+  };
+
   const handleDropObjectToSupport = (objectId) => {
     if (!projectEditable) return;
     const object = objects.find(candidate => candidate.id === objectId);
@@ -1906,6 +1917,16 @@ export default function App() {
                                   disabled={!projectEditable}
                                 >
                                   连接网络
+                                </button>
+                              )}
+                              {issue.code === 'auto_connect_display' && (
+                                <button
+                                  type="button"
+                                  className="ui-button ui-button-primary"
+                                  onClick={() => handleAutoConnectDisplay(issue.id)}
+                                  disabled={!projectEditable}
+                                >
+                                  连接显示器
                                 </button>
                               )}
                             </div>
