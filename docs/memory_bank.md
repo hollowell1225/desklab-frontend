@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `f08c985 fix: clarify full-router switch guidance`
-- Tests: `npm test` → 235 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `1bde233 feat: suggest switch uplinks`
+- Tests: `npm test` → 236 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+1bde233 feat: suggest switch uplinks
 f08c985 fix: clarify full-router switch guidance
 bbf0291 feat: guide switch purchases when router is full
 436bb69 fix: include switch power step in guidance
@@ -1217,6 +1218,17 @@ code evidence.
   checks all passed. No browser or visual QA was performed.
 - Commit: `f08c985 fix: clarify full-router switch guidance` (pushed).
 
+### Switch uplink action (2026-07-14)
+
+- Added a free `auto_uplink_switch` recommendation and modal action that safely
+  joins an unconnected switch to a free router LAN port. It is offered only when
+  no ordinary endpoint is waiting for that same capacity, so “apply all” cannot
+  create competing uses of a router port.
+- Test-first coverage verifies the generated router-to-switch patch; full
+  verification: `npm test` 236/236, lint, build (known non-fatal large-chunk
+  warning), and local frontend/backend HTTP 200. No browser or visual QA.
+- Commit: `1bde233 feat: suggest switch uplinks` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1395,7 +1407,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 235 tests
+npm test          # 236 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
