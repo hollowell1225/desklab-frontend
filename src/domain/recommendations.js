@@ -635,7 +635,9 @@ export function applyAllImprovements(project, suggestions) {
  * and badge without orchestrating the individual builders.
  */
 export function buildRecommendations(project = {}, options = {}) {
-  const { room, objects = [], connections = [] } = project;
+  const { room, objects: rawObjects, connections: rawConnections } = project || {};
+  const objects = Array.isArray(rawObjects) ? rawObjects : [];
+  const connections = Array.isArray(rawConnections) ? rawConnections : [];
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);

@@ -549,6 +549,10 @@ test('buildRecommendations aggregates free and purchase suggestions with a total
   assert.equal(result.total, result.freeImprovements.length + result.purchases.length);
 
   assert.deepEqual(buildRecommendations({}), { freeImprovements: [], purchases: [], total: 0 });
+  assert.deepEqual(buildRecommendations({ objects: null, connections: null }), {
+    freeImprovements: [], purchases: [], total: 0,
+  });
+  assert.deepEqual(buildRecommendations(null), { freeImprovements: [], purchases: [], total: 0 });
 });
 
 test('buildRecommendations facade tolerates malformed-but-valid project data', () => {
