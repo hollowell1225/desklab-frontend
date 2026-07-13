@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `77aa29f fix: require router uplink for network suggestions`
+- Feature HEAD: `436bb69 fix: include switch power step in guidance`
 - Tests: `npm test` → 233 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+436bb69 fix: include switch power step in guidance
 77aa29f fix: require router uplink for network suggestions
 7841a36 feat: guide wiring after hardware purchase
 d7656ab fix: dedupe power graph connection ids
@@ -1172,6 +1173,20 @@ code evidence.
   local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
   No browser or visual QA was performed.
 - Commit: `77aa29f fix: require router uplink for network suggestions` (pushed).
+
+### Switch purchase guidance power step (2026-07-14)
+
+- Fixed the switch post-purchase sequence so it now requires power first,
+  router LAN uplink second, and downstream devices last. The previous wording
+  omitted the switch's AC input and could leave an apparently wired but
+  inoperative network segment.
+- Test-first coverage updated the public guidance contract; it failed against
+  the old sequence and passes with the corrected order.
+- Verification: `npm test` 233/233; `npm run lint`; `npm run build` (known
+  non-fatal large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200. No browser or visual QA was
+  performed.
+- Commit: `436bb69 fix: include switch power step in guidance` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
