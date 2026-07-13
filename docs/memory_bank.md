@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `4831314 fix: exclude invalid links from power graph`
-- Tests: `npm test` → 222 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `2ff0bfc fix: dedupe occupied power graph ports`
+- Tests: `npm test` → 223 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+2ff0bfc fix: dedupe occupied power graph ports
 4831314 fix: exclude invalid links from power graph
 1465637 fix: ignore invalid strip output capacity
 96ab864 fix: skip invalid power input recommendations
@@ -994,6 +995,19 @@ code evidence.
 - Verification: analysis 19/19; `npm test` 222/222; lint, build, and local
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `4831314 fix: exclude invalid links from power graph` (pushed).
+
+### Duplicate power-port graph guard (2026-07-14)
+- Fixed a remaining disagreement between the shared power graph and wiring
+  analysis: two individually valid links could reuse one physical power port.
+  Wiring analysis rejects the later link, but the graph previously counted both
+  loads and could create a false overload/UPS purchase recommendation.
+- The graph now mirrors the nested per-object port-occupancy rule and ignores
+  later conflicting connections in their deterministic input order.
+- Test-first coverage confirms a duplicate source outlet counts only the first
+  300W load rather than both connected loads.
+- Verification: analysis 20/20; `npm test` 223/223; lint, build, and local
+  frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `2ff0bfc fix: dedupe occupied power graph ports` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
