@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `b74e570 fix: keep generic modem within catalog bounds`
-- Tests: `npm test` → 204 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `4770cb1 fix: keep generic router within catalog bounds`
+- Tests: `npm test` → 205 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+4770cb1 fix: keep generic router within catalog bounds
 b74e570 fix: keep generic modem within catalog bounds
 a6ad8cd fix: keep generic nas within catalog bounds
 f6c4b16 fix: keep generic wall outlet within catalog bounds
@@ -177,9 +178,8 @@ Code-native generic model assets now exist for:
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
 covered. All generic furniture, monitors, computers, power adapters, wall
-outlets, NAS, and modem geometry is now constrained through a shared normalized
-layout module. The next safe target is a focused geometry-bound audit of the
-all-in-one computer.
+outlets, NAS, modem, and router geometry is now constrained through a shared
+normalized layout module. The next safe target is the generic switch.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -737,6 +737,15 @@ all-in-one computer.
 - Verification: focused tests 11/11; `npm test` 204/204; lint, build, and local
   frontend/backend HTTP checks passed. Browser/visual QA was not performed.
 - Commit: `b74e570 fix: keep generic modem within catalog bounds` (pushed).
+
+### Generic router geometry-bound regression fix (2026-07-13)
+- Added a normalized shared layout for the router body, four ports, antennas,
+  and status light. The port centers moved from `z=0.51` to `z=0.46` so their
+  visible geometry remains within the catalog footprint.
+- Test-first `router` bounds assertion failed before layout registration and
+  passed afterward. Verification: focused 12/12; `npm test` 205/205; lint,
+  build, and local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `4770cb1 fix: keep generic router within catalog bounds` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
