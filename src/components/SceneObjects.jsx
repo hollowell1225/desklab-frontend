@@ -818,12 +818,16 @@ function GenericGamingDeskModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const legWidth = Math.min(width, depth) * 0.1;
+  const footprintBase = Math.min(width, depth);
+  const layout = getGenericModelLayout('gaming-desk');
+  const [desktop] = layout.tops;
+  const [rearCrossbar] = layout.crossbars;
+  const [monitorShelf] = layout.shelves;
 
   return (
     <group>
-      <mesh position={[0, height * 0.42, 0]}>
-        <boxGeometry args={[width, height * 0.12, depth]} />
+      <mesh position={[desktop.x * width, height * 0.42, desktop.z * depth]}>
+        <boxGeometry args={[desktop.width * width, height * 0.12, desktop.depth * depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -831,20 +835,18 @@ function GenericGamingDeskModel({ obj, materialProps }) {
           roughness={0.52}
         />
       </mesh>
-      <mesh position={[-width * 0.38, -height * 0.03, 0]} rotation={[0, 0, -0.1]}>
-        <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
-        <meshStandardMaterial color="#1f2937" metalness={0.25} roughness={0.58} />
-      </mesh>
-      <mesh position={[width * 0.38, -height * 0.03, 0]} rotation={[0, 0, 0.1]}>
-        <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
-        <meshStandardMaterial color="#1f2937" metalness={0.25} roughness={0.58} />
-      </mesh>
-      <mesh position={[0, -height * 0.15, -depth * 0.28]}>
-        <boxGeometry args={[width * 0.72, height * 0.08, legWidth]} />
+      {layout.legs.map(leg => (
+        <mesh key={`${leg.x}-${leg.z}`} position={[leg.x * width, -height * 0.03, leg.z * depth]} rotation={[0, 0, leg.rotation]}>
+          <boxGeometry args={[leg.width * footprintBase, height * 0.82, leg.depth * footprintBase]} />
+          <meshStandardMaterial color="#1f2937" metalness={0.25} roughness={0.58} />
+        </mesh>
+      ))}
+      <mesh position={[rearCrossbar.x * width, -height * 0.15, rearCrossbar.z * depth]}>
+        <boxGeometry args={[rearCrossbar.width * width, height * 0.08, rearCrossbar.depth * footprintBase]} />
         <meshStandardMaterial color="#334155" metalness={0.2} roughness={0.62} />
       </mesh>
-      <mesh position={[0, height * 0.47, -depth * 0.32]}>
-        <boxGeometry args={[width * 0.48, height * 0.05, depth * 0.22]} />
+      <mesh position={[monitorShelf.x * width, height * 0.47, monitorShelf.z * depth]}>
+        <boxGeometry args={[monitorShelf.width * width, height * 0.05, monitorShelf.depth * depth]} />
         <meshStandardMaterial color="#111827" roughness={0.6} />
       </mesh>
     </group>
