@@ -854,12 +854,16 @@ function GenericStandingDeskModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const columnWidth = Math.min(width, depth) * 0.1;
+  const footprintBase = Math.min(width, depth);
+  const layout = getGenericModelLayout('standing-desk');
+  const [desktop] = layout.tops;
+  const [rearCrossbar] = layout.crossbars;
+  const [controlPanel] = layout.controlPanels;
 
   return (
     <group>
-      <mesh position={[0, height * 0.43, 0]}>
-        <boxGeometry args={[width, height * 0.1, depth]} />
+      <mesh position={[desktop.x * width, height * 0.43, desktop.z * depth]}>
+        <boxGeometry args={[desktop.width * width, height * 0.1, desktop.depth * depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -867,28 +871,33 @@ function GenericStandingDeskModel({ obj, materialProps }) {
           roughness={0.54}
         />
       </mesh>
-      {[-width * 0.3, width * 0.3].map((x) => (
-        <group key={x} position={[x, -height * 0.04, 0]}>
-          <mesh position={[0, height * 0.08, 0]}>
-            <boxGeometry args={[columnWidth, height * 0.68, columnWidth]} />
-            <meshStandardMaterial color="#64748b" metalness={0.22} roughness={0.56} />
-          </mesh>
-          <mesh position={[0, -height * 0.13, 0]}>
-            <boxGeometry args={[columnWidth * 1.28, height * 0.34, columnWidth * 1.28]} />
-            <meshStandardMaterial color="#475569" metalness={0.28} roughness={0.54} />
-          </mesh>
-          <mesh position={[0, -height * 0.45, 0]}>
-            <boxGeometry args={[width * 0.24, height * 0.06, depth * 0.76]} />
-            <meshStandardMaterial color="#334155" metalness={0.24} roughness={0.6} />
-          </mesh>
-        </group>
-      ))}
-      <mesh position={[0, height * 0.04, -depth * 0.34]}>
-        <boxGeometry args={[width * 0.58, height * 0.06, columnWidth]} />
+      {layout.columns.map((column, index) => {
+        const sleeve = layout.sleeves[index];
+        const foot = layout.feet[index];
+
+        return (
+          <group key={`${column.x}-${column.z}`} position={[column.x * width, -height * 0.04, column.z * depth]}>
+            <mesh position={[0, height * 0.08, 0]}>
+              <boxGeometry args={[column.width * footprintBase, height * 0.68, column.depth * footprintBase]} />
+              <meshStandardMaterial color="#64748b" metalness={0.22} roughness={0.56} />
+            </mesh>
+            <mesh position={[0, -height * 0.13, 0]}>
+              <boxGeometry args={[sleeve.width * footprintBase, height * 0.34, sleeve.depth * footprintBase]} />
+              <meshStandardMaterial color="#475569" metalness={0.28} roughness={0.54} />
+            </mesh>
+            <mesh position={[0, -height * 0.45, 0]}>
+              <boxGeometry args={[foot.width * width, height * 0.06, foot.depth * depth]} />
+              <meshStandardMaterial color="#334155" metalness={0.24} roughness={0.6} />
+            </mesh>
+          </group>
+        );
+      })}
+      <mesh position={[rearCrossbar.x * width, height * 0.04, rearCrossbar.z * depth]}>
+        <boxGeometry args={[rearCrossbar.width * width, height * 0.06, rearCrossbar.depth * footprintBase]} />
         <meshStandardMaterial color="#475569" metalness={0.2} roughness={0.64} />
       </mesh>
-      <mesh position={[width * 0.32, height * 0.35, depth * 0.38]}>
-        <boxGeometry args={[width * 0.12, height * 0.035, depth * 0.08]} />
+      <mesh position={[controlPanel.x * width, height * 0.35, controlPanel.z * depth]}>
+        <boxGeometry args={[controlPanel.width * width, height * 0.035, controlPanel.depth * depth]} />
         <meshStandardMaterial color="#111827" roughness={0.5} />
       </mesh>
     </group>

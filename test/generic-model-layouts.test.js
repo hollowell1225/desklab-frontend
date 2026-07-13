@@ -6,3 +6,7 @@ import { isGenericModelLayoutWithinBounds } from '../src/domain/generic-model-la
 test('generic l-desk layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('l-desk'), true);
 });
+
+test('generic standing desk layout remains inside its catalog footprint', () => {
+  assert.equal(isGenericModelLayoutWithinBounds('standing-desk'), true);
+});

@@ -15,8 +15,33 @@ const GENERIC_L_DESK_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_STANDING_DESK_LAYOUT = Object.freeze({
+  tops: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
+  ]),
+  columns: Object.freeze([
+    Object.freeze({ x: -0.3, z: 0, width: 0.1, depth: 0.1 }),
+    Object.freeze({ x: 0.3, z: 0, width: 0.1, depth: 0.1 }),
+  ]),
+  sleeves: Object.freeze([
+    Object.freeze({ x: -0.3, z: 0, width: 0.128, depth: 0.128 }),
+    Object.freeze({ x: 0.3, z: 0, width: 0.128, depth: 0.128 }),
+  ]),
+  feet: Object.freeze([
+    Object.freeze({ x: -0.3, z: 0, width: 0.24, depth: 0.76 }),
+    Object.freeze({ x: 0.3, z: 0, width: 0.24, depth: 0.76 }),
+  ]),
+  crossbars: Object.freeze([
+    Object.freeze({ x: 0, z: -0.34, width: 0.58, depth: 0.1 }),
+  ]),
+  controlPanels: Object.freeze([
+    Object.freeze({ x: 0.32, z: 0.38, width: 0.12, depth: 0.08 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
+  'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
@@ -27,7 +52,7 @@ export function isGenericModelLayoutWithinBounds(modelId) {
   const layout = getGenericModelLayout(modelId);
   if (!layout) return false;
 
-  return [...layout.tops, ...layout.legs, ...layout.cableTrays].every(part => (
+  return Object.values(layout).flat().every(part => (
     Math.abs(part.x) + part.width / 2 <= 0.5
     && Math.abs(part.z) + part.depth / 2 <= 0.5
   ));
