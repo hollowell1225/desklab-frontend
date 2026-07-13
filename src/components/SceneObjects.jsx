@@ -755,11 +755,14 @@ function GenericModemModel({ obj, materialProps }) {
   const height = obj.scale.z;
   const depth = obj.scale.y;
   const ledColors = ['#4ade80', '#4ade80', '#60a5fa', '#facc15'];
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [topPlate] = layout.topPlates;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -767,25 +770,25 @@ function GenericModemModel({ obj, materialProps }) {
           roughness={0.62}
         />
       </mesh>
-      <mesh position={[0, height * 0.52, 0]}>
-        <boxGeometry args={[width * 0.72, height * 0.05, depth * 0.5]} />
+      <mesh position={[width * topPlate.x, height * 0.52, depth * topPlate.z]}>
+        <boxGeometry args={[width * topPlate.width, height * 0.05, depth * topPlate.depth]} />
         <meshStandardMaterial color="#475569" roughness={0.7} />
       </mesh>
       {ledColors.map((color, index) => (
         <mesh
           key={color + index}
-          position={[-width * 0.3 + index * width * 0.2, height * 0.57, depth * 0.08]}
+          position={[width * layout.statusLights[index].x, height * 0.57, depth * layout.statusLights[index].z]}
         >
-          <sphereGeometry args={[width * 0.025, 10, 8]} />
+          <sphereGeometry args={[width * layout.statusLights[index].width / 2, 10, 8]} />
           <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4} />
         </mesh>
       ))}
-      <mesh position={[-width * 0.2, 0, depth * 0.52]}>
-        <boxGeometry args={[width * 0.26, height * 0.42, depth * 0.06]} />
+      <mesh position={[width * layout.frontPorts[0].x, 0, depth * layout.frontPorts[0].z]}>
+        <boxGeometry args={[width * layout.frontPorts[0].width, height * 0.42, depth * layout.frontPorts[0].depth]} />
         <meshStandardMaterial color="#0f172a" roughness={0.7} />
       </mesh>
-      <mesh position={[width * 0.25, 0, depth * 0.52]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[height * 0.13, height * 0.13, depth * 0.06, 12]} />
+      <mesh position={[width * layout.frontPorts[1].x, 0, depth * layout.frontPorts[1].z]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[height * 0.13, height * 0.13, depth * layout.frontPorts[1].depth, 12]} />
         <meshStandardMaterial color="#111827" roughness={0.72} />
       </mesh>
     </group>

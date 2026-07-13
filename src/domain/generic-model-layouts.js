@@ -184,6 +184,21 @@ const GENERIC_NAS_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_MODEM_LAYOUT = Object.freeze({
+  bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
+  topPlates: Object.freeze([Object.freeze({ x: 0, z: 0, width: 0.72, depth: 0.5 })]),
+  statusLights: Object.freeze([
+    Object.freeze({ x: -0.3, z: 0.08, width: 0.05, depth: 0.0625 }),
+    Object.freeze({ x: -0.1, z: 0.08, width: 0.05, depth: 0.0625 }),
+    Object.freeze({ x: 0.1, z: 0.08, width: 0.05, depth: 0.0625 }),
+    Object.freeze({ x: 0.3, z: 0.08, width: 0.05, depth: 0.0625 }),
+  ]),
+  frontPorts: Object.freeze([
+    Object.freeze({ x: -0.2, z: 0.47, width: 0.26, depth: 0.06 }),
+    Object.freeze({ x: 0.25, z: 0.47, width: 0.06933333333333333, depth: 0.06 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -197,6 +212,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'power-adapter': GENERIC_POWER_ADAPTER_LAYOUT,
   'wall-outlet': GENERIC_WALL_OUTLET_LAYOUT,
   'nas-2bay': GENERIC_NAS_LAYOUT,
+  modem: GENERIC_MODEM_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
