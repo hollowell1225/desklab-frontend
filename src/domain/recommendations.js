@@ -41,24 +41,44 @@ function isWanPort(port) {
   return port.id === 'wan' || port.name?.toLowerCase().includes('wan');
 }
 
-function requiresPowerButIsUnpowered(object, occupiedPorts) {
-  const powerInputs = (object.ports || []).filter(port =>
+function hasPowerInput(object) {
+  return (object.ports || []).some(port =>
     ['ac_input', 'dc_input'].includes(port.type) && isPortDirectionConsistent(port)
   );
-  return powerInputs.length > 0
-    && powerInputs.every(port => !occupiedPorts.get(object.id)?.has(port.id));
 }
 
-function getRouterReachableObjectIds(objects, connections, invalidConnectionIds, occupiedPorts = new Map()) {
+function getPoweredObjectIds(objects, powerGraph) {
+  const poweredObjectIds = new Set(objects
+    .filter(object => !hasPowerInput(object))
+    .map(object => object.id));
+  const pending = [...poweredObjectIds];
+
+  while (pending.length > 0) {
+    const objectId = pending.pop();
+    for (const childId of powerGraph.childrenBySource.get(objectId) || []) {
+      if (poweredObjectIds.has(childId)) continue;
+      poweredObjectIds.add(childId);
+      pending.push(childId);
+    }
+  }
+
+  return poweredObjectIds;
+}
+
+function requiresPowerButIsUnpowered(object, poweredObjectIds) {
+  return hasPowerInput(object) && !poweredObjectIds.has(object.id);
+}
+
+function getRouterReachableObjectIds(objects, connections, invalidConnectionIds, poweredObjectIds) {
   const objectIds = new Set(objects.map(object => object.id));
   const isNetworkForwarder = object => object.modelId === 'router' || object.type === 'router'
     || object.modelId === 'switch' || object.type === 'switch';
   const reachable = new Set(objects
     .filter(object => (object.modelId === 'router' || object.type === 'router')
-      && !requiresPowerButIsUnpowered(object, occupiedPorts))
+      && !requiresPowerButIsUnpowered(object, poweredObjectIds))
     .map(object => object.id));
   const forwarderIds = new Set(objects
-    .filter(object => isNetworkForwarder(object) && !requiresPowerButIsUnpowered(object, occupiedPorts))
+    .filter(object => isNetworkForwarder(object) && !requiresPowerButIsUnpowered(object, poweredObjectIds))
     .map(object => object.id));
   const neighbors = new Map();
 
@@ -104,6 +124,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
+  const powerGraph = options.powerGraph || buildPowerGraph(objects, connections);
   const invalidConnectionIds = getInvalidConnectionIds(wiringIssues);
 
   for (const issue of analyzeProjectLayout(room, objects)) {
@@ -169,6 +190,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
       toPorts.add(connection.toPortId);
     }
   }
+  const poweredObjectIds = getPoweredObjectIds(objects, powerGraph);
 
   for (const issue of wiringIssues) {
     if (issue.code === 'unpowered_input') {
@@ -181,7 +203,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
 
         for (const candidate of objects) {
           if (candidate.id === object.id) continue;
-          if (requiresPowerButIsUnpowered(candidate, occupiedPorts)) continue;
+          if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
           for (const candidatePort of candidate.ports || []) {
             const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
             if (hasFromDir &&
@@ -248,7 +270,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   }
 
   // 3. 自动连接网络 (auto_network_device)
-  const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, occupiedPorts);
+  const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, poweredObjectIds);
   const unconnectedNetworkEndpointCount = objects.reduce((count, object) => {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) return count;
@@ -260,7 +282,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
     ).length;
   }, 0);
   const freeRouterLanPortCount = objects.reduce((count, router) => {
-    if (!(router.modelId === 'router' || router.type === 'router') || requiresPowerButIsUnpowered(router, occupiedPorts)) return count;
+    if (!(router.modelId === 'router' || router.type === 'router') || requiresPowerButIsUnpowered(router, poweredObjectIds)) return count;
     return count + (router.ports || []).filter(port =>
       port.type === 'ethernet'
       && String(port.id).toLowerCase().includes('lan')
@@ -275,12 +297,12 @@ export function buildFreeImprovements(room, objects, connections = [], options =
     if (freeRouterLanPortCount <= unconnectedNetworkEndpointCount
       || !isSwitch
       || routerReachableObjectIds.has(switchDevice.id)
-      || requiresPowerButIsUnpowered(switchDevice, occupiedPorts)) continue;
+      || requiresPowerButIsUnpowered(switchDevice, poweredObjectIds)) continue;
 
     let bestUplink = null;
     for (const router of objects) {
       const isRouter = router.modelId === 'router' || router.type === 'router';
-      if (!isRouter || requiresPowerButIsUnpowered(router, occupiedPorts)) continue;
+      if (!isRouter || requiresPowerButIsUnpowered(router, poweredObjectIds)) continue;
       for (const routerPort of router.ports || []) {
         if (routerPort.type !== 'ethernet' || !String(routerPort.id).toLowerCase().includes('lan')) continue;
         if (!(routerPort.direction === 'output' || routerPort.direction === 'bidirectional') || !isPortDirectionConsistent(routerPort)) continue;
@@ -502,6 +524,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       toPorts.add(connection.toPortId);
     }
   }
+  const poweredObjectIds = getPoweredObjectIds(objects, powerGraph);
 
   // 2. Original cable warning/short check
   for (const issue of wiringIssues) {
@@ -570,7 +593,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
 
     const { availableLanPorts, occupiedLanCount } = objects
       .filter(obj => (obj.modelId === 'router' || obj.type === 'router')
-        && !requiresPowerButIsUnpowered(obj, occupiedPorts))
+        && !requiresPowerButIsUnpowered(obj, poweredObjectIds))
       .reduce((capacity, router) => {
         const lanPorts = (router.ports || []).filter(p =>
           p.type === 'ethernet'
@@ -585,7 +608,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
         };
       }, { availableLanPorts: 0, occupiedLanCount: 0 });
     const freeLanPorts = Math.max(0, availableLanPorts - occupiedLanCount);
-    const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, occupiedPorts);
+    const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, poweredObjectIds);
     const freeSwitchPorts = objects
       .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
       .reduce((count, switchDevice) => count + (switchDevice.ports || []).filter(port =>
@@ -686,7 +709,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     let hasNearbySource = false;
     for (const candidate of objects) {
       if (candidate.id === object.id) continue;
-      if (requiresPowerButIsUnpowered(candidate, occupiedPorts)) continue;
+      if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
       for (const candidatePort of candidate.ports || []) {
         const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
         if (hasFromDir &&
@@ -816,7 +839,7 @@ export function buildRecommendations(project = {}, options = {}) {
     : analyzeProjectWiring(objects, connections);
   const powerGraph = options.powerGraph || buildPowerGraph(objects, connections);
   const freeImprovements = room
-    ? buildFreeImprovements(room, objects, connections, { wiringIssues })
+    ? buildFreeImprovements(room, objects, connections, { wiringIssues, powerGraph })
     : [];
   const purchases = buildPurchaseSuggestions(objects, connections, { wiringIssues, powerGraph });
   return {

@@ -603,6 +603,38 @@ test('does not use an unpowered power strip as a supply source', () => {
     'an unpowered strip must not suppress the PC power recommendation');
 });
 
+test('does not use a power strip fed only by an unpowered upstream strip', () => {
+  const upstreamStrip = object('upstream', {
+    type: 'power_strip', modelId: 'power-strip',
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' },
+    ],
+  });
+  const downstreamStrip = object('downstream', {
+    type: 'power_strip', modelId: 'power-strip',
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' },
+    ],
+  });
+  const pc = object('pc', {
+    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
+  });
+  const connections = [{
+    id: 'strip-chain', cableType: 'power', length: 1,
+    fromObjectId: 'upstream', fromPortId: 'ac-out', toObjectId: 'downstream', toPortId: 'ac-in',
+  }];
+
+  const free = buildFreeImprovements(room, [upstreamStrip, downstreamStrip, pc], connections);
+  const purchases = buildPurchaseSuggestions([upstreamStrip, downstreamStrip, pc], connections);
+
+  assert.equal(free.some(item => item.code === 'auto_power_device'), false,
+    'a downstream strip is unavailable until its upstream supply reaches a root source');
+  assert.ok(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('pc')),
+    'a dead power chain must not suppress the PC power recommendation');
+});
+
 test('does not recommend power fixes for a directionally invalid power input', () => {
   const source = object('source', {
     type: 'power_strip',
@@ -971,6 +1003,13 @@ test('suggests networking an unconnected ethernet device and the fix creates a v
 });
 
 test('does not use an unpowered router as an automatic network source', () => {
+  const adapter = object('adapter', {
+    type: 'power-adapter', modelId: 'power-adapter',
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'dc-out', name: 'DC OUT', type: 'dc_output', direction: 'output' },
+    ],
+  });
   const router = object('router', {
     type: 'router', modelId: 'router',
     ports: [
@@ -982,11 +1021,15 @@ test('does not use an unpowered router as an automatic network source', () => {
     modelId: 'desktop-pc',
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
   });
+  const connections = [{
+    id: 'adapter-router', cableType: 'power', length: 1,
+    fromObjectId: 'adapter', fromPortId: 'dc-out', toObjectId: 'router', toPortId: 'dc-in',
+  }];
 
-  const suggestions = buildFreeImprovements(room, [router, pc], []);
+  const suggestions = buildFreeImprovements(room, [adapter, router, pc], connections);
 
   assert.equal(suggestions.some(item => item.code === 'auto_network_device'), false,
-    'a router must have a valid power connection before it can provide network access');
+    'a router must have a power path to a root source before it can provide network access');
 });
 
 test('does not connect a device through a switch that lacks a router uplink', () => {
