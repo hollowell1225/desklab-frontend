@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `a41e62c fix: reject WAN switch uplinks`
+- Feature HEAD: `9659963 fix: require switch power before uplink`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+9659963 fix: require switch power before uplink
 a41e62c fix: reject WAN switch uplinks
 bf82644 fix: exclude WAN ports from switch capacity
 7530afe fix: count capacity across routers
@@ -1293,6 +1294,23 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `a41e62c fix: reject WAN switch uplinks` (pushed).
+
+### Powered-switch uplink guard (2026-07-14)
+
+- Fixed automatic switch uplinks that could be offered before a switch's valid
+  AC/DC power input was connected. The previous text promised downstream
+  network access even though an unpowered switch cannot forward traffic.
+- `auto_uplink_switch` now waits only when a switch explicitly declares power
+  inputs and all of them are unconnected through valid links. Devices with no
+  modeled power input retain the existing behavior.
+- Test-first regression verifies that an unpowered switch gets no uplink
+  suggestion; the available power recommendation is therefore the required
+  next step before the UI recomputes the uplink.
+- Verification: focused recommendations 52/52; `npm test` 242/242; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `9659963 fix: require switch power before uplink` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
