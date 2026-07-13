@@ -149,6 +149,15 @@ test('standing desk resolves to the generic in-house furniture asset', () => {
   assert.equal(asset.category, 'furniture');
 });
 
+test('l-desk resolves to the generic in-house furniture asset', () => {
+  const asset = getGenericModelAsset('l-desk');
+
+  assert.equal(asset.id, 'generic-l-desk');
+  assert.equal(asset.source, 'in-house-generated');
+  assert.equal(asset.license, 'DeskLab-owned');
+  assert.equal(asset.category, 'furniture');
+});
+
 test('unknown or externally loaded models keep the fallback rendering path', () => {
   assert.equal(getGenericModelAsset('missing-model'), null);
   assert.equal(hasGenericModelAsset('missing-model'), false);

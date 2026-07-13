@@ -112,6 +112,13 @@
 - **Added**: 2026-07-13
 - **Notes**: Generic unbranded adjustable-height desk with lift columns, crossbar, feet, and control panel used for `standing-desk`.
 
+## Code-Native Generic L Desk
+- **Model Name**: Generic low-poly L-shaped desk
+- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
+- **License**: DeskLab-owned
+- **Added**: 2026-07-13
+- **Notes**: Generic unbranded L-shaped desktop with four legs and rear cable trays used for `l-desk`.
+
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
 - **Author**: XX-Alias Neal (@meta-creators)

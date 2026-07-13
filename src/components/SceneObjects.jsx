@@ -894,6 +894,60 @@ function GenericStandingDeskModel({ obj, materialProps }) {
   );
 }
 
+function GenericLDeskModel({ obj, materialProps }) {
+  const width = obj.scale.x;
+  const height = obj.scale.z;
+  const depth = obj.scale.y;
+  const topThickness = height * 0.1;
+  const legWidth = Math.min(width, depth) * 0.09;
+  const mainWidth = width * 0.76;
+  const mainDepth = depth * 0.58;
+  const returnWidth = width * 0.38;
+  const returnDepth = depth * 0.72;
+
+  return (
+    <group>
+      <mesh position={[-width * 0.1, height * 0.43, -depth * 0.18]}>
+        <boxGeometry args={[mainWidth, topThickness, mainDepth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.56}
+        />
+      </mesh>
+      <mesh position={[width * 0.3, height * 0.43, depth * 0.18]}>
+        <boxGeometry args={[returnWidth, topThickness, returnDepth]} />
+        <meshStandardMaterial
+          color={obj.color}
+          emissive={materialProps.emissiveColor}
+          emissiveIntensity={materialProps.emissiveIntensity}
+          roughness={0.56}
+        />
+      </mesh>
+      {[
+        [-width * 0.4, -depth * 0.4],
+        [width * 0.08, -depth * 0.4],
+        [width * 0.42, depth * 0.39],
+        [width * 0.16, depth * 0.39],
+      ].map(([x, z]) => (
+        <mesh key={`${x}-${z}`} position={[x, -height * 0.02, z]}>
+          <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
+          <meshStandardMaterial color="#475569" metalness={0.16} roughness={0.62} />
+        </mesh>
+      ))}
+      <mesh position={[-width * 0.1, height * 0.28, -depth * 0.43]}>
+        <boxGeometry args={[mainWidth * 0.72, height * 0.08, depth * 0.08]} />
+        <meshStandardMaterial color="#334155" roughness={0.7} />
+      </mesh>
+      <mesh position={[width * 0.3, height * 0.28, depth * 0.45]}>
+        <boxGeometry args={[returnWidth * 0.72, height * 0.08, depth * 0.07]} />
+        <meshStandardMaterial color="#334155" roughness={0.7} />
+      </mesh>
+    </group>
+  );
+}
+
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -942,6 +996,9 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-standing-desk') {
     return <GenericStandingDeskModel obj={obj} materialProps={materialProps} />;
+  }
+  if (asset?.id === 'generic-l-desk') {
+    return <GenericLDeskModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }
