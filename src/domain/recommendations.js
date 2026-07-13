@@ -4,7 +4,7 @@ import {
   snapWallOutletToNearestWall,
 } from './layout-analysis.js';
 import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad, toPowerValue, classifyPowerLoad } from './analysis.js';
-import { calculatePositionDistance, evaluateConnectionLength, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
+import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
 import { validateAndConstrainObject } from './geometry.js';
 import { findModelTemplate } from './catalog.js';
 
@@ -779,9 +779,15 @@ export function applyImprovement(project, suggestion) {
 
   if (patch.newConnection) {
     const connections = project.connections || [];
-    const objectIds = new Set((project.objects || []).map(object => object.id));
-    if (!objectIds.has(patch.newConnection.fromObjectId)
-      || !objectIds.has(patch.newConnection.toObjectId)) {
+    const objectsById = new Map((project.objects || []).map(object => [object.id, object]));
+    const fromObject = objectsById.get(patch.newConnection.fromObjectId);
+    const toObject = objectsById.get(patch.newConnection.toObjectId);
+    const fromPort = fromObject?.ports?.find(port => port.id === patch.newConnection.fromPortId);
+    const toPort = toObject?.ports?.find(port => port.id === patch.newConnection.toPortId);
+    if (!fromObject
+      || !toObject
+      || !arePortsCompatible(fromPort, toPort)
+      || patch.newConnection.cableType !== inferCableType(fromPort, toPort)) {
       return project;
     }
     if (connections.some(connection => connection.id === patch.newConnection.id)) {

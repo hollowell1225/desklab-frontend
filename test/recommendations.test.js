@@ -806,7 +806,14 @@ test('applyImprovement returns the project unchanged for an empty patch', () => 
 });
 
 test('applyImprovement does not append an automatic connection twice', () => {
-  const project = { room, objects: [object('outlet'), object('pc')], connections: [] };
+  const project = {
+    room,
+    objects: [
+      object('outlet', { ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }] }),
+      object('pc', { ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }] }),
+    ],
+    connections: [],
+  };
   const suggestion = {
     patch: {
       newConnection: {
@@ -826,7 +833,11 @@ test('applyImprovement does not append an automatic connection twice', () => {
 test('applyImprovement does not use a port claimed by a newer connection', () => {
   const project = {
     room,
-    objects: [object('outlet'), object('monitor'), object('pc')],
+    objects: [
+      object('outlet', { ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }] }),
+      object('monitor', { ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }] }),
+      object('pc', { ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }] }),
+    ],
     connections: [{
       id: 'newer-connection', name: 'Newer connection', cableType: 'power', length: 1,
       fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'monitor', toPortId: 'ac-in',
@@ -846,7 +857,13 @@ test('applyImprovement does not use a port claimed by a newer connection', () =>
 });
 
 test('applyImprovement does not create a connection to a deleted endpoint', () => {
-  const project = { room, objects: [object('outlet')], connections: [] };
+  const project = {
+    room,
+    objects: [object('outlet', {
+      ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+    })],
+    connections: [],
+  };
   const staleSuggestion = {
     patch: {
       newConnection: {
@@ -858,6 +875,28 @@ test('applyImprovement does not create a connection to a deleted endpoint', () =
 
   assert.equal(applyImprovement(project, staleSuggestion), project,
     'a stale connection must not reintroduce a reference to a deleted device');
+});
+
+test('applyImprovement does not create a connection through a deleted port', () => {
+  const project = {
+    room,
+    objects: [
+      object('outlet', { ports: [] }),
+      object('pc', { ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }] }),
+    ],
+    connections: [],
+  };
+  const staleSuggestion = {
+    patch: {
+      newConnection: {
+        id: 'c-auto-power-pc-ac-in', name: 'PC power', cableType: 'power', length: 1.5,
+        fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'pc', toPortId: 'ac-in',
+      },
+    },
+  };
+
+  assert.equal(applyImprovement(project, staleSuggestion), project,
+    'a stale connection must not reference a port that no longer exists');
 });
 
 test('buildRecommendations aggregates free and purchase suggestions with a total', () => {
