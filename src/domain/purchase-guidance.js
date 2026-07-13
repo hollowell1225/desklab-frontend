@@ -11,7 +11,7 @@ const PURCHASE_GUIDANCE = Object.freeze({
   }),
   switch: Object.freeze({
     title: '下一步：开始布线',
-    description: '先将路由器 LAN 口接到交换机上联口，再将待联网设备接到交换机。',
+    description: '先接通交换机电源，再将路由器 LAN 口接到交换机上联口，最后将待联网设备接到交换机。',
     actionLabel: '打开连接面板',
   }),
 });
