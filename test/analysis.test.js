@@ -350,6 +350,44 @@ test('computeDevicePowerLoad correctly aggregates power load recursively', () =>
   assert.equal(pcLoad, 0); // 没有外接设备，外接负载为0
 });
 
+test('power graph ignores invalid direction and type power connections', () => {
+  const wrongDirectionSource = object('wrong-direction-source', [
+    port('ac-out', 'ac_output', 'input'),
+  ]);
+  const wrongDirectionLoad = object('wrong-direction-load', [
+    port('ac-in', 'ac_input', 'input'),
+  ], { wattage: 600 });
+  const incompatibleSource = object('incompatible-source', [
+    port('dc-out', 'dc_output', 'output'),
+  ]);
+  const incompatibleLoad = object('incompatible-load', [
+    port('ac-in', 'ac_input', 'input'),
+  ], { wattage: 700 });
+  const wrongCableSource = object('wrong-cable-source', [
+    port('ac-out', 'ac_output', 'output'),
+  ]);
+  const wrongCableLoad = object('wrong-cable-load', [
+    port('ac-in', 'ac_input', 'input'),
+  ], { wattage: 800 });
+  const wrongCable = connection('wrong-cable', 'wrong-cable-source', 'ac-out', 'wrong-cable-load', 'ac-in');
+  wrongCable.cableType = 'hdmi';
+  const objects = [
+    wrongDirectionSource, wrongDirectionLoad,
+    incompatibleSource, incompatibleLoad,
+    wrongCableSource, wrongCableLoad,
+  ];
+  const connections = [
+    connection('wrong-direction', 'wrong-direction-source', 'ac-out', 'wrong-direction-load', 'ac-in'),
+    connection('incompatible', 'incompatible-source', 'dc-out', 'incompatible-load', 'ac-in'),
+    wrongCable,
+  ];
+
+  const graph = buildPowerGraph(objects, connections);
+  assert.equal(computeDevicePowerLoad('wrong-direction-source', objects, connections, graph), 0);
+  assert.equal(computeDevicePowerLoad('incompatible-source', objects, connections, graph), 0);
+  assert.equal(computeDevicePowerLoad('wrong-cable-source', objects, connections, graph), 0);
+});
+
 test('power load coerces string/invalid wattage and maxLoad instead of corrupting math', () => {
   // Drafts/imports can carry numeric fields as strings; isProjectObject does not
   // validate wattage/maxLoad, so the engine must coerce them. String "+" must not

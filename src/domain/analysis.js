@@ -110,7 +110,19 @@ export function buildPowerGraph(objects, connections) {
     if (!fromObj || !toObj) continue;
     const fromPort = getPort(fromObj, connection.fromPortId);
     const toPort = getPort(toObj, connection.toPortId);
-    if (fromPort && toPort && POWER_OUTPUT_TYPES.has(fromPort.type) && POWER_INPUT_TYPES.has(toPort.type)) {
+    const sourceDirectionValid = fromPort?.direction === 'output' || fromPort?.direction === 'bidirectional';
+    const targetDirectionValid = toPort?.direction === 'input' || toPort?.direction === 'bidirectional';
+    const isValidPowerConnection = fromPort
+      && toPort
+      && POWER_OUTPUT_TYPES.has(fromPort.type)
+      && POWER_INPUT_TYPES.has(toPort.type)
+      && isPortDirectionConsistent(fromPort)
+      && isPortDirectionConsistent(toPort)
+      && sourceDirectionValid
+      && targetDirectionValid
+      && arePortTypesCompatible(fromPort.type, toPort.type)
+      && connection.cableType === inferCableType(fromPort, toPort);
+    if (isValidPowerConnection) {
       powerEdges.push([connection.fromObjectId, connection.toObjectId]);
     }
   }
