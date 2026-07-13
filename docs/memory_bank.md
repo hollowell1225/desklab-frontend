@@ -898,8 +898,8 @@ code evidence.
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
-  non-negative number — drafts/imports can carry them as strings, which
-  `isProjectObject` does not validate) and `classifyPowerLoad(currentLoad, maxLoad)`
+  non-negative number as defense in depth for malformed transient live state)
+  and `classifyPowerLoad(currentLoad, maxLoad)`
   → `'overload' | 'warning' | 'ok'` (with `POWER_WARNING_RATIO = 0.9`).
 - Both helpers are the single source of truth for overload/warning thresholds.
   Consumers: `analyzeProjectWiring`, `recommendations.js`, `SceneObjects.jsx`
