@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `cf36b14 fix: tolerate null recommendation state`
-- Tests: `npm test` → 219 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `96ab864 fix: skip invalid power input recommendations`
+- Tests: `npm test` → 220 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+96ab864 fix: skip invalid power input recommendations
 cf36b14 fix: tolerate null recommendation state
 f69fec0 fix: match LAN port ids case-insensitively
 a90dab6 fix: filter invalid switch recommendations
@@ -950,6 +951,21 @@ code evidence.
 - Verification: recommendations 38/38; `npm test` 219/219; lint, build, and
   local frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `cf36b14 fix: tolerate null recommendation state` (pushed).
+
+### Invalid power-input recommendation guard (2026-07-14)
+- Fixed a recommendation path that could generate an invalid connection for a
+  custom AC/DC input port whose direction contradicted its power type. Wiring
+  analysis correctly reported the malformed port, but the recommendation engine
+  still offered automatic power connection or a power purchase; the generated
+  auto-connection would then be rejected by backend validation.
+- Auto-power and buy-power paths now skip semantically inconsistent target
+  inputs, leaving the configuration error for the user to correct rather than
+  proposing an impossible fix.
+- Test-first coverage verifies that an `ac_input` marked as `output` receives
+  neither a free auto-power nor a paid power recommendation.
+- Verification: recommendations 39/39; `npm test` 220/220; lint, build, and
+  local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `96ab864 fix: skip invalid power input recommendations` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
