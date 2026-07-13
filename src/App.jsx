@@ -1960,6 +1960,16 @@ export default function App() {
                                   连接网络
                                 </button>
                               )}
+                              {issue.code === 'auto_uplink_switch' && (
+                                <button
+                                  type="button"
+                                  className="ui-button ui-button-primary"
+                                  onClick={() => handleAutoConnectNetwork(issue.id)}
+                                  disabled={!projectEditable}
+                                >
+                                  上联交换机
+                                </button>
+                              )}
                               {issue.code === 'auto_connect_display' && (
                                 <button
                                   type="button"

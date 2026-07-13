@@ -21,9 +21,10 @@ const SUGGESTION_ORDER = {
   drop_to_support: 1,
   snap_outlet_to_wall: 2,
   auto_power_device: 3,
-  auto_network_device: 4,
-  auto_connect_display: 5,
-  extend_cable: 6,
+  auto_uplink_switch: 4,
+  auto_network_device: 5,
+  auto_connect_display: 6,
+  extend_cable: 7,
 };
 
 function compareSuggestions(first, second) {
@@ -232,6 +233,60 @@ export function buildFreeImprovements(room, objects, connections = [], options =
 
   // 3. 自动连接网络 (auto_network_device)
   const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds);
+  const hasUnconnectedNetworkEndpoint = objects.some(object => {
+    const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
+    return !isDistributor && (object.ports || []).some(port =>
+      port.type === 'ethernet'
+      && (port.direction === 'input' || port.direction === 'bidirectional')
+      && isPortDirectionConsistent(port)
+      && !occupiedPorts.get(object.id)?.has(port.id)
+    );
+  });
+
+  for (const switchDevice of objects) {
+    const isSwitch = switchDevice.modelId === 'switch' || switchDevice.type === 'switch';
+    if (hasUnconnectedNetworkEndpoint || !isSwitch || routerReachableObjectIds.has(switchDevice.id)) continue;
+
+    let bestUplink = null;
+    for (const router of objects) {
+      const isRouter = router.modelId === 'router' || router.type === 'router';
+      if (!isRouter) continue;
+      for (const routerPort of router.ports || []) {
+        if (routerPort.type !== 'ethernet' || !String(routerPort.id).toLowerCase().includes('lan')) continue;
+        if (!(routerPort.direction === 'output' || routerPort.direction === 'bidirectional') || !isPortDirectionConsistent(routerPort)) continue;
+        if (occupiedPorts.get(router.id)?.has(routerPort.id)) continue;
+        for (const switchPort of switchDevice.ports || []) {
+          if (switchPort.type !== 'ethernet' || !isPortDirectionConsistent(switchPort)) continue;
+          if (occupiedPorts.get(switchDevice.id)?.has(switchPort.id)) continue;
+          const distance = calculatePositionDistance(router.position, switchDevice.position);
+          if (distance === null) continue;
+          if (!bestUplink || distance < bestUplink.distance) bestUplink = { router, routerPort, switchPort, distance };
+        }
+      }
+    }
+
+    if (!bestUplink) continue;
+    const length = ceilLength(Math.max(1.0, bestUplink.distance * 1.1 + 0.3));
+    suggestions.push({
+      id: `auto-uplink:${bestUplink.router.id}:${bestUplink.routerPort.id}:${switchDevice.id}:${bestUplink.switchPort.id}`,
+      code: 'auto_uplink_switch',
+      title: `将“${switchDevice.name}”上联到“${bestUplink.router.name}”`,
+      description: `使用一根 ${length}m 网线连接路由器空闲 LAN 口和交换机端口，使交换机可以为下游设备提供网络。`,
+      objectIds: [bestUplink.router.id, switchDevice.id],
+      patch: { newConnection: {
+        id: `c-auto-uplink-${bestUplink.router.id}-${bestUplink.routerPort.id}-${switchDevice.id}-${bestUplink.switchPort.id}`,
+        name: `${switchDevice.name}上联网线`, cableType: 'ethernet', length,
+        fromObjectId: bestUplink.router.id, fromPortId: bestUplink.routerPort.id,
+        toObjectId: switchDevice.id, toPortId: bestUplink.switchPort.id,
+      } },
+    });
+    for (const [objectId, portId] of [[bestUplink.router.id, bestUplink.routerPort.id], [switchDevice.id, bestUplink.switchPort.id]]) {
+      let ports = occupiedPorts.get(objectId);
+      if (!ports) { ports = new Set(); occupiedPorts.set(objectId, ports); }
+      ports.add(portId);
+    }
+  }
+
   for (const object of objects) {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) continue;
