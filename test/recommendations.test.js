@@ -388,6 +388,34 @@ test('recommends a switch when a reachable switch only has a WAN port free', () 
     'a WAN port cannot provide the downstream capacity used to suppress a switch purchase');
 });
 
+test('recommends a switch when a reachable switch is unpowered', () => {
+  const router = object('router-1', {
+    modelId: 'router',
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch-1', {
+    modelId: 'switch',
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'eth-2', name: 'Port 2', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const unconnected = object('unconnected', {
+    modelId: 'desktop-pc',
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const connections = [{
+    id: 'router-switch', cableType: 'ethernet', length: 1,
+    fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'switch-1', toPortId: 'eth-1',
+  }];
+
+  const purchases = buildPurchaseSuggestions([router, switchDevice, unconnected], connections);
+
+  assert.ok(purchases.some(item => item.code === 'buy_switch'),
+    'an unpowered switch cannot provide the downstream capacity used to suppress a switch purchase');
+});
+
 test('marks a switch purchase as requiring LAN migration when the router is full', () => {
   const router = object('router-1', {
     modelId: 'router',
@@ -854,6 +882,25 @@ test('suggests networking an unconnected ethernet device and the fix creates a v
   const suggestions2 = buildFreeImprovements(room, next.objects, next.connections);
   const connect2 = suggestions2.find(item => item.code === 'auto_network_device');
   assert.equal(connect2, undefined, 'recommendation should disappear after connection is applied');
+});
+
+test('does not use an unpowered router as an automatic network source', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router',
+    ports: [
+      { id: 'dc-in', name: 'DC IN', type: 'dc_input', direction: 'input' },
+      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const pc = object('pc', {
+    modelId: 'desktop-pc',
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
+  });
+
+  const suggestions = buildFreeImprovements(room, [router, pc], []);
+
+  assert.equal(suggestions.some(item => item.code === 'auto_network_device'), false,
+    'a router must have a valid power connection before it can provide network access');
 });
 
 test('does not connect a device through a switch that lacks a router uplink', () => {

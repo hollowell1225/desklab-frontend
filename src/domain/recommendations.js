@@ -49,14 +49,17 @@ function requiresPowerButIsUnpowered(object, occupiedPorts) {
     && powerInputs.every(port => !occupiedPorts.get(object.id)?.has(port.id));
 }
 
-function getRouterReachableObjectIds(objects, connections, invalidConnectionIds) {
+function getRouterReachableObjectIds(objects, connections, invalidConnectionIds, occupiedPorts = new Map()) {
   const objectIds = new Set(objects.map(object => object.id));
   const isNetworkForwarder = object => object.modelId === 'router' || object.type === 'router'
     || object.modelId === 'switch' || object.type === 'switch';
   const reachable = new Set(objects
-    .filter(object => object.modelId === 'router' || object.type === 'router')
+    .filter(object => (object.modelId === 'router' || object.type === 'router')
+      && !requiresPowerButIsUnpowered(object, occupiedPorts))
     .map(object => object.id));
-  const forwarderIds = new Set(objects.filter(isNetworkForwarder).map(object => object.id));
+  const forwarderIds = new Set(objects
+    .filter(object => isNetworkForwarder(object) && !requiresPowerButIsUnpowered(object, occupiedPorts))
+    .map(object => object.id));
   const neighbors = new Map();
 
   for (const connection of connections) {
@@ -76,9 +79,9 @@ function getRouterReachableObjectIds(objects, connections, invalidConnectionIds)
   while (pending.length > 0) {
     const objectId = pending.pop();
     for (const neighborId of neighbors.get(objectId) || []) {
-      if (reachable.has(neighborId)) continue;
+      if (reachable.has(neighborId) || !forwarderIds.has(neighborId)) continue;
       reachable.add(neighborId);
-      if (forwarderIds.has(neighborId)) pending.push(neighborId);
+      pending.push(neighborId);
     }
   }
 
@@ -244,7 +247,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   }
 
   // 3. 自动连接网络 (auto_network_device)
-  const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds);
+  const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, occupiedPorts);
   const unconnectedNetworkEndpointCount = objects.reduce((count, object) => {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) return count;
@@ -256,7 +259,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
     ).length;
   }, 0);
   const freeRouterLanPortCount = objects.reduce((count, router) => {
-    if (!(router.modelId === 'router' || router.type === 'router')) return count;
+    if (!(router.modelId === 'router' || router.type === 'router') || requiresPowerButIsUnpowered(router, occupiedPorts)) return count;
     return count + (router.ports || []).filter(port =>
       port.type === 'ethernet'
       && String(port.id).toLowerCase().includes('lan')
@@ -276,7 +279,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
     let bestUplink = null;
     for (const router of objects) {
       const isRouter = router.modelId === 'router' || router.type === 'router';
-      if (!isRouter) continue;
+      if (!isRouter || requiresPowerButIsUnpowered(router, occupiedPorts)) continue;
       for (const routerPort of router.ports || []) {
         if (routerPort.type !== 'ethernet' || !String(routerPort.id).toLowerCase().includes('lan')) continue;
         if (!(routerPort.direction === 'output' || routerPort.direction === 'bidirectional') || !isPortDirectionConsistent(routerPort)) continue;
@@ -565,7 +568,8 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     });
 
     const { availableLanPorts, occupiedLanCount } = objects
-      .filter(obj => obj.modelId === 'router' || obj.type === 'router')
+      .filter(obj => (obj.modelId === 'router' || obj.type === 'router')
+        && !requiresPowerButIsUnpowered(obj, occupiedPorts))
       .reduce((capacity, router) => {
         const lanPorts = (router.ports || []).filter(p =>
           p.type === 'ethernet'
@@ -580,7 +584,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
         };
       }, { availableLanPorts: 0, occupiedLanCount: 0 });
     const freeLanPorts = Math.max(0, availableLanPorts - occupiedLanCount);
-    const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds);
+    const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, occupiedPorts);
     const freeSwitchPorts = objects
       .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
       .reduce((count, switchDevice) => count + (switchDevice.ports || []).filter(port =>
