@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `cfd9581 fix: prevent clock rollback history grouping`
-- Tests: `npm test` → 215 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `51f12ba fix: validate optional power metadata`
+- Tests: `npm test` → 216 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+51f12ba fix: validate optional power metadata
 cfd9581 fix: prevent clock rollback history grouping
 26be343 fix: respect zero project history limit
 b2db1ed fix: limit clipboard project imports
@@ -841,6 +842,17 @@ code evidence.
 - Verification: focused 7/7; `npm test` 215/215; lint, build, and local
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `cfd9581 fix: prevent clock rollback history grouping` (pushed).
+
+### Optional power-metadata validation guard (2026-07-14)
+- Closed a frontend/backend contract gap: the backend rejected invalid optional
+  `wattage` and `maxLoad`, but shared frontend envelope validation accepted
+  them, allowing bad data to survive load/import/draft recovery until save.
+- The shared validator now accepts those fields only when absent, null, or a
+  non-negative finite number. Regression coverage rejects string and negative
+  values for both fields in a successful-looking project response.
+- Verification: project-client 33/33; draft 18/18; `npm test` 216/216; lint,
+  build, and local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `51f12ba fix: validate optional power metadata` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
