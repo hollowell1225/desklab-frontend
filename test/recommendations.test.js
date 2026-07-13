@@ -481,6 +481,38 @@ test('does not recommend power fixes for a directionally invalid power input', (
   assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered'), false);
 });
 
+test('ignores invalid connection occupancy when recommending power fixes', () => {
+  const source = object('source', {
+    type: 'power_strip',
+    modelId: 'power-strip',
+    position: { x: 0, y: 0, z: 0.1 },
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' },
+    ],
+  });
+  const device = object('device', {
+    position: { x: 1, y: 0, z: 0.1 },
+    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
+  });
+  const connections = [{
+    id: 'invalid-self', name: 'Invalid self link', cableType: 'power', length: 1,
+    fromObjectId: 'source', fromPortId: 'ac-out', toObjectId: 'source', toPortId: 'ac-in',
+  }];
+
+  const recommendations = buildRecommendations({ room, objects: [source, device], connections });
+  const autoPower = recommendations.freeImprovements.find(item => item.code === 'auto_power_device');
+
+  assert.ok(autoPower, 'invalid links must not consume the available source port');
+  assert.equal(autoPower.patch.newConnection.fromObjectId, 'source');
+  assert.equal(autoPower.patch.newConnection.toObjectId, 'device');
+  assert.equal(
+    recommendations.purchases.some(item => item.code === 'buy_power_for_unpowered'),
+    false,
+    'a valid nearby source must prevent a false purchase recommendation'
+  );
+});
+
 test('auto_power_device with real catalog power-adapter and laptop clears unpowered warning', () => {
   const adapter = placeCatalogObject({
     modelTemplate: findModelTemplate({ modelId: 'power-adapter' }),

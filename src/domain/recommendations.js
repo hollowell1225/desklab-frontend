@@ -32,6 +32,10 @@ function compareSuggestions(first, second) {
   return first.id < second.id ? -1 : first.id > second.id ? 1 : 0;
 }
 
+function getInvalidConnectionIds(wiringIssues) {
+  return new Set(wiringIssues.flatMap(issue => issue?.invalidConnectionIds || []));
+}
+
 /**
  * Compose detected layout/wiring issues into actionable "free improvement"
  * suggestions — changes the user can apply without buying anything. Each
@@ -48,6 +52,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
+  const invalidConnectionIds = getInvalidConnectionIds(wiringIssues);
 
   for (const issue of analyzeProjectLayout(room, objects)) {
     if (issue.code === 'floating_object') {
@@ -95,6 +100,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   // Calculate occupied ports to find free ones
   const occupiedPorts = new Map();
   for (const connection of connections) {
+    if (invalidConnectionIds.has(connection.id)) continue;
     if (connection.fromObjectId && connection.fromPortId && connection.toObjectId && connection.toPortId) {
       let fromPorts = occupiedPorts.get(connection.fromObjectId);
       if (!fromPorts) {
@@ -349,10 +355,12 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
   const powerGraph = options.powerGraph || buildPowerGraph(objects, connections);
+  const invalidConnectionIds = getInvalidConnectionIds(wiringIssues);
 
   // 1. Calculate occupied ports per object
   const occupiedPorts = new Map();
   for (const connection of connections) {
+    if (invalidConnectionIds.has(connection.id)) continue;
     if (connection.fromObjectId && connection.fromPortId && connection.toObjectId && connection.toPortId) {
       let fromPorts = occupiedPorts.get(connection.fromObjectId);
       if (!fromPorts) {
