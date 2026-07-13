@@ -43,7 +43,7 @@ function isWanPort(port) {
 
 function hasPowerInput(object) {
   return (object.ports || []).some(port =>
-    ['ac_input', 'dc_input'].includes(port.type) && isPortDirectionConsistent(port)
+    ['ac_input', 'dc_input'].includes(port.type)
   );
 }
 

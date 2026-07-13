@@ -653,6 +653,29 @@ test('does not recommend power fixes for a directionally invalid power input', (
   assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered'), false);
 });
 
+test('does not use a source with an invalidly directed power input', () => {
+  const invalidSource = object('invalid-source', {
+    type: 'power_strip', modelId: 'power-strip',
+    position: { x: 0, y: 0, z: 0.1 },
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'output' },
+      { id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' },
+    ],
+  });
+  const pc = object('pc', {
+    position: { x: 1, y: 0, z: 0.1 },
+    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
+  });
+
+  const free = buildFreeImprovements(room, [invalidSource, pc], []);
+  const purchases = buildPurchaseSuggestions([invalidSource, pc], []);
+
+  assert.equal(free.some(item => item.code === 'auto_power_device'), false,
+    'a malformed power source must not be treated as an independent root');
+  assert.ok(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('pc')),
+    'a malformed source must not suppress the PC power recommendation');
+});
+
 test('ignores invalid connection occupancy when recommending power fixes', () => {
   const source = object('source', {
     type: 'power_strip',
