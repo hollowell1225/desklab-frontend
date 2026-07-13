@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `7530afe fix: count capacity across routers`
+- Feature HEAD: `bf82644 fix: exclude WAN ports from switch capacity`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+bf82644 fix: exclude WAN ports from switch capacity
 7530afe fix: count capacity across routers
 97bfffe fix: count reachable switch capacity
 f619fed fix: validate switch uplink direction
@@ -1260,6 +1261,21 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `7530afe fix: count capacity across routers` (pushed).
+
+### WAN port capacity guard (2026-07-14)
+
+- Fixed a mismatch between purchase planning and automatic network wiring:
+  switch ports marked as `WAN` are intentionally not used as downstream
+  network sources, so they no longer count as available switch capacity when
+  deciding whether a switch purchase is needed.
+- Test-first regression covers a router-uplinked switch whose only remaining
+  Ethernet port is `WAN`; the prior calculation incorrectly suppressed the
+  needed purchase recommendation.
+- Verification: focused recommendations 50/50; `npm test` 240/240; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `bf82644 fix: exclude WAN ports from switch capacity` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
