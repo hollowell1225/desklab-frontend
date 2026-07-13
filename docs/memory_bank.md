@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `a6ad8cd fix: keep generic nas within catalog bounds`
-- Tests: `npm test` → 203 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `b74e570 fix: keep generic modem within catalog bounds`
+- Tests: `npm test` → 204 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+b74e570 fix: keep generic modem within catalog bounds
 a6ad8cd fix: keep generic nas within catalog bounds
 f6c4b16 fix: keep generic wall outlet within catalog bounds
 6706f06 fix: keep generic power adapter within catalog bounds
@@ -176,8 +177,9 @@ Code-native generic model assets now exist for:
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
 covered. All generic furniture, monitors, computers, power adapters, wall
-outlets, and NAS geometry is now constrained through a shared normalized layout
-module. The next safe target is a focused geometry-bound audit of the modem.
+outlets, NAS, and modem geometry is now constrained through a shared normalized
+layout module. The next safe target is a focused geometry-bound audit of the
+all-in-one computer.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -727,6 +729,14 @@ module. The next safe target is a focused geometry-bound audit of the modem.
 - Browser/visual QA: not performed because the user explicitly disallowed
   Codex IAB, page screenshots, and Base64 image output.
 - Commit: `a6ad8cd fix: keep generic nas within catalog bounds` (pushed).
+
+### Generic modem geometry-bound regression fix (2026-07-13)
+- Added a normalized shared layout for the modem body, top plate, status lights,
+  and front ports, mapped to `modem`; front ports now remain at `z <= 0.5`.
+- Test-first `modem` bounds assertion failed before registration and passed after.
+- Verification: focused tests 11/11; `npm test` 204/204; lint, build, and local
+  frontend/backend HTTP checks passed. Browser/visual QA was not performed.
+- Commit: `b74e570 fix: keep generic modem within catalog bounds` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
