@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `13d483d feat: add generic l-desk model asset`
-- Tests: `npm test` → 192 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `f64d4e7 test: cover generic assets for catalog models`
+- Tests: `npm test` → 193 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+f64d4e7 test: cover generic assets for catalog models
 13d483d feat: add generic l-desk model asset
 18ce68a feat: add generic standing desk model asset
 e707b9c docs: record generic gaming desk asset slice
@@ -519,6 +520,20 @@ generic assets.
   Codex IAB, page screenshots, and Base64 image output; no browser or visual
   QA is claimed for this slice.
 - Commit: `13d483d feat: add generic l-desk model asset` (pushed).
+
+### Generic catalog asset coverage regression test (2026-07-13)
+- Added a public-interface regression test in `test/model-assets.test.js` that
+  enumerates every `DEVICE_CATALOG` model with `assetUrl: null` and requires a
+  matching in-house generic asset with the same category and DeskLab-owned
+  metadata.
+- This prevents future catalog additions from silently falling back to an
+  unstyled box while leaving external GLB-backed models unaffected.
+- Verification: `node --test test\model-assets.test.js` passed 19/19;
+  `npm test` passed 193/193; `npm run lint` passed; `npm run build` passed
+  with the existing non-fatal large chunk warning.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `f64d4e7 test: cover generic assets for catalog models` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
