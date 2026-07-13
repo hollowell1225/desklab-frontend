@@ -1483,6 +1483,17 @@ code evidence.
   browser or visual QA was performed.
 - Commit: `cc991f7 fix: reject stale connection port conflicts` (pushed).
 
+### External Chrome DOM runtime check (2026-07-14)
+
+- Performed a real local runtime check with external Chrome headless against
+  `http://127.0.0.1:5173/`; no Codex in-app browser, IAB, screenshot, or image
+  output was used.
+- After a 5-second virtual-time wait, the dumped DOM contained the `DeskLab`
+  title, mounted `#root`, an active Three.js canvas (764×316), and the current
+  default-project controls: `布局检查 (2)`, `布线检查 (5)`, and `改进建议 (6)`.
+- This is DOM/runtime evidence only, not pixel-level visual QA; no screenshot
+  was captured or claimed.
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
