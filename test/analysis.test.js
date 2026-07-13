@@ -457,6 +457,22 @@ test('power graph ignores a later connection that reuses a physical port', () =>
   assert.equal(computeDevicePowerLoad('source', objects, connections, graph), 300);
 });
 
+test('power graph ignores a later connection that reuses a connection id', () => {
+  const source = object('source', [
+    port('ac-out-1', 'ac_output', 'output'),
+    port('ac-out-2', 'ac_output', 'output'),
+  ]);
+  const firstLoad = object('first-load', [port('ac-in', 'ac_input', 'input')], { wattage: 300 });
+  const duplicateLoad = object('duplicate-load', [port('ac-in', 'ac_input', 'input')], { wattage: 300 });
+  const first = connection('duplicate-id', 'source', 'ac-out-1', 'first-load', 'ac-in');
+  const duplicate = connection('duplicate-id', 'source', 'ac-out-2', 'duplicate-load', 'ac-in');
+  const objects = [source, firstLoad, duplicateLoad];
+
+  const graph = buildPowerGraph(objects, [first, duplicate]);
+
+  assert.equal(computeDevicePowerLoad('source', objects, [first, duplicate], graph), 300);
+});
+
 test('power load coerces string/invalid wattage and maxLoad instead of corrupting math', () => {
   // Drafts/imports can carry numeric fields as strings; isProjectObject does not
   // validate wattage/maxLoad, so the engine must coerce them. String "+" must not

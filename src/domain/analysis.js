@@ -104,8 +104,12 @@ export function buildPowerGraph(objects, connections) {
   const objectById = new Map(objects.map(object => [object.id, object]));
   const powerEdges = [];
   const occupiedPorts = new Map();
+  const seenConnectionIds = new Set();
 
   for (const connection of connections) {
+    if (seenConnectionIds.has(connection.id)) continue;
+    seenConnectionIds.add(connection.id);
+
     const fromObj = objectById.get(connection.fromObjectId);
     const toObj = objectById.get(connection.toObjectId);
     if (!fromObj || !toObj) continue;
