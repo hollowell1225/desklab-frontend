@@ -103,6 +103,13 @@ const GENERIC_GAMING_DESK_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
+const GENERIC_STANDING_DESK_ASSET = Object.freeze({
+  id: 'generic-standing-desk',
+  category: 'furniture',
+  source: 'in-house-generated',
+  license: 'DeskLab-owned',
+});
+
 const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'monitor-24': GENERIC_MONITOR_ASSET,
   'monitor-27': GENERIC_MONITOR_ASSET,
@@ -121,6 +128,7 @@ const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'all-in-one': GENERIC_ALL_IN_ONE_ASSET,
   'office-desk': GENERIC_OFFICE_DESK_ASSET,
   'gaming-desk': GENERIC_GAMING_DESK_ASSET,
+  'standing-desk': GENERIC_STANDING_DESK_ASSET,
 });
 
 export function getGenericModelAsset(modelId) {
