@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `257d1df fix: keep generic switch within catalog bounds`
-- Tests: `npm test` → 206 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `7adc0db fix: keep generic ups within catalog bounds`
+- Tests: `npm test` → 207 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+7adc0db fix: keep generic ups within catalog bounds
 257d1df fix: keep generic switch within catalog bounds
 4770cb1 fix: keep generic router within catalog bounds
 b74e570 fix: keep generic modem within catalog bounds
@@ -179,8 +180,9 @@ Code-native generic model assets now exist for:
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
 covered. All generic furniture, monitors, computers, power adapters, wall
-outlets, NAS, modem, router, and switch geometry is now constrained through a
-shared normalized layout module. The next safe target is the generic UPS.
+outlets, NAS, modem, router, switch, and UPS geometry is now constrained
+through a shared normalized layout module. The next safe target is the power
+strip input-end geometry audit.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -756,6 +758,15 @@ shared normalized layout module. The next safe target is the generic UPS.
   passed afterward. Verification: focused 13/13; `npm test` 206/206; lint,
   build, and local frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `257d1df fix: keep generic switch within catalog bounds` (pushed).
+
+### Generic UPS geometry-bound regression fix (2026-07-14)
+- Added normalized shared layout data for the UPS body, front panel, display,
+  button, status light, and five vents. All front components now stay inside
+  the catalog footprint.
+- Test-first `ups` assertion failed before layout registration and passed after.
+  Verification: focused 14/14; `npm test` 207/207; lint, build, and local
+  frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `7adc0db fix: keep generic ups within catalog bounds` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
