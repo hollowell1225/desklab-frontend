@@ -886,6 +886,16 @@ code evidence.
 - Commit: backend `2aa0943 contract: document power metadata in openapi`
   (pushed).
 
+### Null optional model-metadata normalization guard (2026-07-14)
+- Fixed a response-contract mismatch: compatibility validation accepted
+  `category`, `modelId`, and `color` as null, then wrote those nulls back even
+  though the formal schemas declare them optional strings.
+- Normalization now omits null values for those metadata fields while retaining
+  meaningful `assetUrl: null` values used by in-house generic models.
+- Verification: backend validate 23/23; `npm test` 32/32;
+  `npm run check:contracts` passed. No browser or visual QA performed.
+- Commit: backend `9ecbcc9 fix: normalize null model metadata` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -910,17 +920,17 @@ c14f5d2 feat: auto-connect USB-C displays
 ```
 
 ### Backend `D:\desklab\backend`
-- HEAD: `2aa0943 contract: document power metadata in openapi`
-- Tests: `npm test` → 31 passed. Contracts check passed.
+- HEAD: `9ecbcc9 fix: normalize null model metadata`
+- Tests: `npm test` → 32 passed. Contracts check passed.
 - Untracked (DO NOT touch): `?? .vscode/`
 
 Last 5 commits:
 ```
+9ecbcc9 fix: normalize null model metadata
 2aa0943 contract: document power metadata in openapi
 ddf4c1e contract: allow null port anchors
 fd2eb33 fix: preserve null port anchors
 967bfcf contract: add wattage and maxLoad to Object schema
-e15b9de fix: preserve wattage and maxLoad through backend validation
 ```
 
 Always re-check `git status` and recent commits before making changes.
