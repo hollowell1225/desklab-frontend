@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `42177ce fix: flag self-referencing connections`
-- Tests: `npm test` → 224 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `a85b16a fix: ignore invalid connection occupancy`
+- Tests: `npm test` → 225 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+a85b16a fix: ignore invalid connection occupancy
 42177ce fix: flag self-referencing connections
 2ff0bfc fix: dedupe occupied power graph ports
 4831314 fix: exclude invalid links from power graph
@@ -1029,6 +1030,25 @@ code evidence.
   No browser or visual QA was performed.
 - Commit: `42177ce fix: flag self-referencing connections` (pushed).
 
+### Invalid recommendation-occupancy guard (2026-07-14)
+
+- Problem: wiring analysis correctly excludes invalid links from port occupancy,
+  but both recommendation builders independently counted every raw connection.
+  A self-referencing invalid power link could therefore consume a usable source
+  port, suppress `auto_power_device`, and create a false purchase suggestion.
+- Test-first regression: `test/recommendations.test.js` creates an invalid
+  self-link on a strip's AC output and a nearby unpowered device. The available
+  output must still produce an auto-power fix and must prevent a paid-power
+  recommendation.
+- Fix: both free and purchase recommendation occupancy maps now derive a shared
+  invalid-id set from `wiringIssues` and skip those connections. This preserves
+  deterministic valid-link occupancy while matching analysis semantics.
+- Verification: focused test first red then green; `npm test` 225/225;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
+  No browser or visual QA was performed.
+- Commit: `a85b16a fix: ignore invalid connection occupancy` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1207,7 +1227,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 224 tests
+npm test          # 225 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
