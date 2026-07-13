@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `c15e614 fix: keep generic mini pc within catalog bounds`
-- Tests: `npm test` → 200 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `6706f06 fix: keep generic power adapter within catalog bounds`
+- Tests: `npm test` → 201 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+6706f06 fix: keep generic power adapter within catalog bounds
 c15e614 fix: keep generic mini pc within catalog bounds
 fd1fa11 fix: preserve desktop pc scale behavior
 2731fd0 fix: keep generic desktop pc within catalog bounds
@@ -172,9 +173,9 @@ Code-native generic model assets now exist for:
 - `l-desk`
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
-covered. All generic furniture, monitors, desktop PCs, and mini PCs are now
-constrained through a shared normalized layout module. The next safe target is
-a focused geometry-bound audit of the generic power adapter.
+covered. All generic furniture, monitors, computers, and power adapters are
+now constrained through a shared normalized layout module. The next safe target
+is a focused geometry-bound audit of the generic wall outlet.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -672,6 +673,26 @@ a focused geometry-bound audit of the generic power adapter.
 - Browser/visual QA: not performed because the user explicitly disallowed
   Codex IAB, page screenshots, and Base64 image output.
 - Commit: `c15e614 fix: keep generic mini pc within catalog bounds` (pushed).
+
+### Generic power adapter geometry-bound regression fix (2026-07-13)
+- Added one normalized shared layout for the adapter body, top label, two AC
+  pins, and DC strain relief, mapped to `power-adapter` in
+  `src/domain/generic-model-layouts.js`.
+- Added a test-first public-interface assertion for `power-adapter`. It failed
+  before the layout was registered and passed after rendering consumed it.
+- Fixed real catalog-footprint overflows: AC pins previously extended to
+  normalized depth `0.86` and the DC strain relief to `-0.73`; both now remain
+  inside the `[-0.5, 0.5]` footprint. The strain-relief cylinder uses independent
+  X/Z scale to preserve the default silhouette after non-uniform resizing.
+- Verification: focused layout tests passed 8/8; `npm test` passed 201/201;
+  `npm run lint` and `npm run build` passed with the existing non-fatal large
+  chunk warning.
+- Runtime endpoint QA: frontend and local backend `curl` checks returned HTTP
+  200. No backend write/save was performed.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `6706f06 fix: keep generic power adapter within catalog bounds`
+  (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
