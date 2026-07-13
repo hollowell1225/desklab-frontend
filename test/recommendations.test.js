@@ -445,6 +445,24 @@ test('does not suggest auto_power_device when no power source has a free compati
   assert.equal(autoPower, undefined, 'should not suggest auto_power_device without a power source');
 });
 
+test('does not recommend power fixes for a directionally invalid power input', () => {
+  const source = object('source', {
+    type: 'power_strip',
+    modelId: 'power-strip',
+    position: { x: 0, y: 0, z: 0.1 },
+    ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+  });
+  const device = object('device', {
+    position: { x: 1, y: 0, z: 0.1 },
+    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'output' }],
+  });
+
+  const free = buildFreeImprovements(room, [source, device], []);
+  const purchases = buildPurchaseSuggestions([device], []);
+  assert.equal(free.some(item => item.code === 'auto_power_device'), false);
+  assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered'), false);
+});
+
 test('auto_power_device with real catalog power-adapter and laptop clears unpowered warning', () => {
   const adapter = placeCatalogObject({
     modelTemplate: findModelTemplate({ modelId: 'power-adapter' }),

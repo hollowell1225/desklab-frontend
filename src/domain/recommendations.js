@@ -117,7 +117,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
       const [, objectId, portId] = issue.id.split(':');
       const object = objectsById.get(objectId);
       const port = object?.ports?.find(p => p.id === portId);
-      if (object && port) {
+      if (object && port && isPortDirectionConsistent(port)) {
         let bestSource = null;
         let minDistance = Number.MAX_VALUE;
 
@@ -535,7 +535,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     if (hasOutputPort) continue;
 
     const port = object.ports?.find(p => issue.id.endsWith(`:${p.id}`));
-    if (!port) continue;
+    if (!port || !isPortDirectionConsistent(port)) continue;
 
     // Check if there's a nearby power source with a free compatible port
     let hasNearbySource = false;
