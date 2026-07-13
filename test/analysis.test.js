@@ -144,6 +144,20 @@ test('reports stale object and port references as errors', () => {
   assert.ok(issues.some(issue => issue.code === 'partial_port_binding'));
 });
 
+test('reports self-referencing connections as invalid instead of a power loop', () => {
+  const device = object('device', [
+    port('ac-in', 'ac_input', 'input'),
+    port('ac-out', 'ac_output', 'output'),
+  ]);
+  const selfConnection = connection('self-power', 'device', 'ac-out', 'device', 'ac-in');
+
+  const issues = analyzeProjectWiring([device], [selfConnection]);
+
+  assert.ok(issues.some(issue => issue.code === 'self_connection'));
+  assert.equal(issues.some(issue => issue.code === 'power_cycle'), false);
+  assert.deepEqual(getInvalidConnectionIds(issues), ['self-power']);
+});
+
 test('reports invalid semantics and duplicate physical port occupancy', () => {
   const objects = [
     object('source', [port('out', 'hdmi', 'output')]),

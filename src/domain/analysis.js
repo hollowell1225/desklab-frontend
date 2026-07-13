@@ -180,6 +180,20 @@ export function analyzeProjectWiring(objects, connections) {
       continue;
     }
 
+    if (connection.fromObjectId === connection.toObjectId) {
+      issues.push({
+        id: `self-connection:${connection.id}`,
+        code: 'self_connection',
+        severity: 'error',
+        title: `连接“${connection.name}”不能连接同一设备`,
+        description: '连接的起点和终点必须是不同设备。请删除该连接后重新创建。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId],
+      });
+      continue;
+    }
+
     const hasFromPort = Boolean(connection.fromPortId);
     const hasToPort = Boolean(connection.toPortId);
     if (!hasFromPort && !hasToPort) {
