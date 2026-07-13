@@ -796,11 +796,18 @@ function GenericAllInOneModel({ obj, materialProps }) {
   const height = obj.scale.z;
   const depth = obj.scale.y;
   const panelHeight = height * 0.68;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [panel] = layout.panels;
+  const [screen] = layout.screens;
+  const [lowerBezel] = layout.lowerBezels;
+  const [rearHousing] = layout.rearHousings;
+  const [stand] = layout.stands;
+  const [base] = layout.bases;
 
   return (
     <group>
-      <mesh position={[0, height * 0.1, 0]}>
-        <boxGeometry args={[width, panelHeight, depth * 0.5]} />
+      <mesh position={[width * panel.x, height * 0.1, depth * panel.z]}>
+        <boxGeometry args={[width * panel.width, panelHeight, depth * panel.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -808,24 +815,24 @@ function GenericAllInOneModel({ obj, materialProps }) {
           roughness={0.5}
         />
       </mesh>
-      <mesh position={[0, height * 0.15, depth * 0.27]}>
-        <boxGeometry args={[width * 0.86, panelHeight * 0.72, depth * 0.08]} />
+      <mesh position={[width * screen.x, height * 0.15, depth * screen.z]}>
+        <boxGeometry args={[width * screen.width, panelHeight * 0.72, depth * screen.depth]} />
         <meshStandardMaterial color="#0f172a" roughness={0.32} metalness={0.12} />
       </mesh>
-      <mesh position={[0, -height * 0.13, depth * 0.27]}>
-        <boxGeometry args={[width * 0.86, panelHeight * 0.13, depth * 0.08]} />
+      <mesh position={[width * lowerBezel.x, -height * 0.13, depth * lowerBezel.z]}>
+        <boxGeometry args={[width * lowerBezel.width, panelHeight * 0.13, depth * lowerBezel.depth]} />
         <meshStandardMaterial color="#334155" roughness={0.64} />
       </mesh>
-      <mesh position={[0, height * 0.1, -depth * 0.34]}>
-        <boxGeometry args={[width * 0.58, panelHeight * 0.56, depth * 0.3]} />
+      <mesh position={[width * rearHousing.x, height * 0.1, depth * rearHousing.z]}>
+        <boxGeometry args={[width * rearHousing.width, panelHeight * 0.56, depth * rearHousing.depth]} />
         <meshStandardMaterial color="#374151" roughness={0.72} />
       </mesh>
-      <mesh position={[0, -height * 0.27, 0]}>
-        <boxGeometry args={[width * 0.12, height * 0.24, depth * 0.38]} />
+      <mesh position={[width * stand.x, -height * 0.27, depth * stand.z]}>
+        <boxGeometry args={[width * stand.width, height * 0.24, depth * stand.depth]} />
         <meshStandardMaterial color="#475569" roughness={0.64} />
       </mesh>
-      <mesh position={[0, -height * 0.43, 0]}>
-        <boxGeometry args={[width * 0.42, height * 0.06, depth * 0.72]} />
+      <mesh position={[width * base.x, -height * 0.43, depth * base.z]}>
+        <boxGeometry args={[width * base.width, height * 0.06, depth * base.depth]} />
         <meshStandardMaterial color="#27303a" roughness={0.68} />
       </mesh>
     </group>

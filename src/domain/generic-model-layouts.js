@@ -250,6 +250,15 @@ const GENERIC_POWER_STRIP_LAYOUT = Object.freeze({
   inputEnds: Object.freeze([Object.freeze({ x: -0.45, z: -0.42, width: 0.08, depth: 0.16 })]),
 });
 
+const GENERIC_ALL_IN_ONE_LAYOUT = Object.freeze({
+  panels: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 0.5 })]),
+  screens: Object.freeze([Object.freeze({ x: 0, z: 0.27, width: 0.86, depth: 0.08 })]),
+  lowerBezels: Object.freeze([Object.freeze({ x: 0, z: 0.27, width: 0.86, depth: 0.08 })]),
+  rearHousings: Object.freeze([Object.freeze({ x: 0, z: -0.34, width: 0.58, depth: 0.3 })]),
+  stands: Object.freeze([Object.freeze({ x: 0, z: 0, width: 0.12, depth: 0.38 })]),
+  bases: Object.freeze([Object.freeze({ x: 0, z: 0, width: 0.42, depth: 0.72 })]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -268,6 +277,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   switch: GENERIC_SWITCH_LAYOUT,
   ups: GENERIC_UPS_LAYOUT,
   'power-strip': GENERIC_POWER_STRIP_LAYOUT,
+  'all-in-one': GENERIC_ALL_IN_ONE_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
