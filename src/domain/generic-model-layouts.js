@@ -239,6 +239,17 @@ const GENERIC_UPS_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_POWER_STRIP_LAYOUT = Object.freeze({
+  bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
+  topPlates: Object.freeze([Object.freeze({ x: 0, z: 0, width: 0.9, depth: 0.72 })]),
+  socketPairs: Object.freeze([
+    ...Array.from({ length: 6 }, (_, index) => Object.freeze({
+      x: -0.36 + index * 0.72 / 5, z: 0.12, width: 0.051, depth: 0.022,
+    })),
+  ]),
+  inputEnds: Object.freeze([Object.freeze({ x: -0.45, z: -0.42, width: 0.08, depth: 0.16 })]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -256,6 +267,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   router: GENERIC_ROUTER_LAYOUT,
   switch: GENERIC_SWITCH_LAYOUT,
   ups: GENERIC_UPS_LAYOUT,
+  'power-strip': GENERIC_POWER_STRIP_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
