@@ -233,14 +233,18 @@ function GenericMonitorModel({ obj, materialProps }) {
   const height = obj.scale.z;
   const depth = obj.scale.y;
   const panelHeight = height * 0.68;
-  const panelDepth = depth * 0.45;
-  const bezelWidth = Math.min(width * 0.08, 0.045);
   const standHeight = height * 0.26;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [panel] = layout.panels;
+  const [screen] = layout.screens;
+  const [rearHousing] = layout.rearHousings;
+  const [stand] = layout.stands;
+  const [base] = layout.bases;
 
   return (
     <group>
-      <mesh position={[0, height * 0.12, 0]}>
-        <boxGeometry args={[width, panelHeight, panelDepth]} />
+      <mesh position={[panel.x * width, height * 0.12, panel.z * depth]}>
+        <boxGeometry args={[panel.width * width, panelHeight, panel.depth * depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -248,16 +252,16 @@ function GenericMonitorModel({ obj, materialProps }) {
           roughness={0.55}
         />
       </mesh>
-      <mesh position={[0, height * 0.12, depth * 0.24]}>
-        <boxGeometry args={[width * 0.82, panelHeight * 0.72, depth * 0.12]} />
+      <mesh position={[screen.x * width, height * 0.12, screen.z * depth]}>
+        <boxGeometry args={[screen.width * width, panelHeight * 0.72, screen.depth * depth]} />
         <meshStandardMaterial color="#111827" roughness={0.35} metalness={0.15} />
       </mesh>
-      <mesh position={[0, height * 0.12, -depth * 0.33]}>
-        <boxGeometry args={[width * 0.52, panelHeight * 0.42, depth * 0.24]} />
+      <mesh position={[rearHousing.x * width, height * 0.12, rearHousing.z * depth]}>
+        <boxGeometry args={[rearHousing.width * width, panelHeight * 0.42, rearHousing.depth * depth]} />
         <meshStandardMaterial color="#2f3a45" roughness={0.75} />
       </mesh>
-      <mesh position={[0, -height * 0.25, 0]}>
-        <boxGeometry args={[Math.max(bezelWidth, width * 0.12), standHeight, depth * 0.52]} />
+      <mesh position={[stand.x * width, -height * 0.25, stand.z * depth]}>
+        <boxGeometry args={[stand.width * width, standHeight, stand.depth * depth]} />
         <meshStandardMaterial
           color="#3b4652"
           emissive={materialProps.emissiveColor}
@@ -265,8 +269,8 @@ function GenericMonitorModel({ obj, materialProps }) {
           roughness={0.65}
         />
       </mesh>
-      <mesh position={[0, -height * 0.43, 0]}>
-        <boxGeometry args={[width * 0.42, height * 0.07, depth * 0.92]} />
+      <mesh position={[base.x * width, -height * 0.43, base.z * depth]}>
+        <boxGeometry args={[base.width * width, height * 0.07, base.depth * depth]} />
         <meshStandardMaterial color="#202832" roughness={0.7} />
       </mesh>
     </group>

@@ -18,3 +18,9 @@ test('generic office desk layout remains inside its catalog footprint', () => {
 test('generic gaming desk layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('gaming-desk'), true);
 });
+
+test('generic monitor layouts remain inside their catalog footprints', () => {
+  for (const modelId of ['monitor-24', 'monitor-27', 'ultrawide-monitor']) {
+    assert.equal(isGenericModelLayoutWithinBounds(modelId), true);
+  }
+});

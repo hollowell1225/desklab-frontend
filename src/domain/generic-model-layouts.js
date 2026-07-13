@@ -70,11 +70,32 @@ const GENERIC_GAMING_DESK_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_MONITOR_LAYOUT = Object.freeze({
+  panels: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 0.45 }),
+  ]),
+  screens: Object.freeze([
+    Object.freeze({ x: 0, z: 0.24, width: 0.82, depth: 0.12 }),
+  ]),
+  rearHousings: Object.freeze([
+    Object.freeze({ x: 0, z: -0.33, width: 0.52, depth: 0.24 }),
+  ]),
+  stands: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 0.12, depth: 0.52 }),
+  ]),
+  bases: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 0.42, depth: 0.92 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
   'office-desk': GENERIC_OFFICE_DESK_LAYOUT,
   'gaming-desk': GENERIC_GAMING_DESK_LAYOUT,
+  'monitor-24': GENERIC_MONITOR_LAYOUT,
+  'monitor-27': GENERIC_MONITOR_LAYOUT,
+  'ultrawide-monitor': GENERIC_MONITOR_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
