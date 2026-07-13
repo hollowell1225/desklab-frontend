@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `6706f06 fix: keep generic power adapter within catalog bounds`
-- Tests: `npm test` → 201 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `f6c4b16 fix: keep generic wall outlet within catalog bounds`
+- Tests: `npm test` → 202 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+f6c4b16 fix: keep generic wall outlet within catalog bounds
 6706f06 fix: keep generic power adapter within catalog bounds
 c15e614 fix: keep generic mini pc within catalog bounds
 fd1fa11 fix: preserve desktop pc scale behavior
@@ -173,9 +174,9 @@ Code-native generic model assets now exist for:
 - `l-desk`
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
-covered. All generic furniture, monitors, computers, and power adapters are
-now constrained through a shared normalized layout module. The next safe target
-is a focused geometry-bound audit of the generic wall outlet.
+covered. All generic furniture, monitors, computers, power adapters, and wall
+outlets are now constrained through a shared normalized layout module. The next
+safe target is a focused geometry-bound audit of the generic laptop.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -692,6 +693,23 @@ is a focused geometry-bound audit of the generic wall outlet.
 - Browser/visual QA: not performed because the user explicitly disallowed
   Codex IAB, page screenshots, and Base64 image output.
 - Commit: `6706f06 fix: keep generic power adapter within catalog bounds`
+  (pushed).
+
+### Generic wall outlet geometry-bound regression fix (2026-07-13)
+- Added one normalized shared layout for the outlet body, faceplate, four slots,
+  and center fastener, mapped to `wall-outlet` in
+  `src/domain/generic-model-layouts.js`.
+- Added a test-first public-interface assertion for `wall-outlet`. It failed
+  before the layout was registered and passed after rendering consumed it.
+- Fixed real catalog-footprint overflows: the faceplate, slots, and fastener
+  previously extended through normalized depth `0.56`, `0.60`, and `0.62`;
+  all now remain inside the front boundary (`z <= 0.5`).
+- Verification: focused layout tests passed 9/9; `npm test` passed 202/202;
+  `npm run lint` and `npm run build` passed with the existing non-fatal large
+  chunk warning. Local frontend and backend `curl` checks returned HTTP 200.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `f6c4b16 fix: keep generic wall outlet within catalog bounds`
   (pushed).
 
 Notes on the power-load slices (2026-06-25):
