@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `92d0eb7 test: cover generic gaming desk layout bounds`
-- Tests: `npm test` → 197 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `525b695 test: cover generic monitor layout bounds`
+- Tests: `npm test` → 198 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+525b695 test: cover generic monitor layout bounds
 92d0eb7 test: cover generic gaming desk layout bounds
 f2f10f4 test: cover generic office desk layout bounds
 961ae2d test: cover generic standing desk layout bounds
@@ -168,9 +169,9 @@ Code-native generic model assets now exist for:
 - `l-desk`
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
-covered. All generic furniture geometry is now constrained through a shared
-normalized layout module. The next safe target is a focused geometry-bound
-audit of high-risk non-furniture generic assets, starting with monitors.
+covered. All generic furniture and monitor geometry is now constrained through
+a shared normalized layout module. The next safe target is a focused
+geometry-bound audit of the generic desktop PC.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -611,6 +612,24 @@ audit of high-risk non-furniture generic assets, starting with monitors.
   Codex IAB, page screenshots, and Base64 image output.
 - Commit: `92d0eb7 test: cover generic gaming desk layout bounds` (pushed).
 
+### Generic monitor geometry-bound regression test (2026-07-13)
+- Added one normalized shared layout for the monitor panel, screen, rear housing,
+  stand, and base, mapped to `monitor-24`, `monitor-27`, and
+  `ultrawide-monitor` in `src/domain/generic-model-layouts.js`.
+- `GenericMonitorModel` now reads that layout through the object's real
+  `modelId`, keeping the three catalog variants on the same render/test seam.
+- Added a test-first public-interface assertion for all three monitor model ids.
+  It failed before their shared layout was registered and passed once rendering
+  consumed it.
+- Verification: focused layout tests passed 5/5; `npm test` passed 198/198;
+  `npm run lint` and `npm run build` passed with the existing non-fatal large
+  chunk warning.
+- Runtime endpoint QA: frontend and local backend `curl` checks returned HTTP
+  200. No backend write/save was performed.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `525b695 test: cover generic monitor layout bounds` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -816,8 +835,7 @@ Remaining work:
    - Browser/visual QA of the new fix buttons
 
 2. **If continuing autonomously without product direction**:
-   - Audit high-risk non-furniture generic assets for geometry-bound regression
-     coverage, starting with monitor render paths.
+   - Audit the generic desktop PC for geometry-bound regression coverage.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
