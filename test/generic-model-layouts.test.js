@@ -32,3 +32,7 @@ test('generic desktop PC layout remains inside its catalog footprint', () => {
 test('generic mini PC layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('mini-pc'), true);
 });
+
+test('generic power adapter layout remains inside its catalog footprint', () => {
+  assert.equal(isGenericModelLayoutWithinBounds('power-adapter'), true);
+});

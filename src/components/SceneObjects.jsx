@@ -567,12 +567,16 @@ function GenericPowerAdapterModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const pinWidth = width * 0.12;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [label] = layout.labels;
+  const acPins = layout.acPins;
+  const [dcStrainRelief] = layout.dcStrainReliefs;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -580,20 +584,22 @@ function GenericPowerAdapterModel({ obj, materialProps }) {
           roughness={0.65}
         />
       </mesh>
-      <mesh position={[0, height * 0.52, 0]}>
-        <boxGeometry args={[width * 0.58, height * 0.04, depth * 0.52]} />
+      <mesh position={[width * label.x, height * 0.52, depth * label.z]}>
+        <boxGeometry args={[width * label.width, height * 0.04, depth * label.depth]} />
         <meshStandardMaterial color="#475569" roughness={0.72} />
       </mesh>
-      <mesh position={[-width * 0.22, 0, depth * 0.68]}>
-        <boxGeometry args={[pinWidth, height * 0.36, depth * 0.36]} />
-        <meshStandardMaterial color="#cbd5e1" metalness={0.65} roughness={0.32} />
-      </mesh>
-      <mesh position={[width * 0.22, 0, depth * 0.68]}>
-        <boxGeometry args={[pinWidth, height * 0.36, depth * 0.36]} />
-        <meshStandardMaterial color="#cbd5e1" metalness={0.65} roughness={0.32} />
-      </mesh>
-      <mesh position={[0, 0, -depth * 0.61]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[height * 0.23, height * 0.23, depth * 0.24, 12]} />
+      {acPins.map((pin, index) => (
+        <mesh key={index} position={[width * pin.x, 0, depth * pin.z]}>
+          <boxGeometry args={[width * pin.width, height * 0.36, depth * pin.depth]} />
+          <meshStandardMaterial color="#cbd5e1" metalness={0.65} roughness={0.32} />
+        </mesh>
+      ))}
+      <mesh
+        position={[width * dcStrainRelief.x, 0, depth * dcStrainRelief.z]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[width * dcStrainRelief.width / 2, depth * dcStrainRelief.depth, height * 0.23]}
+      >
+        <cylinderGeometry args={[1, 1, 1, 12]} />
         <meshStandardMaterial color="#111827" roughness={0.76} />
       </mesh>
     </group>

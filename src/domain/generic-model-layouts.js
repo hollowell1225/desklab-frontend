@@ -129,6 +129,22 @@ const GENERIC_MINI_PC_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_POWER_ADAPTER_LAYOUT = Object.freeze({
+  bodies: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
+  ]),
+  labels: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 0.58, depth: 0.52 }),
+  ]),
+  acPins: Object.freeze([
+    Object.freeze({ x: -0.22, z: 0.32, width: 0.12, depth: 0.36 }),
+    Object.freeze({ x: 0.22, z: 0.32, width: 0.12, depth: 0.36 }),
+  ]),
+  dcStrainReliefs: Object.freeze([
+    Object.freeze({ x: 0, z: -0.38, width: 0.138, depth: 0.24 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -139,6 +155,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'ultrawide-monitor': GENERIC_MONITOR_LAYOUT,
   'desktop-pc': GENERIC_DESKTOP_PC_LAYOUT,
   'mini-pc': GENERIC_MINI_PC_LAYOUT,
+  'power-adapter': GENERIC_POWER_ADAPTER_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
