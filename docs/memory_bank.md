@@ -1493,6 +1493,10 @@ code evidence.
   default-project controls: `布局检查 (2)`, `布线检查 (5)`, and `改进建议 (6)`.
 - This is DOM/runtime evidence only, not pixel-level visual QA; no screenshot
   was captured or claimed.
+- Attempted button-level interaction through the same external Chrome DevTools
+  endpoint, but Node's local WebSocket client was rejected by Chrome before any
+  evaluation or click occurred. Treat interactive browser QA as unverified;
+  the temporary Chrome process was closed without changing project data.
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
