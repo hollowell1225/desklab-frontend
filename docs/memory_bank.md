@@ -854,6 +854,16 @@ code evidence.
   build, and local frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `51f12ba fix: validate optional power metadata` (pushed).
 
+### Backend null port-anchor normalization guard (2026-07-14)
+- Fixed a backend 500 path: `anchor: null` was explicitly accepted as an
+  optional port value, but output normalization unconditionally read its
+  coordinates and threw a `TypeError`.
+- Normalization now preserves an explicit null anchor and still copies valid
+  coordinate objects, keeping the output stable for ETag versioning.
+- Verification: backend validate 22/22; `npm test` 31/31;
+  `npm run check:contracts` passed. No browser or visual QA performed.
+- Commit: backend `fd2eb33 fix: preserve null port anchors` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -878,17 +888,17 @@ c14f5d2 feat: auto-connect USB-C displays
 ```
 
 ### Backend `D:\desklab\backend`
-- HEAD: `967bfcf contract: add wattage and maxLoad to Object schema`
-- Tests: `npm test` → 30 passed. Contracts check passed.
+- HEAD: `fd2eb33 fix: preserve null port anchors`
+- Tests: `npm test` → 31 passed. Contracts check passed.
 - Untracked (DO NOT touch): `?? .vscode/`
 
 Last 5 commits:
 ```
+fd2eb33 fix: preserve null port anchors
 967bfcf contract: add wattage and maxLoad to Object schema
 e15b9de fix: preserve wattage and maxLoad through backend validation
 cabed03 test: lock multi-value If-Match version preconditions
 96aa66c test: lock normalization idempotency for ETag stability
-e667c63 test: lock malformed port anchor rejection
 ```
 
 Always re-check `git status` and recent commits before making changes.
