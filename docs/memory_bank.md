@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `9d81dbc fix: require power for network capacity`
+- Feature HEAD: `89097cd fix: reapply changed free improvements`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+89097cd fix: reapply changed free improvements
 9d81dbc fix: require power for network capacity
 72a9f2e feat: apply newly unlocked free improvements
 9659963 fix: require switch power before uplink
@@ -1353,6 +1354,24 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `9d81dbc fix: require power for network capacity` (pushed).
+
+### Dynamic free-fix patch guard (2026-07-14)
+
+- Fixed a second-pass correctness issue in `applyAllAvailableImprovements`.
+  It previously deduplicated solely by suggestion ID. If an earlier layout fix
+  changed the required cable length, the later `extend-cable:<id>` suggestion
+  retained its ID and the updated patch was incorrectly skipped.
+- Deduplication now keys on both suggestion ID and serialized patch content:
+  identical work still terminates, while a genuinely updated corrective patch
+  can run in a later pass.
+- Test-first regression reproduces an off-wall outlet snap that increases an
+  already-short power cable from a 0.79m to a 2.79m requirement; one-click
+  free fixes now reapplies the cable adjustment and leaves no cable warning.
+- Verification: focused recommendations 56/56; `npm test` 246/246; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `89097cd fix: reapply changed free improvements` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
