@@ -35,7 +35,7 @@ Backend:
 D:\desklab\backend
 ```
 
-GitHub backups (private):
+GitHub repositories:
 ```text
 Frontend: https://github.com/hollowell1225/desklab-frontend
 Backend:  https://github.com/hollowell1225/desklab-backend
@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `d36aecf fix: ignore missing improvement targets`
+- Feature HEAD: `4008b33 fix: make improvement patches idempotent`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+4008b33 fix: make improvement patches idempotent
 d36aecf fix: ignore missing improvement targets
 f26c112 fix: validate stale connection ports
 8f6ca7c fix: reject deleted connection endpoints
@@ -1529,9 +1530,8 @@ code evidence.
   suggestion targets an object or connection that was deleted before the action
   runs, `applyImprovement()` now returns the exact existing project instead of
   allocating an unchanged project state.
-- This prevents stale callbacks from creating misleading undo/history entries
-  or success feedback when nothing can actually be changed. Existing valid
-  layout and cable applications still create immutable updates.
+- This keeps the domain operation as a strict no-op that callers can recognize;
+  existing valid layout and cable applications still create immutable updates.
 - Test-first regression covers both a deleted object layout patch and a deleted
   connection cable patch; each is a strict no-op.
 - Verification: focused recommendations 64/64; `npm test` 255/255; `npm run
@@ -1539,6 +1539,23 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No new
   browser or visual QA was performed for this domain-only change.
 - Commit: `d36aecf fix: ignore missing improvement targets` (pushed).
+
+### Repeated improvement-patch guard (2026-07-14)
+
+- Made existing-target layout and cable patches idempotent as well. If the
+  suggested position/rotation or cable length is already present,
+  `applyImprovement()` returns the exact project instead of allocating an
+  indistinguishable new state.
+- This closes the repeat-action boundary across layout, cable length, and
+  automatic connections, avoiding unnecessary downstream state work while
+  preserving immutable updates for real changes.
+- Test-first regression verifies repeated layout and cable patches are strict
+  no-ops.
+- Verification: focused recommendations 65/65; `npm test` 256/256; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No new
+  browser or visual QA was performed for this domain-only change.
+- Commit: `4008b33 fix: make improvement patches idempotent` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
@@ -1680,61 +1697,15 @@ Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
 - 5MB request body limit. Optimistic concurrency with `If-Match` / `ETag`.
 - Backup recovery via `/api/projects/default/recover-backup`.
 
-## Tokyo VPS Demo Deployment
+## Remote Demo Deployment Policy
 
-Last deployed: 2026-06-26, Asia/Shanghai.
-
-Important development policy:
-- The Tokyo VPS is **not** the primary development backend.
-- During normal development, run the backend locally from `D:\desklab\backend` on port `3001`.
-- Do **not** deploy to, restart, or depend on the VPS backend unless the user explicitly asks for remote deployment/demo.
-- Treat the VPS as a temporary demo/preview environment only; it can lag behind local development.
-
-SSH:
-```bash
-ssh -i "D:\桌面\claude.pem" ubuntu@43.165.178.199
-```
-
-DeskLab backend is deployed on the Tokyo VPS at:
-```text
-/home/ubuntu/desklab-backend
-```
-
-Systemd services:
-```bash
-sudo systemctl status desklab-backend
-sudo systemctl status desklab-backend-tunnel
-```
-
-Demo runtime:
-- DeskLab backend service: `desklab-backend`
-- Internal port: `3011`
-- Public Quick Tunnel: `https://facing-continuing-locks-boats.trycloudflare.com`
-- Health/API check: `https://facing-continuing-locks-boats.trycloudflare.com/api/projects/default`
-
-Important VPS port note:
-- Do **not** use port `3001` for DeskLab on this VPS. Existing MCP services already use the 3000/3001 area:
-  - `mcd-mcp` on local port 3000
-  - `luckin-mcp` on local port 3001
-- DeskLab uses `PORT=3011` to avoid disrupting those services.
-
-Quick Tunnel caveat:
-- The `trycloudflare.com` URL can change if `desklab-backend-tunnel` restarts. For a stable production URL, replace it later with a Cloudflare named tunnel.
-
-Deploy/update sketch, only when explicitly requested by the user:
-```powershell
-cd D:\desklab\backend
-npm test
-npm run check:contracts
-tar -czf D:\desklab\deploy\desklab-backend.tgz --exclude .git --exclude .vscode --exclude node_modules --exclude "*.log" -C D:\desklab\backend .
-scp -i "D:\桌面\claude.pem" D:\desklab\deploy\desklab-backend.tgz ubuntu@43.165.178.199:/home/ubuntu/desklab-backend.tgz
-```
-
-On the VPS, extract into `/home/ubuntu/desklab-backend`, run `npm ci --omit=dev`, and restart:
-```bash
-sudo systemctl restart desklab-backend
-sudo systemctl restart desklab-backend-tunnel
-```
+- The remote demo environment is not the primary development backend. Use the
+  local backend at port `3001` during normal development.
+- Do not deploy to, restart, or depend on a remote environment unless the user
+  explicitly requests deployment or demo work.
+- Host addresses, tunnel URLs, service names, and credential locations are kept
+  out of this tracked memory bank so the public repository contains no private
+  infrastructure access details.
 
 ## Verification Gates
 
