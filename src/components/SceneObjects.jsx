@@ -327,15 +327,14 @@ function GenericRouterModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const portCount = 4;
-  const portWidth = width * 0.11;
-  const portSpacing = width * 0.5 / (portCount - 1);
   const antennaHeight = height * 0.85;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -343,24 +342,21 @@ function GenericRouterModel({ obj, materialProps }) {
           roughness={0.58}
         />
       </mesh>
-      {Array.from({ length: portCount }, (_, index) => {
-        const x = -width * 0.25 + portSpacing * index;
-        return (
-          <mesh key={index} position={[x, height * 0.1, depth * 0.51]}>
-            <boxGeometry args={[portWidth, height * 0.36, depth * 0.08]} />
+      {layout.ports.map((port, index) => (
+          <mesh key={index} position={[width * port.x, height * 0.1, depth * port.z]}>
+            <boxGeometry args={[width * port.width, height * 0.36, depth * port.depth]} />
             <meshStandardMaterial color="#102027" roughness={0.65} />
           </mesh>
-        );
-      })}
-      <mesh position={[width * 0.35, height * 0.52, -depth * 0.2]} rotation={[0, 0, -0.45]}>
+      ))}
+      <mesh position={[width * layout.antennas[1].x, height * 0.52, depth * layout.antennas[1].z]} rotation={[0, 0, layout.antennas[1].rotation]}>
         <cylinderGeometry args={[width * 0.012, width * 0.012, antennaHeight, 8]} />
         <meshStandardMaterial color="#263238" roughness={0.7} />
       </mesh>
-      <mesh position={[-width * 0.35, height * 0.52, -depth * 0.2]} rotation={[0, 0, 0.45]}>
+      <mesh position={[width * layout.antennas[0].x, height * 0.52, depth * layout.antennas[0].z]} rotation={[0, 0, layout.antennas[0].rotation]}>
         <cylinderGeometry args={[width * 0.012, width * 0.012, antennaHeight, 8]} />
         <meshStandardMaterial color="#263238" roughness={0.7} />
       </mesh>
-      <mesh position={[width * 0.38, height * 0.52, depth * 0.2]}>
+      <mesh position={[width * layout.statusLights[0].x, height * 0.52, depth * layout.statusLights[0].z]}>
         <sphereGeometry args={[Math.min(width, depth) * 0.035, 12, 8]} />
         <meshStandardMaterial color="#76ff03" emissive="#76ff03" emissiveIntensity={0.45} />
       </mesh>

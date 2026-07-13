@@ -48,3 +48,7 @@ test('generic NAS layout remains inside its catalog footprint', () => {
 test('generic modem layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('modem'), true);
 });
+
+test('generic router layout remains inside its catalog footprint', () => {
+  assert.equal(isGenericModelLayoutWithinBounds('router'), true);
+});
