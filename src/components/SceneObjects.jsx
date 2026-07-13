@@ -467,6 +467,7 @@ function GenericDesktopPcModel({ obj, materialProps }) {
   const [powerButton] = layout.powerButtons;
   const [statusLight] = layout.statusLights;
   const frontPorts = layout.frontPorts;
+  const fanVentRadius = Math.min(width, height) * fanVent.width / 2;
 
   return (
     <group>
@@ -484,15 +485,18 @@ function GenericDesktopPcModel({ obj, materialProps }) {
         <meshStandardMaterial color="#20252b" roughness={0.7} />
       </mesh>
       <mesh position={[width * fanVent.x, height * 0.27, depth * fanVent.z]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[width * fanVent.width / 2, width * fanVent.width / 2, depth * fanVent.depth, 20]} />
+        <cylinderGeometry args={[fanVentRadius, fanVentRadius, depth * fanVent.depth, 20]} />
         <meshStandardMaterial color="#111827" roughness={0.78} />
       </mesh>
       <mesh position={[width * powerButton.x, -height * 0.27, depth * powerButton.z]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[width * powerButton.width / 2, width * powerButton.width / 2, depth * powerButton.depth, 20]} />
         <meshStandardMaterial color="#0f172a" roughness={0.55} />
       </mesh>
-      <mesh position={[width * statusLight.x, -height * 0.27, depth * statusLight.z]}>
-        <sphereGeometry args={[width * statusLight.width / 2, 10, 8]} />
+      <mesh
+        position={[width * statusLight.x, -height * 0.27, depth * statusLight.z]}
+        scale={[width * statusLight.width / 2, width * statusLight.width / 2, depth * statusLight.depth / 2]}
+      >
+        <sphereGeometry args={[1, 10, 8]} />
         <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.45} />
       </mesh>
       {frontPorts.map((port, index) => (
