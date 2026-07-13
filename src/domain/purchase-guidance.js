@@ -16,6 +16,12 @@ const PURCHASE_GUIDANCE = Object.freeze({
   }),
 });
 
-export function getPurchaseGuidance(modelId) {
+export function getPurchaseGuidance(modelId, options = {}) {
+  if (modelId === 'switch' && options.requiresLanPortMigration) {
+    return {
+      ...PURCHASE_GUIDANCE.switch,
+      description: '先接通交换机电源；再将一台已接入路由器的终端迁移到交换机，腾出 LAN 口；随后将该 LAN 口上联到交换机，最后连接其余设备。',
+    };
+  }
   return PURCHASE_GUIDANCE[modelId] ?? null;
 }

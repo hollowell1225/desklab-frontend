@@ -509,6 +509,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
           title: '考虑加购网络交换机',
           description: `检测到 ${unconnectedEthernetDevices.length} 个未联网的以太网设备，路由器仅剩 ${freeLanPorts} 个空闲 LAN 口。建议加购网络交换机以扩展网络端口。`,
           product: { category: 'network', modelId: 'switch' },
+          requiresLanPortMigration: freeLanPorts === 0,
         });
       }
     }

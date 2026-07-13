@@ -336,6 +336,29 @@ test('recommends a switch when unconnected ethernet devices exceed available LAN
   assert.ok(buySwitch, 'should recommend a switch when unconnected devices exceed free LAN ports');
 });
 
+test('marks a switch purchase as requiring LAN migration when the router is full', () => {
+  const router = object('router-1', {
+    modelId: 'router',
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const pc = (id) => object(id, {
+    modelId: 'desktop-pc',
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const connected = pc('connected');
+  const unconnected = pc('unconnected');
+  const connections = [{
+    id: 'router-connected', cableType: 'ethernet', length: 1,
+    fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'connected', toPortId: 'eth-1',
+  }];
+
+  const purchases = buildPurchaseSuggestions([router, connected, unconnected], connections);
+  const buySwitch = purchases.find(item => item.code === 'buy_switch');
+
+  assert.ok(buySwitch, 'a full router with another endpoint still needs a switch');
+  assert.equal(buySwitch.requiresLanPortMigration, true);
+});
+
 test('recommends a power strip purchase when a power strip is fully occupied', () => {
   const strip = object('strip-1', {
     type: 'power_strip',

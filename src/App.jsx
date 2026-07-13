@@ -883,12 +883,12 @@ export default function App() {
     return result.object;
   }, [objects, projectEditable, recordHistory, room, showStatus]);
 
-  const handleAddRecommendedDevice = useCallback((modelId, categoryId) => {
+  const handleAddRecommendedDevice = useCallback((modelId, categoryId, guidanceOptions) => {
     if (!projectEditable) return;
     const template = findModelTemplate({ modelId });
     if (!template) return;
     const addedObject = handleAddDevice(template, categoryId);
-    const guidance = getPurchaseGuidance(modelId);
+    const guidance = getPurchaseGuidance(modelId, guidanceOptions);
     if (!addedObject || !guidance) return;
     setPurchaseGuidance({ ...guidance, objectId: addedObject.id });
     setShowRecommendations(true);
@@ -899,8 +899,10 @@ export default function App() {
     handleAddRecommendedDevice('ups', 'power');
   }, [handleAddRecommendedDevice]);
 
-  const handleAddRecommendedSwitch = useCallback(() => {
-    handleAddRecommendedDevice('switch', 'network');
+  const handleAddRecommendedSwitch = useCallback((recommendation) => {
+    handleAddRecommendedDevice('switch', 'network', {
+      requiresLanPortMigration: recommendation?.requiresLanPortMigration === true,
+    });
   }, [handleAddRecommendedDevice]);
 
   const handleAddRecommendedPowerStrip = useCallback(() => {
@@ -2012,7 +2014,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   className="ui-button ui-button-primary"
-                                  onClick={handleAddRecommendedSwitch}
+                                  onClick={() => handleAddRecommendedSwitch(issue)}
                                   disabled={!projectEditable}
                                 >
                                   加购交换机
