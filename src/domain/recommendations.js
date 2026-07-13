@@ -442,7 +442,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     if (router) {
       const lanPorts = (router.ports || []).filter(p =>
         p.type === 'ethernet'
-        && p.id.includes('lan')
+        && String(p.id).toLowerCase().includes('lan')
         && (p.direction === 'output' || p.direction === 'bidirectional')
         && isPortDirectionConsistent(p)
       );

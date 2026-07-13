@@ -270,6 +270,19 @@ test('does not recommend a switch for an output-only ethernet device port', () =
   assert.equal(purchases.some(item => item.code === 'buy_switch'), false);
 });
 
+test('recognizes custom router LAN port ids regardless of case', () => {
+  const router = object('router-1', {
+    modelId: 'router',
+    ports: [{ id: 'LAN-1', name: 'LAN 1', type: 'ethernet', direction: 'output' }],
+  });
+  const device = object('pc-1', {
+    ports: [{ id: 'eth-1', name: 'Ethernet', type: 'ethernet', direction: 'input' }],
+  });
+
+  const purchases = buildPurchaseSuggestions([router, device], []);
+  assert.equal(purchases.some(item => item.code === 'buy_switch'), false);
+});
+
 test('does not recommend a switch when all ethernet devices are already connected to the router', () => {
   const router = object('router-1', {
     modelId: 'router',
