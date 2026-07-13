@@ -24,3 +24,7 @@ test('generic monitor layouts remain inside their catalog footprints', () => {
     assert.equal(isGenericModelLayoutWithinBounds(modelId), true);
   }
 });
+
+test('generic desktop PC layout remains inside its catalog footprint', () => {
+  assert.equal(isGenericModelLayoutWithinBounds('desktop-pc'), true);
+});

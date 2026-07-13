@@ -460,12 +460,18 @@ function GenericDesktopPcModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const ventRadius = Math.min(width, height) * 0.22;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [frontPanel] = layout.frontPanels;
+  const [fanVent] = layout.fanVents;
+  const [powerButton] = layout.powerButtons;
+  const [statusLight] = layout.statusLights;
+  const frontPorts = layout.frontPorts;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -473,30 +479,28 @@ function GenericDesktopPcModel({ obj, materialProps }) {
           roughness={0.62}
         />
       </mesh>
-      <mesh position={[0, 0, depth * 0.51]}>
-        <boxGeometry args={[width * 0.82, height * 0.88, depth * 0.04]} />
+      <mesh position={[width * frontPanel.x, 0, depth * frontPanel.z]}>
+        <boxGeometry args={[width * frontPanel.width, height * 0.88, depth * frontPanel.depth]} />
         <meshStandardMaterial color="#20252b" roughness={0.7} />
       </mesh>
-      <mesh position={[0, height * 0.27, depth * 0.55]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[ventRadius, ventRadius, depth * 0.05, 20]} />
+      <mesh position={[width * fanVent.x, height * 0.27, depth * fanVent.z]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[width * fanVent.width / 2, width * fanVent.width / 2, depth * fanVent.depth, 20]} />
         <meshStandardMaterial color="#111827" roughness={0.78} />
       </mesh>
-      <mesh position={[-width * 0.24, -height * 0.27, depth * 0.56]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[width * 0.07, width * 0.07, depth * 0.05, 20]} />
+      <mesh position={[width * powerButton.x, -height * 0.27, depth * powerButton.z]} rotation={[Math.PI / 2, 0, 0]}>
+        <cylinderGeometry args={[width * powerButton.width / 2, width * powerButton.width / 2, depth * powerButton.depth, 20]} />
         <meshStandardMaterial color="#0f172a" roughness={0.55} />
       </mesh>
-      <mesh position={[-width * 0.24, -height * 0.27, depth * 0.6]}>
-        <sphereGeometry args={[width * 0.022, 10, 8]} />
+      <mesh position={[width * statusLight.x, -height * 0.27, depth * statusLight.z]}>
+        <sphereGeometry args={[width * statusLight.width / 2, 10, 8]} />
         <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.45} />
       </mesh>
-      <mesh position={[width * 0.18, -height * 0.27, depth * 0.56]}>
-        <boxGeometry args={[width * 0.16, height * 0.045, depth * 0.05]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.65} />
-      </mesh>
-      <mesh position={[width * 0.18, -height * 0.18, depth * 0.56]}>
-        <boxGeometry args={[width * 0.16, height * 0.045, depth * 0.05]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.65} />
-      </mesh>
+      {frontPorts.map((port, index) => (
+        <mesh key={index} position={[width * port.x, height * (-0.27 + index * 0.09), depth * port.z]}>
+          <boxGeometry args={[width * port.width, height * 0.045, depth * port.depth]} />
+          <meshStandardMaterial color="#0f172a" roughness={0.65} />
+        </mesh>
+      ))}
     </group>
   );
 }

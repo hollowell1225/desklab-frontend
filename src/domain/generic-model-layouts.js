@@ -88,6 +88,28 @@ const GENERIC_MONITOR_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_DESKTOP_PC_LAYOUT = Object.freeze({
+  bodies: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
+  ]),
+  frontPanels: Object.freeze([
+    Object.freeze({ x: 0, z: 0.48, width: 0.82, depth: 0.04 }),
+  ]),
+  fanVents: Object.freeze([
+    Object.freeze({ x: 0, z: 0.475, width: 0.44, depth: 0.05 }),
+  ]),
+  powerButtons: Object.freeze([
+    Object.freeze({ x: -0.24, z: 0.475, width: 0.14, depth: 0.05 }),
+  ]),
+  statusLights: Object.freeze([
+    Object.freeze({ x: -0.24, z: 0.487, width: 0.044, depth: 0.022 }),
+  ]),
+  frontPorts: Object.freeze([
+    Object.freeze({ x: 0.18, z: 0.475, width: 0.16, depth: 0.05 }),
+    Object.freeze({ x: 0.18, z: 0.475, width: 0.16, depth: 0.05 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -96,6 +118,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'monitor-24': GENERIC_MONITOR_LAYOUT,
   'monitor-27': GENERIC_MONITOR_LAYOUT,
   'ultrawide-monitor': GENERIC_MONITOR_LAYOUT,
+  'desktop-pc': GENERIC_DESKTOP_PC_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
