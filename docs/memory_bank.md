@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `d8b3682 test: cover generic laptop layout bounds`
-- Tests: `npm test` → 210 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `59597c1 test: require bounds layouts for generic catalog models`
+- Tests: `npm test` → 211 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+59597c1 test: require bounds layouts for generic catalog models
 d8b3682 test: cover generic laptop layout bounds
 0ac9589 test: cover generic all-in-one layout bounds
 67d30cf fix: keep generic power strip within catalog bounds
@@ -184,8 +185,9 @@ Code-native generic model assets now exist for:
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
 covered. All generic furniture, monitors, computers, power adapters, wall
 Every catalog generic model is now constrained through the shared normalized
-layout module and has a focused boundary regression assertion. The next safe
-target is a small hardening opportunity found from current code evidence.
+layout module and a catalog-driven regression test prevents future coverage
+gaps. The next safe target is a small hardening opportunity found from current
+code evidence.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -797,6 +799,15 @@ target is a small hardening opportunity found from current code evidence.
   Verification: focused 17/17; `npm test` 210/210; lint, build, and local
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `d8b3682 test: cover generic laptop layout bounds` (pushed).
+
+### Generic catalog layout coverage guard (2026-07-14)
+- Added one catalog-driven regression test requiring every `assetUrl: null`
+  catalog model to have an in-bounds shared layout. This protects future catalog
+  additions against silently bypassing geometry-bound coverage.
+- Verification: focused 18/18; `npm test` 211/211; lint, build, and local
+  frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `59597c1 test: require bounds layouts for generic catalog models`
+  (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
