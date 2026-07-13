@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `a8c0ef9 fix: preserve uplinks with spare router capacity`
-- Tests: `npm test` → 237 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `f619fed fix: validate switch uplink direction`
+- Tests: `npm test` → 238 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+f619fed fix: validate switch uplink direction
 a8c0ef9 fix: preserve uplinks with spare router capacity
 1bde233 feat: suggest switch uplinks
 f08c985 fix: clarify full-router switch guidance
