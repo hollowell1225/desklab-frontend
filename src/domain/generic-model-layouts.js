@@ -259,6 +259,14 @@ const GENERIC_ALL_IN_ONE_LAYOUT = Object.freeze({
   bases: Object.freeze([Object.freeze({ x: 0, z: 0, width: 0.42, depth: 0.72 })]),
 });
 
+const GENERIC_LAPTOP_LAYOUT = Object.freeze({
+  bases: Object.freeze([Object.freeze({ x: 0, z: 0.04, width: 1, depth: 0.9 })]),
+  keyboards: Object.freeze([Object.freeze({ x: 0, z: 0.07, width: 0.78, depth: 0.54 })]),
+  lids: Object.freeze([Object.freeze({ x: 0, z: -0.39, width: 0.96, depth: 0.06 })]),
+  screens: Object.freeze([Object.freeze({ x: 0, z: -0.35, width: 0.84, depth: 0.025 })]),
+  hinges: Object.freeze([Object.freeze({ x: 0, z: -0.36, width: 0.72, depth: 0.12 })]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -278,6 +286,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   ups: GENERIC_UPS_LAYOUT,
   'power-strip': GENERIC_POWER_STRIP_LAYOUT,
   'all-in-one': GENERIC_ALL_IN_ONE_LAYOUT,
+  'laptop-15': GENERIC_LAPTOP_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {

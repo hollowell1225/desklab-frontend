@@ -653,11 +653,17 @@ function GenericLaptopModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [base] = layout.bases;
+  const [keyboard] = layout.keyboards;
+  const [lid] = layout.lids;
+  const [screen] = layout.screens;
+  const [hinge] = layout.hinges;
 
   return (
     <group>
-      <mesh position={[0, -height * 0.42, depth * 0.04]}>
-        <boxGeometry args={[width, height * 0.12, depth * 0.9]} />
+      <mesh position={[width * base.x, -height * 0.42, depth * base.z]}>
+        <boxGeometry args={[width * base.width, height * 0.12, depth * base.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -665,12 +671,12 @@ function GenericLaptopModel({ obj, materialProps }) {
           roughness={0.55}
         />
       </mesh>
-      <mesh position={[0, -height * 0.35, depth * 0.07]}>
-        <boxGeometry args={[width * 0.78, height * 0.025, depth * 0.54]} />
+      <mesh position={[width * keyboard.x, -height * 0.35, depth * keyboard.z]}>
+        <boxGeometry args={[width * keyboard.width, height * 0.025, depth * keyboard.depth]} />
         <meshStandardMaterial color="#1f2937" roughness={0.68} />
       </mesh>
-      <mesh position={[0, height * 0.02, -depth * 0.39]}>
-        <boxGeometry args={[width * 0.96, height * 0.78, depth * 0.06]} />
+      <mesh position={[width * lid.x, height * 0.02, depth * lid.z]}>
+        <boxGeometry args={[width * lid.width, height * 0.78, depth * lid.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -678,12 +684,12 @@ function GenericLaptopModel({ obj, materialProps }) {
           roughness={0.58}
         />
       </mesh>
-      <mesh position={[0, height * 0.02, -depth * 0.35]}>
-        <boxGeometry args={[width * 0.84, height * 0.62, depth * 0.025]} />
+      <mesh position={[width * screen.x, height * 0.02, depth * screen.z]}>
+        <boxGeometry args={[width * screen.width, height * 0.62, depth * screen.depth]} />
         <meshStandardMaterial color="#0f172a" roughness={0.34} metalness={0.12} />
       </mesh>
-      <mesh position={[0, -height * 0.36, -depth * 0.36]} rotation={[0, 0, Math.PI / 2]}>
-        <cylinderGeometry args={[height * 0.045, height * 0.045, width * 0.72, 12]} />
+      <mesh position={[width * hinge.x, -height * 0.36, depth * hinge.z]} rotation={[0, 0, Math.PI / 2]}>
+        <cylinderGeometry args={[height * 0.045, height * 0.045, width * hinge.width, 12]} />
         <meshStandardMaterial color="#334155" roughness={0.64} />
       </mesh>
     </group>
