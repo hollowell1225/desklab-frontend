@@ -214,6 +214,20 @@ const GENERIC_ROUTER_LAYOUT = Object.freeze({
   statusLights: Object.freeze([Object.freeze({ x: 0.38, z: 0.2, width: 0.05, depth: 0.07 })]),
 });
 
+const GENERIC_SWITCH_LAYOUT = Object.freeze({
+  bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
+  frontPanels: Object.freeze([Object.freeze({ x: 0, z: 0.46, width: 0.88, depth: 0.08 })]),
+  ports: Object.freeze([
+    ...Array.from({ length: 8 }, (_, index) => Object.freeze({
+      x: -0.36 + index * 0.72 / 7, z: 0.46, width: 0.075, depth: 0.08,
+    })),
+  ]),
+  statusLights: Object.freeze([
+    Object.freeze({ x: -0.43, z: 0.18, width: 0.015, depth: 0.036 }),
+    Object.freeze({ x: -0.36, z: 0.18, width: 0.015, depth: 0.036 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -229,6 +243,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'nas-2bay': GENERIC_NAS_LAYOUT,
   modem: GENERIC_MODEM_LAYOUT,
   router: GENERIC_ROUTER_LAYOUT,
+  switch: GENERIC_SWITCH_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {

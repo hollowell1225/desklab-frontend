@@ -368,14 +368,14 @@ function GenericSwitchModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const portCount = 8;
-  const portWidth = width * 0.075;
-  const portSpacing = width * 0.72 / (portCount - 1);
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [frontPanel] = layout.frontPanels;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -383,24 +383,21 @@ function GenericSwitchModel({ obj, materialProps }) {
           roughness={0.6}
         />
       </mesh>
-      <mesh position={[0, height * 0.02, depth * 0.51]}>
-        <boxGeometry args={[width * 0.88, height * 0.58, depth * 0.08]} />
+      <mesh position={[width * frontPanel.x, height * 0.02, depth * frontPanel.z]}>
+        <boxGeometry args={[width * frontPanel.width, height * 0.58, depth * frontPanel.depth]} />
         <meshStandardMaterial color="#0f172a" roughness={0.65} />
       </mesh>
-      {Array.from({ length: portCount }, (_, index) => {
-        const x = -width * 0.36 + portSpacing * index;
-        return (
-          <mesh key={index} position={[x, height * 0.08, depth * 0.56]}>
-            <boxGeometry args={[portWidth, height * 0.34, depth * 0.08]} />
+      {layout.ports.map((port, index) => (
+          <mesh key={index} position={[width * port.x, height * 0.08, depth * port.z]}>
+            <boxGeometry args={[width * port.width, height * 0.34, depth * port.depth]} />
             <meshStandardMaterial color="#111827" roughness={0.7} />
           </mesh>
-        );
-      })}
-      <mesh position={[-width * 0.43, height * 0.36, depth * 0.18]}>
+      ))}
+      <mesh position={[width * layout.statusLights[0].x, height * 0.36, depth * layout.statusLights[0].z]}>
         <sphereGeometry args={[Math.min(width, depth) * 0.018, 10, 8]} />
         <meshStandardMaterial color="#76ff03" emissive="#76ff03" emissiveIntensity={0.4} />
       </mesh>
-      <mesh position={[-width * 0.36, height * 0.36, depth * 0.18]}>
+      <mesh position={[width * layout.statusLights[1].x, height * 0.36, depth * layout.statusLights[1].z]}>
         <sphereGeometry args={[Math.min(width, depth) * 0.018, 10, 8]} />
         <meshStandardMaterial color="#ffd54f" emissive="#ffd54f" emissiveIntensity={0.3} />
       </mesh>
