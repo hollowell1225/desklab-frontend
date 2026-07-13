@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-07-05, Asia/Shanghai
+Last updated: 2026-07-13, Asia/Shanghai
 
 ## Mission
 
@@ -93,15 +93,17 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-06-26 handoff)
+## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `3a2e4d2 feat: add generic gaming desk model asset`
-- Tests: `npm test` → 190 passed. Lint + build clean.
+- Feature HEAD: `18ce68a feat: add generic standing desk model asset`
+- Tests: `npm test` → 191 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+18ce68a feat: add generic standing desk model asset
+e707b9c docs: record generic gaming desk asset slice
 3a2e4d2 feat: add generic gaming desk model asset
 412e176 docs: record generic office desk asset slice
 9c94b59 feat: add generic office desk model asset
@@ -156,8 +158,9 @@ Code-native generic model assets now exist for:
 - `all-in-one`
 - `office-desk`
 - `gaming-desk`
+- `standing-desk`
 
-The next likely model-asset targets are `standing-desk` and `l-desk`.
+The next likely model-asset target is `l-desk`.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -469,6 +472,30 @@ The next likely model-asset targets are `standing-desk` and `l-desk`.
   by missing `sandboxPolicy` metadata. No browser or visual QA is claimed.
 - Commit: `3a2e4d2 feat: add generic gaming desk model asset` (pushed).
 
+
+### Generic standing desk model asset slice (2026-07-13)
+- Added a code-native, in-house, generic low-poly adjustable standing desk
+  render path for `standing-desk`; no external meshes, logos, or branded
+  silhouettes were introduced.
+- `src/domain/model-assets.js` maps `standing-desk` to
+  `generic-standing-desk`. `SceneObjects.jsx` renders a desktop, two lift
+  columns, lower sleeves, feet, rear crossbar, and front control panel while
+  preserving GLB priority and box fallback.
+- Expanded `test/model-assets.test.js` test-first; the focused test failed on
+  the previous `null` mapping before implementation and passed afterward.
+- Updated `public/models/ATTRIBUTION.md` with DeskLab-owned source notes.
+- Verification: focused `node --test test\model-assets.test.js` passed 17/17;
+  `npm test` passed 191/191; `npm run lint` passed; `npm run build` passed
+  after rerun with permission to write Vite's `node_modules\.vite-temp`, with
+  the existing non-fatal large chunk warning.
+- Runtime endpoint QA: `curl.exe -sS -I http://127.0.0.1:5173/` returned HTTP
+  200, and `curl.exe -sS http://localhost:3001/api/projects/default` returned
+  the default project JSON. No backend write/save was performed.
+- Browser/visual QA: not completed in this handoff slice because the user
+  explicitly disallowed Codex IAB, page screenshots, and Base64 image output;
+  no browser or visual QA is claimed for this slice.
+- Commit: `18ce68a feat: add generic standing desk model asset` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -647,7 +674,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 190 tests
+npm test          # 191 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -675,7 +702,7 @@ Remaining work:
 
 2. **If continuing autonomously without product direction**:
    - Continue generic, legally safe, code-native low-poly model assets.
-     Good next targets: `standing-desk`, then `l-desk`.
+     Good next target: `l-desk`.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
