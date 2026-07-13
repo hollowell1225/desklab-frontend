@@ -360,6 +360,33 @@ test('does not recommend a switch when another router has free LAN capacity', ()
     'all router LAN capacity should be counted before recommending a switch');
 });
 
+test('recommends a switch when a reachable switch only has a WAN port free', () => {
+  const router = object('router-1', {
+    modelId: 'router',
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch-1', {
+    modelId: 'switch',
+    ports: [
+      { id: 'uplink', name: 'Uplink', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const unconnected = object('unconnected', {
+    modelId: 'desktop-pc',
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const connections = [{
+    id: 'router-switch', cableType: 'ethernet', length: 1,
+    fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'switch-1', toPortId: 'uplink',
+  }];
+
+  const purchases = buildPurchaseSuggestions([router, switchDevice, unconnected], connections);
+
+  assert.ok(purchases.some(item => item.code === 'buy_switch'),
+    'a WAN port cannot provide the downstream capacity used to suppress a switch purchase');
+});
+
 test('marks a switch purchase as requiring LAN migration when the router is full', () => {
   const router = object('router-1', {
     modelId: 'router',

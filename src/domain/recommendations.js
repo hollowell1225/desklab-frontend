@@ -530,7 +530,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     }
   }
 
-  // 3. 加购交换机：仅统计未连接网口的设备，与路由器空闲 LAN 口比较
+  // 3. 加购交换机：比较未联网设备与实际可用于下游设备的网络端口容量
   {
     const isNetworkDistributor = (obj) =>
       obj.modelId === 'router' || obj.type === 'router'
@@ -569,6 +569,8 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
       .reduce((count, switchDevice) => count + (switchDevice.ports || []).filter(port =>
         port.type === 'ethernet'
+        && port.id !== 'wan'
+        && !port.name?.toLowerCase().includes('wan')
         && (port.direction === 'output' || port.direction === 'bidirectional')
         && isPortDirectionConsistent(port)
         && !occupiedPorts.get(switchDevice.id)?.has(port.id)
