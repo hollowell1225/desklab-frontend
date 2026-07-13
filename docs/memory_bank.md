@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `bbf0291 feat: guide switch purchases when router is full`
+- Feature HEAD: `f08c985 fix: clarify full-router switch guidance`
 - Tests: `npm test` → 235 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+f08c985 fix: clarify full-router switch guidance
 bbf0291 feat: guide switch purchases when router is full
 436bb69 fix: include switch power step in guidance
 77aa29f fix: require router uplink for network suggestions
@@ -1204,6 +1205,17 @@ code evidence.
   `/api/projects/default` HTTP checks both 200. No browser or visual QA was
   performed.
 - Commit: `bbf0291 feat: guide switch purchases when router is full` (pushed).
+
+### Full-router switch guidance clarification (2026-07-14)
+
+- Fixed an unsafe implication in the full-router switch guide: an occupied LAN
+  port may be an uplink rather than a movable endpoint. The sequence now asks
+  the user to free a LAN port suitable for the new uplink and presents moving a
+  normal endpoint to the switch as one optional way to do so.
+- Test-first coverage updated the guidance contract; `npm test` 235/235, lint,
+  build (known non-fatal large-chunk warning), and local frontend/backend HTTP
+  checks all passed. No browser or visual QA was performed.
+- Commit: `f08c985 fix: clarify full-router switch guidance` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
