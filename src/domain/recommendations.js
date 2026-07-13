@@ -548,22 +548,21 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       return ethPorts.some(p => !occupied.has(p.id));
     });
 
-    const router = objects.find(obj => obj.modelId === 'router' || obj.type === 'router');
-    let availableLanPorts = 0;
-    let occupiedLanCount = 0;
-    if (router) {
-      const lanPorts = (router.ports || []).filter(p =>
-        p.type === 'ethernet'
-        && String(p.id).toLowerCase().includes('lan')
-        && (p.direction === 'output' || p.direction === 'bidirectional')
-        && isPortDirectionConsistent(p)
-      );
-      if (lanPorts.length > 0) {
-        availableLanPorts = lanPorts.length;
+    const { availableLanPorts, occupiedLanCount } = objects
+      .filter(obj => obj.modelId === 'router' || obj.type === 'router')
+      .reduce((capacity, router) => {
+        const lanPorts = (router.ports || []).filter(p =>
+          p.type === 'ethernet'
+          && String(p.id).toLowerCase().includes('lan')
+          && (p.direction === 'output' || p.direction === 'bidirectional')
+          && isPortDirectionConsistent(p)
+        );
         const routerOccupied = occupiedPorts.get(router.id) || new Set();
-        occupiedLanCount = lanPorts.filter(p => routerOccupied.has(p.id)).length;
-      }
-    }
+        return {
+          availableLanPorts: capacity.availableLanPorts + lanPorts.length,
+          occupiedLanCount: capacity.occupiedLanCount + lanPorts.filter(p => routerOccupied.has(p.id)).length,
+        };
+      }, { availableLanPorts: 0, occupiedLanCount: 0 });
     const freeLanPorts = Math.max(0, availableLanPorts - occupiedLanCount);
     const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds);
     const freeSwitchPorts = objects
