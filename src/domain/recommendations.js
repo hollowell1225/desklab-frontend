@@ -15,6 +15,13 @@ function ceilLength(value) {
   return Math.ceil(value * 100) / 100;
 }
 
+function hasSameOwnValues(current, next) {
+  const currentKeys = Object.keys(current || {});
+  const nextKeys = Object.keys(next || {});
+  return currentKeys.length === nextKeys.length
+    && nextKeys.every(key => current?.[key] === next?.[key]);
+}
+
 // Deterministic display order so the UI and tests see a stable list.
 const SUGGESTION_ORDER = {
   move_inside_room: 0,
@@ -755,7 +762,14 @@ export function applyImprovement(project, suggestion) {
 
   if (patch.objectId) {
     const objects = project.objects || [];
-    if (!objects.some(object => object.id === patch.objectId)) return project;
+    const targetObject = objects.find(object => object.id === patch.objectId);
+    if (!targetObject) return project;
+    const nextPosition = patch.position ? patch.position : targetObject.position;
+    const nextRotation = patch.rotation ? patch.rotation : targetObject.rotation;
+    if (hasSameOwnValues(targetObject.position, nextPosition)
+      && hasSameOwnValues(targetObject.rotation, nextRotation)) {
+      return project;
+    }
     return {
       ...project,
       objects: objects.map(object =>
@@ -771,7 +785,8 @@ export function applyImprovement(project, suggestion) {
 
   if (patch.connectionId) {
     const connections = project.connections || [];
-    if (!connections.some(connection => connection.id === patch.connectionId)) return project;
+    const targetConnection = connections.find(connection => connection.id === patch.connectionId);
+    if (!targetConnection || targetConnection.length === patch.length) return project;
     return {
       ...project,
       connections: connections.map(connection =>

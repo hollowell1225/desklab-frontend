@@ -820,6 +820,21 @@ test('applyImprovement ignores patches for deleted objects and connections', () 
   }), project, 'a stale cable patch must be a no-op');
 });
 
+test('applyImprovement does not allocate state for already-applied patches', () => {
+  const project = {
+    room,
+    objects: [object('desk', { position: { x: 1, y: 0, z: 0.5 }, rotation: { x: 0, y: 0, z: 0 } })],
+    connections: [{ id: 'existing', length: 2 }],
+  };
+
+  assert.equal(applyImprovement(project, {
+    patch: { objectId: 'desk', position: { x: 1, y: 0, z: 0.5 }, rotation: { x: 0, y: 0, z: 0 } },
+  }), project, 'a repeated layout patch must be a no-op');
+  assert.equal(applyImprovement(project, {
+    patch: { connectionId: 'existing', length: 2 },
+  }), project, 'a repeated cable patch must be a no-op');
+});
+
 test('applyImprovement does not append an automatic connection twice', () => {
   const project = {
     room,
