@@ -25,6 +25,7 @@ export function createProjectHistory({
     const timestamp = now();
     if (groupKey
       && activeGroup?.key === groupKey
+      && timestamp >= activeGroup.time
       && timestamp - activeGroup.time < groupWindowMs) {
       activeGroup = { key: groupKey, time: timestamp };
       return status();

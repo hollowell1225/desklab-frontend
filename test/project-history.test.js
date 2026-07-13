@@ -70,6 +70,19 @@ test('rapid records in the same group undo as one operation', () => {
   assert.deepEqual(undone.status, { canUndo: false, canRedo: true });
 });
 
+test('clock rollback starts a new history group instead of merging operations', () => {
+  let timestamp = 100;
+  const history = createProjectHistory({ now: () => timestamp });
+
+  history.record(state('first'), { groupKey: 'move:desk' });
+  timestamp = 0;
+  history.record(state('second'), { groupKey: 'move:desk' });
+
+  const undone = history.undo(state('third'));
+  assert.deepEqual(undone.snapshot, state('second'));
+  assert.deepEqual(undone.status, { canUndo: true, canRedo: true });
+});
+
 test('finishing a group lets the next matching group create a new undo point immediately', () => {
   let timestamp = 0;
   const history = createProjectHistory({ now: () => timestamp });
