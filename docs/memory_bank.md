@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `3d39356 fix: apply display connection recommendations`
+- Feature HEAD: `0e50733 fix: apply unpowered purchase recommendations`
 - Tests: `npm test` → 227 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+0e50733 fix: apply unpowered purchase recommendations
 3d39356 fix: apply display connection recommendations
 373067b fix: flag duplicate connection ids
 a163378 fix: reject blank connection port ids
@@ -1096,6 +1097,16 @@ code evidence.
   large-chunk warning); local frontend/backend HTTP checks passed. No browser or
   visual QA was performed.
 - Commit: `3d39356 fix: apply display connection recommendations` (pushed).
+
+### Unpowered purchase-recommendation UI action (2026-07-14)
+
+- Problem: `buy_power_for_unpowered` had no modal action despite carrying an
+  explicit product choice (`power-strip` for AC or `ups` for DC).
+- Fix: the recommendation now offers the matching existing add-item action and
+  closes the modal, consistent with other purchase recommendations.
+- Verification: `npm test` 227/227; lint; build (known non-fatal large-chunk
+  warning); local frontend/backend HTTP checks passed. No browser or visual QA.
+- Commit: `0e50733 fix: apply unpowered purchase recommendations` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
