@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `fd1fa11 fix: preserve desktop pc scale behavior`
-- Tests: `npm test` → 199 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `c15e614 fix: keep generic mini pc within catalog bounds`
+- Tests: `npm test` → 200 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+c15e614 fix: keep generic mini pc within catalog bounds
 fd1fa11 fix: preserve desktop pc scale behavior
 2731fd0 fix: keep generic desktop pc within catalog bounds
 525b695 test: cover generic monitor layout bounds
@@ -171,9 +172,9 @@ Code-native generic model assets now exist for:
 - `l-desk`
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
-covered. All generic furniture, monitors, and desktop PC geometry is now
+covered. All generic furniture, monitors, desktop PCs, and mini PCs are now
 constrained through a shared normalized layout module. The next safe target is
-a focused geometry-bound audit of the generic mini PC.
+a focused geometry-bound audit of the generic power adapter.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -651,6 +652,26 @@ a focused geometry-bound audit of the generic mini PC.
   Codex IAB, page screenshots, and Base64 image output.
 - Commits: `2731fd0 fix: keep generic desktop pc within catalog bounds` and
   `fd1fa11 fix: preserve desktop pc scale behavior` (pushed).
+
+### Generic mini PC geometry-bound regression fix (2026-07-13)
+- Added one normalized shared layout for the compact body, top vent, power
+  button, status light, and two front ports, mapped to `mini-pc` in
+  `src/domain/generic-model-layouts.js`.
+- Added a test-first public-interface assertion for `mini-pc`. It failed before
+  the layout was registered and passed after rendering consumed it.
+- Fixed a real catalog-footprint overflow: the front button, status light, and
+  ports previously extended through normalized depth `0.51–0.55`; their visible
+  geometry now remains inside the front boundary (`z <= 0.5`). Independent X/Z
+  scale preserves the default silhouette and keeps the layout valid after
+  non-uniform object resizing.
+- Verification: focused layout tests passed 7/7; `npm test` passed 200/200;
+  `npm run lint` and `npm run build` passed with the existing non-fatal large
+  chunk warning.
+- Runtime endpoint QA: frontend and local backend `curl` checks returned HTTP
+  200. No backend write/save was performed.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `c15e614 fix: keep generic mini pc within catalog bounds` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
