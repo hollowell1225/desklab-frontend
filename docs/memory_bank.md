@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `97d60c3 fix: make automatic connections idempotent`
+- Feature HEAD: `cc991f7 fix: reject stale connection port conflicts`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+cc991f7 fix: reject stale connection port conflicts
 97d60c3 fix: make automatic connections idempotent
 51353a9 fix: reject malformed power roots
 33eff79 fix: preserve independent power loads
@@ -1466,6 +1467,21 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `97d60c3 fix: make automatic connections idempotent` (pushed).
+
+### Stale connection-port conflict guard (2026-07-14)
+
+- Hardened automatic connection application beyond duplicate IDs: a stale
+  recommendation is now also rejected when either of its physical endpoint
+  ports has already been claimed by a newer connection with a different ID.
+- This keeps a delayed/rapid UI action from creating duplicate port occupancy,
+  matching the backend's connection contract before the project reaches save.
+- Test-first regression reserves the outlet port through a newer connection,
+  then verifies a stale automatic power patch is a no-op.
+- Verification: focused recommendations 61/61; `npm test` 252/252; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `cc991f7 fix: reject stale connection port conflicts` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
