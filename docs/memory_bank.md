@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `9659963 fix: require switch power before uplink`
+- Feature HEAD: `72a9f2e feat: apply newly unlocked free improvements`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+72a9f2e feat: apply newly unlocked free improvements
 9659963 fix: require switch power before uplink
 a41e62c fix: reject WAN switch uplinks
 bf82644 fix: exclude WAN ports from switch capacity
@@ -1311,6 +1312,26 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `9659963 fix: require switch power before uplink` (pushed).
+
+### Dependency-aware one-click free fixes (2026-07-14)
+
+- Fixed the recommendation modal's “apply all free improvements” action so it
+  no longer stops after the first static suggestion list. A prerequisite such
+  as powering a switch can reveal a safe switch-uplink action only after it is
+  applied.
+- Added `applyAllAvailableImprovements(project)`: it recomputes free
+  improvements after each pass and applies only suggestion IDs not already
+  applied, which guarantees termination while allowing newly unlocked fixes to
+  run in the same user action. The existing `applyAllImprovements` retains its
+  original static-list semantics.
+- Test-first regression proves a single action powers a switch and then adds
+  its router uplink. The modal now uses this dependency-aware operation and
+  reports that all available free improvements were applied.
+- Verification: focused recommendations 53/53; `npm test` 243/243; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `72a9f2e feat: apply newly unlocked free improvements` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
