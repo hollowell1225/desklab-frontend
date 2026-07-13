@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `bf82644 fix: exclude WAN ports from switch capacity`
+- Feature HEAD: `a41e62c fix: reject WAN switch uplinks`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+a41e62c fix: reject WAN switch uplinks
 bf82644 fix: exclude WAN ports from switch capacity
 7530afe fix: count capacity across routers
 97bfffe fix: count reachable switch capacity
@@ -1276,6 +1277,22 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `bf82644 fix: exclude WAN ports from switch capacity` (pushed).
+
+### WAN switch uplink guard (2026-07-14)
+
+- Fixed the remaining WAN-port inconsistency: `auto_uplink_switch` could wire
+  a router LAN port to a switch `WAN` port even though downstream automatic
+  networking deliberately rejects that port. Such an action looked successful
+  but could not deliver the capacity it promised.
+- A shared WAN-port predicate now protects switch-uplink selection, automatic
+  network source selection, and switch-capacity planning. Test-first coverage
+  verifies that a switch whose only candidate port is `WAN` receives no uplink
+  recommendation.
+- Verification: focused recommendations 51/51; `npm test` 241/241; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `a41e62c fix: reject WAN switch uplinks` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
