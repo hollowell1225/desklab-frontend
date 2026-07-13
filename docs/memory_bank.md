@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `2ff0bfc fix: dedupe occupied power graph ports`
-- Tests: `npm test` → 223 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `42177ce fix: flag self-referencing connections`
+- Tests: `npm test` → 224 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+42177ce fix: flag self-referencing connections
 2ff0bfc fix: dedupe occupied power graph ports
 4831314 fix: exclude invalid links from power graph
 1465637 fix: ignore invalid strip output capacity
@@ -1009,6 +1010,25 @@ code evidence.
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `2ff0bfc fix: dedupe occupied power graph ports` (pushed).
 
+### Self-referencing wiring guard (2026-07-14)
+
+- Problem: the backend contract rejects a connection whose two endpoints belong
+  to the same object, but frontend wiring analysis treated one as valid. For a
+  power connection this derived a misleading `power_cycle` issue and occupied
+  ports instead of marking the corrupt connection for removal.
+- Test-first regression: `test/analysis.test.js` now supplies one object with
+  AC input/output ports joined by a self-reference; it must emit
+  `self_connection`, must not emit `power_cycle`, and must expose the connection
+  through `getInvalidConnectionIds`.
+- Fix: `analyzeProjectWiring` now rejects same-object endpoints after confirming
+  both referenced objects exist, emitting an error with `invalidConnectionIds`
+  and skipping all subsequent semantic, occupancy, and power-graph work.
+- Verification: focused test first red then green; `npm test` 224/224;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
+  No browser or visual QA was performed.
+- Commit: `42177ce fix: flag self-referencing connections` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1187,7 +1207,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 191 tests
+npm test          # 224 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -1195,7 +1215,7 @@ npm run build     # vite build (known large chunk warning is OK)
 Backend:
 ```bash
 cd D:\desklab\backend
-npm test              # 30 tests
+npm test              # 32 tests
 npm run check:contracts  # schema + openapi checks
 ```
 
