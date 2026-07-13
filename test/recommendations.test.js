@@ -879,6 +879,27 @@ test('suggests uplinking an unconnected switch through a free router LAN port', 
   assert.equal(suggestion.patch.newConnection.toObjectId, 'switch');
 });
 
+test('keeps a switch uplink suggestion when router capacity also covers an endpoint', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router', position: { x: 2, y: 0, z: 0.2 },
+    ports: [
+      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
+    ports: [{ id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const pc = object('pc', {
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
+  });
+
+  const suggestions = buildFreeImprovements(room, [router, switchDevice, pc], []);
+  assert.ok(suggestions.some(item => item.code === 'auto_uplink_switch'));
+  assert.ok(suggestions.some(item => item.code === 'auto_network_device'));
+});
+
 test('does not suggest networking an ethernet output-only device port', () => {
   const router = object('router', {
     type: 'router',

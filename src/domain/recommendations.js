@@ -233,19 +233,30 @@ export function buildFreeImprovements(room, objects, connections = [], options =
 
   // 3. 自动连接网络 (auto_network_device)
   const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds);
-  const hasUnconnectedNetworkEndpoint = objects.some(object => {
+  const unconnectedNetworkEndpointCount = objects.reduce((count, object) => {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
-    return !isDistributor && (object.ports || []).some(port =>
+    if (isDistributor) return count;
+    return count + (object.ports || []).filter(port =>
       port.type === 'ethernet'
       && (port.direction === 'input' || port.direction === 'bidirectional')
       && isPortDirectionConsistent(port)
       && !occupiedPorts.get(object.id)?.has(port.id)
-    );
-  });
+    ).length;
+  }, 0);
+  const freeRouterLanPortCount = objects.reduce((count, router) => {
+    if (!(router.modelId === 'router' || router.type === 'router')) return count;
+    return count + (router.ports || []).filter(port =>
+      port.type === 'ethernet'
+      && String(port.id).toLowerCase().includes('lan')
+      && (port.direction === 'output' || port.direction === 'bidirectional')
+      && isPortDirectionConsistent(port)
+      && !occupiedPorts.get(router.id)?.has(port.id)
+    ).length;
+  }, 0);
 
   for (const switchDevice of objects) {
     const isSwitch = switchDevice.modelId === 'switch' || switchDevice.type === 'switch';
-    if (hasUnconnectedNetworkEndpoint || !isSwitch || routerReachableObjectIds.has(switchDevice.id)) continue;
+    if (freeRouterLanPortCount <= unconnectedNetworkEndpointCount || !isSwitch || routerReachableObjectIds.has(switchDevice.id)) continue;
 
     let bestUplink = null;
     for (const router of objects) {
