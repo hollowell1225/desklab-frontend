@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `a163378 fix: reject blank connection port ids`
-- Tests: `npm test` → 226 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `373067b fix: flag duplicate connection ids`
+- Tests: `npm test` → 227 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+373067b fix: flag duplicate connection ids
 a163378 fix: reject blank connection port ids
 a85b16a fix: ignore invalid connection occupancy
 42177ce fix: flag self-referencing connections
@@ -1067,6 +1068,20 @@ code evidence.
   No browser or visual QA was performed.
 - Commit: `a163378 fix: reject blank connection port ids` (pushed).
 
+### Duplicate connection-ID guard (2026-07-14)
+
+- Problem: persisted projects reject duplicate connection IDs, but direct wiring
+  analysis accepted distinct links that reused one ID when their ports differed.
+- Test-first regression: two valid HDMI links with the same ID and different
+  endpoint ports must report `duplicate_connection_id` and expose that ID as
+  invalid.
+- Fix: wiring analysis tracks connection IDs in input order and skips each
+  later duplicate before it can affect occupancy or derived power analysis.
+- Verification: focused test first red then green; `npm test` 227/227; lint,
+  build (known non-fatal large-chunk warning), and local frontend/backend HTTP
+  checks passed. No browser or visual QA was performed.
+- Commit: `373067b fix: flag duplicate connection ids` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1245,7 +1260,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 226 tests
+npm test          # 227 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
