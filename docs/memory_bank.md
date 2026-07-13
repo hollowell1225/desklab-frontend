@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `7841a36 feat: guide wiring after hardware purchase`
-- Tests: `npm test` → 230 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `77aa29f fix: require router uplink for network suggestions`
+- Tests: `npm test` → 233 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+77aa29f fix: require router uplink for network suggestions
 7841a36 feat: guide wiring after hardware purchase
 d7656ab fix: dedupe power graph connection ids
 ae4d983 fix: count invalid connections accurately
@@ -1153,6 +1154,25 @@ code evidence.
   No browser or visual QA was performed.
 - Commit: `7841a36 feat: guide wiring after hardware purchase` (pushed).
 
+### Router-uplink network recommendation guard (2026-07-14)
+
+- Problem: automatic network recommendations could attach a device to the
+  nearest switch even when that switch had no valid Ethernet path to a router.
+  A dual-port ordinary device could also accidentally make a switch appear
+  reachable. Both cases create a cable that looks connected without providing
+  actual network access.
+- Test-first regressions verify that a disconnected switch and a switch reached
+  only through a regular dual-port device are rejected, while a switch directly
+  uplinked to a router remains eligible for downstream auto-connections.
+- Fix: `recommendations.js` now builds router-originated Ethernet reachability
+  from valid connections only. Reachability can propagate only through routers
+  and switches; automatic network fixes may use a router or a reachable switch.
+- Verification: focused recommendations tests 44/44; `npm test` 233/233;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
+  No browser or visual QA was performed.
+- Commit: `77aa29f fix: require router uplink for network suggestions` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1331,7 +1351,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 228 tests
+npm test          # 233 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
