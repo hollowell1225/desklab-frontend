@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `961ae2d test: cover generic standing desk layout bounds`
-- Tests: `npm test` → 195 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `f2f10f4 test: cover generic office desk layout bounds`
+- Tests: `npm test` → 196 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+f2f10f4 test: cover generic office desk layout bounds
 961ae2d test: cover generic standing desk layout bounds
 60ca14c fix: keep generic l-desk within catalog bounds
 f64d4e7 test: cover generic assets for catalog models
@@ -166,9 +167,9 @@ Code-native generic model assets now exist for:
 - `l-desk`
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
-covered. L-desk and standing-desk geometry are now constrained through a shared
-normalized layout module. The next safe target is extending that bound
-regression coverage to office and gaming desks.
+covered. L-desk, standing-desk, and office-desk geometry are now constrained
+through a shared normalized layout module. The next safe target is the gaming
+desk.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -574,6 +575,23 @@ regression coverage to office and gaming desks.
   Codex IAB, page screenshots, and Base64 image output.
 - Commit: `961ae2d test: cover generic standing desk layout bounds` (pushed).
 
+### Generic office desk geometry-bound regression test (2026-07-13)
+- Added normalized shared layout data for the office desk's desktop, four legs,
+  and rear cable tray in `src/domain/generic-model-layouts.js`.
+- `SceneObjects.jsx` now renders the office desk's horizontal placement and
+  footprint dimensions from that shared layout, avoiding duplicate constants.
+- Added a test-first public-interface assertion that the office desk remains
+  inside its catalog footprint. It failed before the office-desk layout was
+  registered and passed once the renderer consumed it.
+- Verification: focused layout tests passed 3/3; `npm test` passed 196/196;
+  `npm run lint` and `npm run build` passed with the existing non-fatal large
+  chunk warning.
+- Runtime endpoint QA: frontend and local backend `curl` checks returned HTTP
+  200. No backend write/save was performed.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `f2f10f4 test: cover generic office desk layout bounds` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -779,8 +797,8 @@ Remaining work:
    - Browser/visual QA of the new fix buttons
 
 2. **If continuing autonomously without product direction**:
-   - Extend normalized layout-bound regression coverage to generic office and
-     gaming desk render paths, keeping catalog bounds and fallback behavior stable.
+   - Extend normalized layout-bound regression coverage to the generic gaming
+     desk render path, keeping catalog bounds and fallback behavior stable.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
