@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `0e50733 fix: apply unpowered purchase recommendations`
+- Feature HEAD: `ae4d983 fix: count invalid connections accurately`
 - Tests: `npm test` → 227 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+ae4d983 fix: count invalid connections accurately
 0e50733 fix: apply unpowered purchase recommendations
 3d39356 fix: apply display connection recommendations
 373067b fix: flag duplicate connection ids
@@ -1107,6 +1108,15 @@ code evidence.
 - Verification: `npm test` 227/227; lint; build (known non-fatal large-chunk
   warning); local frontend/backend HTTP checks passed. No browser or visual QA.
 - Commit: `0e50733 fix: apply unpowered purchase recommendations` (pushed).
+
+### Invalid-connection cleanup count (2026-07-14)
+
+- Fixed cleanup confirmation/button/status counts to use the actual number of
+  connection objects removed, rather than unique invalid IDs. This correctly
+  reports two removals when a duplicate-ID conflict requires both records to go.
+- Verification: `npm test` 227/227; lint; build (known non-fatal large-chunk
+  warning); local frontend/backend HTTP checks passed. No browser or visual QA.
+- Commit: `ae4d983 fix: count invalid connections accurately` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
