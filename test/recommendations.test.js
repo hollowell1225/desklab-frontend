@@ -493,7 +493,7 @@ test('does not count directionally invalid AC outputs as occupied strip capacity
 });
 
 test('suggests powering an unpowered device and the fix creates a valid connection', () => {
-  // 1. Create a power strip with a vacant ac_output
+  // 1. Create a powered power strip with a vacant ac_output
   const strip = object('strip1', {
     type: 'power_strip',
     modelId: 'power-strip',
@@ -502,26 +502,34 @@ test('suggests powering an unpowered device and the fix creates a valid connecti
       { id: 'ac-out-1', name: 'out 1', type: 'ac_output', direction: 'output' },
     ]
   });
+  const outlet = object('outlet', {
+    type: 'outlet', modelId: 'wall-outlet',
+    ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+  });
   // 2. Create a desktop PC with an unpowered ac_input
   const pc = object('pc1', {
     modelId: 'desktop-pc',
     position: { x: 1, y: 1, z: 0.5 },
     ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }]
   });
-  const objects = [strip, pc];
+  const objects = [outlet, strip, pc];
+  const connections = [{
+    id: 'outlet-strip', cableType: 'power', length: 1,
+    fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'strip1', toPortId: 'ac-in',
+  }];
 
-  const suggestions = buildFreeImprovements(room, objects, []);
+  const suggestions = buildFreeImprovements(room, objects, connections);
   const autoPower = suggestions.find(item => item.code === 'auto_power_device');
   assert.ok(autoPower, 'expected an auto_power_device suggestion');
   assert.equal(autoPower.patch.newConnection.fromObjectId, 'strip1');
   assert.equal(autoPower.patch.newConnection.toObjectId, 'pc1');
 
   // Apply the patch
-  const project = { room, objects, connections: [] };
+  const project = { room, objects, connections };
   const next = applyImprovement(project, autoPower);
-  assert.equal(next.connections.length, 1);
-  assert.equal(next.connections[0].fromObjectId, 'strip1');
-  assert.equal(next.connections[0].toObjectId, 'pc1');
+  assert.equal(next.connections.length, 2);
+  assert.equal(next.connections.at(-1).fromObjectId, 'strip1');
+  assert.equal(next.connections.at(-1).toObjectId, 'pc1');
 
   // Verify the unpowered warning is resolved for pc1
   const issues = analyzeProjectWiring(next.objects, next.connections);
@@ -544,9 +552,17 @@ test('auto_power_device infers cable type correctly for dc_input devices', () =>
     position: { x: 1, y: 1, z: 0.5 },
     ports: [{ id: 'dc-in', name: 'DC IN', type: 'dc_input', direction: 'input' }],
   });
-  const objects = [adapter, laptop];
+  const outlet = object('outlet', {
+    type: 'outlet', modelId: 'wall-outlet',
+    ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+  });
+  const objects = [outlet, adapter, laptop];
+  const connections = [{
+    id: 'outlet-adapter', cableType: 'power', length: 1,
+    fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'adapter', toPortId: 'ac-in',
+  }];
 
-  const suggestions = buildFreeImprovements(room, objects, []);
+  const suggestions = buildFreeImprovements(room, objects, connections);
   const autoPower = suggestions.find(item => item.code === 'auto_power_device');
   assert.ok(autoPower, 'expected an auto_power_device suggestion for dc_input device');
   assert.equal(autoPower.patch.newConnection.cableType, 'power',
@@ -564,6 +580,27 @@ test('does not suggest auto_power_device when no power source has a free compati
   const suggestions = buildFreeImprovements(room, objects, []);
   const autoPower = suggestions.find(item => item.code === 'auto_power_device');
   assert.equal(autoPower, undefined, 'should not suggest auto_power_device without a power source');
+});
+
+test('does not use an unpowered power strip as a supply source', () => {
+  const strip = object('strip', {
+    type: 'power_strip', modelId: 'power-strip',
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' },
+    ],
+  });
+  const pc = object('pc', {
+    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
+  });
+
+  const free = buildFreeImprovements(room, [strip, pc], []);
+  const purchases = buildPurchaseSuggestions([strip, pc], []);
+
+  assert.equal(free.some(item => item.code === 'auto_power_device'), false,
+    'a strip without an upstream power connection cannot safely power another device');
+  assert.ok(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('pc')),
+    'an unpowered strip must not suppress the PC power recommendation');
 });
 
 test('does not recommend power fixes for a directionally invalid power input', () => {
@@ -598,12 +635,22 @@ test('ignores invalid connection occupancy when recommending power fixes', () =>
     position: { x: 1, y: 0, z: 0.1 },
     ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
   });
-  const connections = [{
-    id: 'invalid-self', name: 'Invalid self link', cableType: 'power', length: 1,
-    fromObjectId: 'source', fromPortId: 'ac-out', toObjectId: 'source', toPortId: 'ac-in',
-  }];
+  const outlet = object('outlet', {
+    type: 'outlet', modelId: 'wall-outlet',
+    ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+  });
+  const connections = [
+    {
+      id: 'outlet-source', cableType: 'power', length: 1,
+      fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'source', toPortId: 'ac-in',
+    },
+    {
+      id: 'invalid-self', name: 'Invalid self link', cableType: 'power', length: 1,
+      fromObjectId: 'source', fromPortId: 'ac-out', toObjectId: 'source', toPortId: 'ac-in',
+    },
+  ];
 
-  const recommendations = buildRecommendations({ room, objects: [source, device], connections });
+  const recommendations = buildRecommendations({ room, objects: [outlet, source, device], connections });
   const autoPower = recommendations.freeImprovements.find(item => item.code === 'auto_power_device');
 
   assert.ok(autoPower, 'invalid links must not consume the available source port');
@@ -617,6 +664,12 @@ test('ignores invalid connection occupancy when recommending power fixes', () =>
 });
 
 test('auto_power_device with real catalog power-adapter and laptop clears unpowered warning', () => {
+  const outlet = placeCatalogObject({
+    modelTemplate: findModelTemplate({ modelId: 'wall-outlet' }),
+    categoryId: 'power',
+    room,
+    id: 'outlet',
+  }).object;
   const adapter = placeCatalogObject({
     modelTemplate: findModelTemplate({ modelId: 'power-adapter' }),
     categoryId: 'power',
@@ -630,9 +683,13 @@ test('auto_power_device with real catalog power-adapter and laptop clears unpowe
     id: 'laptop',
     position: { x: 1, y: 0, z: 0 },
   }).object;
-  const objects = [adapter, laptop];
+  const objects = [outlet, adapter, laptop];
+  const connections = [{
+    id: 'outlet-adapter', cableType: 'power', length: 1,
+    fromObjectId: 'outlet', fromPortId: 'ac-out-1', toObjectId: 'adapter', toPortId: 'ac-in',
+  }];
 
-  const suggestions = buildFreeImprovements(room, objects, []);
+  const suggestions = buildFreeImprovements(room, objects, connections);
   const autoPower = suggestions.find(item => item.code === 'auto_power_device');
   assert.ok(autoPower, 'expected auto_power_device for unpowered laptop near adapter');
   assert.equal(autoPower.patch.newConnection.cableType, 'power',
@@ -641,7 +698,7 @@ test('auto_power_device with real catalog power-adapter and laptop clears unpowe
   assert.equal(autoPower.patch.newConnection.toObjectId, 'laptop');
 
   // Apply and verify the warning is cleared
-  const project = { room, objects, connections: [] };
+  const project = { room, objects, connections };
   const next = applyImprovement(project, autoPower);
   const issues = analyzeProjectWiring(next.objects, next.connections);
   assert.equal(issues.some(issue => issue.code === 'unpowered_input' && issue.objectIds.includes('laptop')), false,
@@ -1240,9 +1297,17 @@ test('does not suggest buying power when unpowered device has a nearby free port
     wattage: 350,
     ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
   });
-  const objects = [strip, pc];
+  const outlet = object('outlet', {
+    type: 'outlet', modelId: 'wall-outlet',
+    ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+  });
+  const objects = [outlet, strip, pc];
+  const connections = [{
+    id: 'outlet-strip', cableType: 'power', length: 1,
+    fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'strip1', toPortId: 'ac-in',
+  }];
 
-  const purchases = buildPurchaseSuggestions(objects, []);
+  const purchases = buildPurchaseSuggestions(objects, connections);
   assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered'), false,
     'should not recommend buying power when free port is available nearby');
 });

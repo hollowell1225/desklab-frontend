@@ -181,6 +181,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
 
         for (const candidate of objects) {
           if (candidate.id === object.id) continue;
+          if (requiresPowerButIsUnpowered(candidate, occupiedPorts)) continue;
           for (const candidatePort of candidate.ports || []) {
             const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
             if (hasFromDir &&
@@ -685,6 +686,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     let hasNearbySource = false;
     for (const candidate of objects) {
       if (candidate.id === object.id) continue;
+      if (requiresPowerButIsUnpowered(candidate, occupiedPorts)) continue;
       for (const candidatePort of candidate.ports || []) {
         const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
         if (hasFromDir &&
