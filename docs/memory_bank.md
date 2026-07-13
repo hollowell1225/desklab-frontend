@@ -35,7 +35,7 @@ Backend:
 D:\desklab\backend
 ```
 
-GitHub repositories:
+GitHub repositories (public):
 ```text
 Frontend: https://github.com/hollowell1225/desklab-frontend
 Backend:  https://github.com/hollowell1225/desklab-backend
