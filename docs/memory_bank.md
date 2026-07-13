@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `b2db1ed fix: limit clipboard project imports`
-- Tests: `npm test` → 213 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `26be343 fix: respect zero project history limit`
+- Tests: `npm test` → 214 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+26be343 fix: respect zero project history limit
 b2db1ed fix: limit clipboard project imports
 59597c1 test: require bounds layouts for generic catalog models
 d8b3682 test: cover generic laptop layout bounds
@@ -819,6 +820,15 @@ code evidence.
 - Verification: focused 2/2; `npm test` 213/213; lint, build, and local
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `b2db1ed fix: limit clipboard project imports` (pushed).
+
+### Zero project-history limit guard (2026-07-14)
+- Fixed a history-limit boundary bug: JavaScript `slice(-0)` retained every
+  snapshot, so `limit: 0` unintentionally created unbounded undo history.
+  Limits are now safely normalized and zero explicitly disables snapshots.
+- Test-first regression coverage verifies zero history has neither undo nor redo.
+- Verification: focused 6/6; `npm test` 214/214; lint, build, and local
+  frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `26be343 fix: respect zero project history limit` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
