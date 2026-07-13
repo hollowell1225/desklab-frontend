@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `436bb69 fix: include switch power step in guidance`
-- Tests: `npm test` → 233 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `bbf0291 feat: guide switch purchases when router is full`
+- Tests: `npm test` → 235 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+bbf0291 feat: guide switch purchases when router is full
 436bb69 fix: include switch power step in guidance
 77aa29f fix: require router uplink for network suggestions
 7841a36 feat: guide wiring after hardware purchase
@@ -1188,6 +1189,22 @@ code evidence.
   performed.
 - Commit: `436bb69 fix: include switch power step in guidance` (pushed).
 
+### Full-router switch migration guidance (2026-07-14)
+
+- Problem: a switch purchase is still necessary when the router has zero free
+  LAN ports, but the ordinary uplink instruction was impossible to follow.
+- Fix: `buy_switch` now marks that LAN migration is required when no router LAN
+  port is free. The post-purchase flow passes that fact to the guidance module,
+  which instructs the user to power the switch, move one existing router client
+  to it, use the freed LAN port for the uplink, then connect remaining devices.
+- Test-first coverage verifies the recommendation context and the specialized
+  public guidance contract.
+- Verification: `npm test` 235/235; `npm run lint`; `npm run build` (known
+  non-fatal large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200. No browser or visual QA was
+  performed.
+- Commit: `bbf0291 feat: guide switch purchases when router is full` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1366,7 +1383,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 233 tests
+npm test          # 235 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
