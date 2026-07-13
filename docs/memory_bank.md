@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `a90dab6 fix: filter invalid switch recommendations`
-- Tests: `npm test` → 218 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `f69fec0 fix: match LAN port ids case-insensitively`
+- Tests: `npm test` → 219 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+f69fec0 fix: match LAN port ids case-insensitively
 a90dab6 fix: filter invalid switch recommendations
 bb3d27b fix: validate auto-network port directions
 51f12ba fix: validate optional power metadata
@@ -923,6 +924,18 @@ code evidence.
 - Verification: recommendations 37/37; `npm test` 218/218; lint, build, and
   local frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `a90dab6 fix: filter invalid switch recommendations` (pushed).
+
+### Case-insensitive LAN port recognition (2026-07-14)
+- Fixed a false `buy_switch` purchase recommendation for custom/imported router
+  ports such as `LAN-1`. LAN capacity recognition previously matched only a
+  lower-case `lan` substring in the port id, treating that valid port as absent.
+- Router LAN port ids now compare case-insensitively while retaining the
+  existing ethernet type, output direction, and semantics checks.
+- Regression coverage was added test-first and confirms a single custom
+  `LAN-1` router port supplies capacity for one ethernet device.
+- Verification: recommendations 38/38; `npm test` 219/219; lint, build, and
+  local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `f69fec0 fix: match LAN port ids case-insensitively` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
