@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `33eff79 fix: preserve independent power loads`
+- Feature HEAD: `51353a9 fix: reject malformed power roots`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+51353a9 fix: reject malformed power roots
 33eff79 fix: preserve independent power loads
 206adcd fix: require rooted power paths
 797fbdc fix: require powered auto power sources
@@ -1400,7 +1401,7 @@ code evidence.
 
 - Hardened the powered-source check from direct input occupancy to a real path
   through `buildPowerGraph()`: sources are usable only when reachable from a
-  modeled root source with no valid AC/DC input, over valid compatible power
+  modeled root source with no AC/DC input, over valid compatible power
   connections.
 - An unpowered upstream strip or adapter can no longer make a downstream strip,
   router, or switch appear operational. The same powered set now gates automatic
@@ -1431,6 +1432,22 @@ code evidence.
   and backend `/api/projects/default` HTTP checks both 200. No browser or visual
   QA was performed.
 - Commit: `33eff79 fix: preserve independent power loads` (pushed).
+
+### Malformed power-root guard (2026-07-14)
+
+- Hardened root-source detection: any device that declares an AC/DC input is
+  now treated as needing an actual valid root-to-device path, even if that input
+  has an invalid direction in malformed imported/live data.
+- This prevents a broken power strip or adapter with an output port from being
+  silently promoted to an independent supply source, which previously could
+  auto-wire a PC to dead hardware and suppress its power purchase guidance.
+- Test-first regression covers an AC-input port incorrectly declared as output;
+  it cannot power a PC and cannot suppress the PC's purchase recommendation.
+- Verification: focused recommendations 59/59; `npm test` 250/250; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `51353a9 fix: reject malformed power roots` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
