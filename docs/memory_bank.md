@@ -1499,6 +1499,11 @@ code evidence.
   `加购建议 5`, and the `一键修复所有免费项 (1)` button, then closed the dialog
   and verified it was gone. No repair, save, screenshot, or project-data write
   was performed; this is interaction-state QA, not pixel-level visual QA.
+- A separate temporary-browser run then clicked `一键修复所有免费项 (1)` without
+  saving: the live UI changed to `免费改进 0` and the apply-all button vanished.
+  After the temporary browser closed, the local API still reported the original
+  7 objects and 2 connections, confirming no persisted default-project data was
+  changed. Local frontend and backend HTTP checks both remained 200.
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
