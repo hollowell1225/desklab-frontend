@@ -778,10 +778,14 @@ export function applyImprovement(project, suggestion) {
   }
 
   if (patch.newConnection) {
+    const connections = project.connections || [];
+    if (connections.some(connection => connection.id === patch.newConnection.id)) {
+      return project;
+    }
     return {
       ...project,
       connections: [
-        ...(project.connections || []),
+        ...connections,
         { ...patch.newConnection },
       ],
     };

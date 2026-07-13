@@ -805,6 +805,24 @@ test('applyImprovement returns the project unchanged for an empty patch', () => 
   assert.equal(applyImprovement(project, undefined), project);
 });
 
+test('applyImprovement does not append an automatic connection twice', () => {
+  const project = { room, objects: [], connections: [] };
+  const suggestion = {
+    patch: {
+      newConnection: {
+        id: 'c-auto-power-pc-ac-in', name: 'PC power', cableType: 'power', length: 1.5,
+        fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'pc', toPortId: 'ac-in',
+      },
+    },
+  };
+
+  const once = applyImprovement(project, suggestion);
+  const twice = applyImprovement(once, suggestion);
+
+  assert.equal(once.connections.length, 1);
+  assert.equal(twice, once, 'reapplying a stale automatic connection must be a no-op');
+});
+
 test('buildRecommendations aggregates free and purchase suggestions with a total', () => {
   const strip = (id, x) => object(id, {
     type: 'power_strip', modelId: 'power-strip',
