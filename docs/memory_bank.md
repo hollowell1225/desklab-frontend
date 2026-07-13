@@ -93,15 +93,16 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-07-13 handoff)
+## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `26be343 fix: respect zero project history limit`
-- Tests: `npm test` → 214 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `cfd9581 fix: prevent clock rollback history grouping`
+- Tests: `npm test` → 215 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+cfd9581 fix: prevent clock rollback history grouping
 26be343 fix: respect zero project history limit
 b2db1ed fix: limit clipboard project imports
 59597c1 test: require bounds layouts for generic catalog models
@@ -830,6 +831,17 @@ code evidence.
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `26be343 fix: respect zero project history limit` (pushed).
 
+### Project-history clock-rollback group guard (2026-07-14)
+- Fixed a grouping boundary bug: a negative elapsed time from a system-clock
+  rollback still satisfied the prior `< groupWindowMs` check, merging an
+  independent operation into the previous undo group.
+- Grouping now requires a non-decreasing timestamp as well as being within the
+  configured time window. Test-first coverage confirms undo returns the second
+  operation after a clock rollback.
+- Verification: focused 7/7; `npm test` 215/215; lint, build, and local
+  frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `cfd9581 fix: prevent clock rollback history grouping` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -1025,7 +1037,8 @@ If rendered UI behavior changes, do browser QA against localhost if browser runt
 ## High-Value Next Work
 
 The autonomous hardening backlog and recommendation foundation are complete.
-Generic model-asset work is now active and safe to continue in small slices.
+Generic model-asset and project-history hardening work is complete through the
+currently audited cases and safe to continue in small slices.
 Remaining work:
 
 1. **Product-design-dependent** (confirm intent with product owner first):
@@ -1035,7 +1048,6 @@ Remaining work:
    - Browser/visual QA of the new fix buttons
 
 2. **If continuing autonomously without product direction**:
-   - Audit the generic desktop PC for geometry-bound regression coverage.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
