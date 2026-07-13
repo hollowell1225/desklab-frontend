@@ -195,6 +195,8 @@ export function buildFreeImprovements(room, objects, connections = [], options =
 
     for (const port of object.ports || []) {
       if (port.type !== 'ethernet') continue;
+      const canReceiveNetwork = port.direction === 'input' || port.direction === 'bidirectional';
+      if (!canReceiveNetwork || !isPortDirectionConsistent(port)) continue;
       
       const isOccupied = occupiedPorts.get(object.id)?.has(port.id);
       if (isOccupied) continue;
@@ -210,6 +212,8 @@ export function buildFreeImprovements(room, objects, connections = [], options =
         for (const candidatePort of candidate.ports || []) {
           if (candidatePort.type !== 'ethernet') continue;
           if (candidatePort.id === 'wan' || candidatePort.name?.toLowerCase().includes('wan')) continue;
+          const canProvideNetwork = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
+          if (!canProvideNetwork || !isPortDirectionConsistent(candidatePort)) continue;
 
           const isPortOccupied = occupiedPorts.get(candidate.id)?.has(candidatePort.id);
           if (isPortOccupied) continue;

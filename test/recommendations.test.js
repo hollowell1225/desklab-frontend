@@ -654,6 +654,22 @@ test('suggests networking an unconnected ethernet device and the fix creates a v
   assert.equal(connect2, undefined, 'recommendation should disappear after connection is applied');
 });
 
+test('does not suggest networking an ethernet output-only device port', () => {
+  const router = object('router', {
+    type: 'router',
+    modelId: 'router',
+    position: { x: 0, y: 0, z: 0.1 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const device = object('uplink-only', {
+    position: { x: 1, y: 0, z: 0.1 },
+    ports: [{ id: 'uplink', name: 'Uplink', type: 'ethernet', direction: 'output' }],
+  });
+
+  const suggestions = buildFreeImprovements(room, [router, device], []);
+  assert.equal(suggestions.some(item => item.code === 'auto_network_device'), false);
+});
+
 test('suggests purchasing a UPS/power split when a power hub is overloaded', () => {
   const ups = object('my-ups', {
     type: 'ups',
