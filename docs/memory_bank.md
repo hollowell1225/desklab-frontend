@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `96ab864 fix: skip invalid power input recommendations`
-- Tests: `npm test` → 220 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `1465637 fix: ignore invalid strip output capacity`
+- Tests: `npm test` → 221 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+1465637 fix: ignore invalid strip output capacity
 96ab864 fix: skip invalid power input recommendations
 cf36b14 fix: tolerate null recommendation state
 f69fec0 fix: match LAN port ids case-insensitively
@@ -966,6 +967,18 @@ code evidence.
 - Verification: recommendations 39/39; `npm test` 220/220; lint, build, and
   local frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `96ab864 fix: skip invalid power input recommendations` (pushed).
+
+### Invalid power-strip capacity guard (2026-07-14)
+- Fixed a false `buy_power_strip` recommendation for a malformed AC output.
+  The previous capacity calculation treated an `ac_output` with an input
+  direction as a usable outlet when an invalid connection occupied it.
+- Only directionally consistent AC outputs now contribute to power-strip
+  capacity, so a configuration error does not look like a full valid strip.
+- Test-first coverage uses an invalid occupied output and confirms no purchase
+  suggestion is produced.
+- Verification: recommendations 40/40; `npm test` 221/221; lint, build, and
+  local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `1465637 fix: ignore invalid strip output capacity` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
