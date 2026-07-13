@@ -10,3 +10,7 @@ test('generic l-desk layout remains inside its catalog footprint', () => {
 test('generic standing desk layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('standing-desk'), true);
 });
+
+test('generic office desk layout remains inside its catalog footprint', () => {
+  assert.equal(isGenericModelLayoutWithinBounds('office-desk'), true);
+});

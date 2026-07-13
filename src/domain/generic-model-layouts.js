@@ -39,9 +39,25 @@ const GENERIC_STANDING_DESK_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_OFFICE_DESK_LAYOUT = Object.freeze({
+  tops: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
+  ]),
+  legs: Object.freeze([
+    Object.freeze({ x: -0.42, z: -0.38, width: 0.09, depth: 0.09 }),
+    Object.freeze({ x: -0.42, z: 0.38, width: 0.09, depth: 0.09 }),
+    Object.freeze({ x: 0.42, z: -0.38, width: 0.09, depth: 0.09 }),
+    Object.freeze({ x: 0.42, z: 0.38, width: 0.09, depth: 0.09 }),
+  ]),
+  cableTrays: Object.freeze([
+    Object.freeze({ x: 0, z: -0.42, width: 0.62, depth: 0.08 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
+  'office-desk': GENERIC_OFFICE_DESK_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {

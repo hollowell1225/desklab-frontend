@@ -784,12 +784,15 @@ function GenericOfficeDeskModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const legWidth = Math.min(width, depth) * 0.09;
+  const footprintBase = Math.min(width, depth);
+  const layout = getGenericModelLayout('office-desk');
+  const [desktop] = layout.tops;
+  const [cableTray] = layout.cableTrays;
 
   return (
     <group>
-      <mesh position={[0, height * 0.44, 0]}>
-        <boxGeometry args={[width, height * 0.12, depth]} />
+      <mesh position={[desktop.x * width, height * 0.44, desktop.z * depth]}>
+        <boxGeometry args={[desktop.width * width, height * 0.12, desktop.depth * depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -797,16 +800,14 @@ function GenericOfficeDeskModel({ obj, materialProps }) {
           roughness={0.58}
         />
       </mesh>
-      {[-width * 0.42, width * 0.42].flatMap((x, xIndex) =>
-        [-depth * 0.38, depth * 0.38].map((z, zIndex) => (
-          <mesh key={`${xIndex}-${zIndex}`} position={[x, -height * 0.03, z]}>
-            <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
-            <meshStandardMaterial color="#475569" metalness={0.18} roughness={0.62} />
-          </mesh>
-        ))
-      )}
-      <mesh position={[0, height * 0.31, -depth * 0.42]}>
-        <boxGeometry args={[width * 0.62, height * 0.1, depth * 0.08]} />
+      {layout.legs.map(leg => (
+        <mesh key={`${leg.x}-${leg.z}`} position={[leg.x * width, -height * 0.03, leg.z * depth]}>
+          <boxGeometry args={[leg.width * footprintBase, height * 0.82, leg.depth * footprintBase]} />
+          <meshStandardMaterial color="#475569" metalness={0.18} roughness={0.62} />
+        </mesh>
+      ))}
+      <mesh position={[cableTray.x * width, height * 0.31, cableTray.z * depth]}>
+        <boxGeometry args={[cableTray.width * width, height * 0.1, cableTray.depth * depth]} />
         <meshStandardMaterial color="#334155" roughness={0.7} />
       </mesh>
     </group>
