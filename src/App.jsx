@@ -920,6 +920,10 @@ export default function App() {
   );
   const wiringSummary = useMemo(() => summarizeWiringIssues(wiringIssues), [wiringIssues]);
   const invalidConnectionIds = useMemo(() => getInvalidConnectionIds(wiringIssues), [wiringIssues]);
+  const invalidConnectionCount = useMemo(() => {
+    const invalidIds = new Set(invalidConnectionIds);
+    return connections.filter(connection => invalidIds.has(connection.id)).length;
+  }, [connections, invalidConnectionIds]);
   const actionableWiringIssueCount = wiringSummary.error + wiringSummary.warning;
   const layoutIssues = useMemo(() => analyzeProjectLayout(room, objects), [room, objects]);
   const layoutSummary = useMemo(() => summarizeLayoutIssues(layoutIssues), [layoutIssues]);
@@ -930,14 +934,14 @@ export default function App() {
   );
 
   const handleCleanupInvalidConnections = () => {
-    if (!projectEditable || invalidConnectionIds.length === 0) return;
+    if (!projectEditable || invalidConnectionCount === 0) return;
     const confirmed = window.confirm(
-      `确定删除 ${invalidConnectionIds.length} 条无效连接吗？\n只会清理引用缺失、端口错误、类型冲突或重复占用的连接；该操作可以撤销。`
+      `确定删除 ${invalidConnectionCount} 条无效连接吗？\n只会清理引用缺失、端口错误、类型冲突或重复占用的连接；该操作可以撤销。`
     );
     if (!confirmed) return;
     const invalidIds = new Set(invalidConnectionIds);
     updateConnectionsWithHistory(current => current.filter(connection => !invalidIds.has(connection.id)));
-    showStatus({ text: `已清理 ${invalidConnectionIds.length} 条无效连接`, type: 'success' });
+    showStatus({ text: `已清理 ${invalidConnectionCount} 条无效连接`, type: 'success' });
   };
 
   const handleApplyAutoFixes = (codes) => {
@@ -1595,13 +1599,13 @@ export default function App() {
                 <span className="wiring-summary-error">严重 {wiringSummary.error}</span>
                 <span className="wiring-summary-warning">警告 {wiringSummary.warning}</span>
                 <span className="wiring-summary-info">提示 {wiringSummary.info}</span>
-                {invalidConnectionIds.length > 0 && (
+                {invalidConnectionCount > 0 && (
                   <button
                     type="button"
                     className="ui-button ui-button-danger wiring-cleanup-button"
                     onClick={handleCleanupInvalidConnections}
                   >
-                    清理无效连接 ({invalidConnectionIds.length})
+                    清理无效连接 ({invalidConnectionCount})
                   </button>
                 )}
                 {cableAutoFixableCount > 0 && (
