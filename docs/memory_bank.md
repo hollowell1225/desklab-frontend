@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `67d30cf fix: keep generic power strip within catalog bounds`
-- Tests: `npm test` → 208 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `0ac9589 test: cover generic all-in-one layout bounds`
+- Tests: `npm test` → 209 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+0ac9589 test: cover generic all-in-one layout bounds
 67d30cf fix: keep generic power strip within catalog bounds
 7adc0db fix: keep generic ups within catalog bounds
 257d1df fix: keep generic switch within catalog bounds
@@ -181,9 +182,9 @@ Code-native generic model assets now exist for:
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
 covered. All generic furniture, monitors, computers, power adapters, wall
-outlets, NAS, modem, router, switch, UPS, and power-strip geometry is now
-constrained through a shared normalized layout module. The next safe target is
-a full shared-layout coverage audit for the remaining catalog models.
+outlets, NAS, modem, router, switch, UPS, power-strip, and all-in-one geometry
+is now constrained through a shared normalized layout module. The next safe
+target is the generic laptop coverage audit.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -777,6 +778,16 @@ a full shared-layout coverage audit for the remaining catalog models.
   Verification: focused 15/15; `npm test` 208/208; lint, build, and local
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `67d30cf fix: keep generic power strip within catalog bounds` (pushed).
+
+### Generic all-in-one layout coverage (2026-07-14)
+- Added one shared normalized layout for the panel, screen, lower bezel, rear
+  housing, stand, and base, mapped to `all-in-one`. Existing geometry remained
+  within bounds; this slice makes that invariant executable and removes duplicate
+  render constants.
+- Test-first `all-in-one` bounds assertion failed before layout registration and
+  passed after. Verification: focused 16/16; `npm test` 209/209; lint, build,
+  and local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `0ac9589 test: cover generic all-in-one layout bounds` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
