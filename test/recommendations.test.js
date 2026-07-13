@@ -842,6 +842,35 @@ test('applyAllAvailableImprovements follows newly unlocked switch uplinks', () =
   assert.equal(buildFreeImprovements(next.room, next.objects, next.connections).length, 0);
 });
 
+test('applyAllAvailableImprovements reapplies a cable fix after an outlet snap changes its length', () => {
+  const outlet = object('outlet', {
+    type: 'outlet', modelId: 'wall-outlet',
+    position: { x: 0, y: 0, z: 1 },
+    scale: { x: 0.08, y: 0.02, z: 0.08 },
+    ports: [{ id: 'ac-out', name: 'AC', type: 'ac_output', direction: 'output', anchor: { x: 0, y: -0.5, z: 0 } }],
+  });
+  const device = object('device', {
+    position: { x: 0, y: 0.5, z: 0.5 },
+    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
+  });
+  const project = {
+    room,
+    objects: [outlet, device],
+    connections: [{
+      id: 'c1', name: 'power', cableType: 'power', length: 0.2,
+      fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'device', toPortId: 'ac-in',
+    }],
+  };
+
+  const next = applyAllAvailableImprovements(project);
+
+  assert.equal(buildFreeImprovements(next.room, next.objects, next.connections)
+    .some(item => item.code === 'extend_cable'), false,
+  'the cable must be extended again after the outlet snap changes its required length');
+  assert.ok(next.connections[0].length > 2,
+    'the final cable length should satisfy the larger post-snap distance');
+});
+
 test('suggests networking an unconnected ethernet device and the fix creates a valid connection', () => {
   const router = object('router', {
     type: 'router',

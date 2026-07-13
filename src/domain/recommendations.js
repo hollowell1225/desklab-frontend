@@ -773,6 +773,10 @@ export function applyAllImprovements(project, suggestions) {
   return suggestions.reduce((current, suggestion) => applyImprovement(current, suggestion), project);
 }
 
+function getSuggestionApplicationKey(suggestion) {
+  return `${suggestion.id}:${JSON.stringify(suggestion.patch)}`;
+}
+
 /**
  * Repeatedly recompute and apply free improvements until no new suggestion is
  * available. This allows prerequisite fixes (for example, powering a switch)
@@ -782,16 +786,16 @@ export function applyAllAvailableImprovements(project) {
   if (!project?.room) return project;
 
   let current = project;
-  const appliedSuggestionIds = new Set();
+  const appliedSuggestionKeys = new Set();
   while (true) {
     const suggestions = buildFreeImprovements(
       current.room,
       current.objects || [],
       current.connections || []
-    ).filter(suggestion => !appliedSuggestionIds.has(suggestion.id));
+    ).filter(suggestion => !appliedSuggestionKeys.has(getSuggestionApplicationKey(suggestion)));
     if (suggestions.length === 0) return current;
 
-    for (const suggestion of suggestions) appliedSuggestionIds.add(suggestion.id);
+    for (const suggestion of suggestions) appliedSuggestionKeys.add(getSuggestionApplicationKey(suggestion));
     current = applyAllImprovements(current, suggestions);
   }
 }
