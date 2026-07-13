@@ -103,6 +103,7 @@ function appendLengthIssues(issues, connection, objects) {
 export function buildPowerGraph(objects, connections) {
   const objectById = new Map(objects.map(object => [object.id, object]));
   const powerEdges = [];
+  const occupiedPorts = new Map();
 
   for (const connection of connections) {
     const fromObj = objectById.get(connection.fromObjectId);
@@ -122,9 +123,19 @@ export function buildPowerGraph(objects, connections) {
       && targetDirectionValid
       && arePortTypesCompatible(fromPort.type, toPort.type)
       && connection.cableType === inferCableType(fromPort, toPort);
-    if (isValidPowerConnection) {
-      powerEdges.push([connection.fromObjectId, connection.toObjectId]);
+    if (!isValidPowerConnection) continue;
+
+    const endpointRefs = [
+      [connection.fromObjectId, connection.fromPortId],
+      [connection.toObjectId, connection.toPortId],
+    ];
+    if (endpointRefs.some(([objectId, portId]) => getOccupiedPort(occupiedPorts, objectId, portId))) {
+      continue;
     }
+    endpointRefs.forEach(([objectId, portId]) => {
+      occupyPort(occupiedPorts, objectId, portId, connection.id);
+    });
+    powerEdges.push([connection.fromObjectId, connection.toObjectId]);
   }
 
   const childrenBySource = new Map();

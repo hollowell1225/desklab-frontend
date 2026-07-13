@@ -388,6 +388,26 @@ test('power graph ignores invalid direction and type power connections', () => {
   assert.equal(computeDevicePowerLoad('wrong-cable-source', objects, connections, graph), 0);
 });
 
+test('power graph ignores a later connection that reuses a physical port', () => {
+  const source = object('source', [
+    port('ac-out', 'ac_output', 'output'),
+  ]);
+  const firstLoad = object('first-load', [
+    port('ac-in', 'ac_input', 'input'),
+  ], { wattage: 300 });
+  const duplicateLoad = object('duplicate-load', [
+    port('ac-in', 'ac_input', 'input'),
+  ], { wattage: 300 });
+  const objects = [source, firstLoad, duplicateLoad];
+  const connections = [
+    connection('first', 'source', 'ac-out', 'first-load', 'ac-in'),
+    connection('duplicate', 'source', 'ac-out', 'duplicate-load', 'ac-in'),
+  ];
+
+  const graph = buildPowerGraph(objects, connections);
+  assert.equal(computeDevicePowerLoad('source', objects, connections, graph), 300);
+});
+
 test('power load coerces string/invalid wattage and maxLoad instead of corrupting math', () => {
   // Drafts/imports can carry numeric fields as strings; isProjectObject does not
   // validate wattage/maxLoad, so the engine must coerce them. String "+" must not
