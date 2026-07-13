@@ -610,13 +610,17 @@ function GenericWallOutletModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const slotWidth = width * 0.08;
   const slotHeight = height * 0.16;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [faceplate] = layout.faceplates;
+  const slots = layout.slots;
+  const [fastener] = layout.fasteners;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -624,20 +628,25 @@ function GenericWallOutletModel({ obj, materialProps }) {
           roughness={0.52}
         />
       </mesh>
-      <mesh position={[0, 0, depth * 0.53]}>
-        <boxGeometry args={[width * 0.82, height * 0.88, depth * 0.06]} />
+      <mesh position={[width * faceplate.x, 0, depth * faceplate.z]}>
+        <boxGeometry args={[width * faceplate.width, height * 0.88, depth * faceplate.depth]} />
         <meshStandardMaterial color="#f8fafc" roughness={0.48} />
       </mesh>
-      {[-height * 0.22, height * 0.22].flatMap((y, row) =>
-        [-width * 0.14, width * 0.14].map((x, column) => (
-          <mesh key={`${row}-${column}`} position={[x, y, depth * 0.58]}>
-            <boxGeometry args={[slotWidth, slotHeight, depth * 0.04]} />
-            <meshStandardMaterial color="#1f2937" roughness={0.72} />
-          </mesh>
-        ))
-      )}
-      <mesh position={[0, 0, depth * 0.6]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[width * 0.035, width * 0.035, depth * 0.04, 12]} />
+      {slots.map((slot, index) => (
+        <mesh
+          key={index}
+          position={[width * slot.x, height * (index < 2 ? -0.22 : 0.22), depth * slot.z]}
+        >
+          <boxGeometry args={[width * slot.width, slotHeight, depth * slot.depth]} />
+          <meshStandardMaterial color="#1f2937" roughness={0.72} />
+        </mesh>
+      ))}
+      <mesh
+        position={[width * fastener.x, 0, depth * fastener.z]}
+        rotation={[Math.PI / 2, 0, 0]}
+        scale={[width * fastener.width / 2, depth * fastener.depth, width * 0.035]}
+      >
+        <cylinderGeometry args={[1, 1, 1, 12]} />
         <meshStandardMaterial color="#94a3b8" metalness={0.45} roughness={0.38} />
       </mesh>
     </group>

@@ -145,6 +145,24 @@ const GENERIC_POWER_ADAPTER_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_WALL_OUTLET_LAYOUT = Object.freeze({
+  bodies: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
+  ]),
+  faceplates: Object.freeze([
+    Object.freeze({ x: 0, z: 0.47, width: 0.82, depth: 0.06 }),
+  ]),
+  slots: Object.freeze([
+    Object.freeze({ x: -0.14, z: 0.48, width: 0.08, depth: 0.04 }),
+    Object.freeze({ x: 0.14, z: 0.48, width: 0.08, depth: 0.04 }),
+    Object.freeze({ x: -0.14, z: 0.48, width: 0.08, depth: 0.04 }),
+    Object.freeze({ x: 0.14, z: 0.48, width: 0.08, depth: 0.04 }),
+  ]),
+  fasteners: Object.freeze([
+    Object.freeze({ x: 0, z: 0.48, width: 0.07, depth: 0.04 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -156,6 +174,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'desktop-pc': GENERIC_DESKTOP_PC_LAYOUT,
   'mini-pc': GENERIC_MINI_PC_LAYOUT,
   'power-adapter': GENERIC_POWER_ADAPTER_LAYOUT,
+  'wall-outlet': GENERIC_WALL_OUTLET_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
