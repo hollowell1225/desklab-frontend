@@ -1989,6 +1989,23 @@ export default function App() {
                                   加购插排
                                 </button>
                               )}
+                              {issue.code === 'buy_power_for_unpowered' && (
+                                <button
+                                  type="button"
+                                  className="ui-button ui-button-primary"
+                                  onClick={() => {
+                                    if (issue.product?.modelId === 'power-strip') {
+                                      handleAddRecommendedPowerStrip();
+                                    } else {
+                                      handleAddRecommendedPowerSource();
+                                    }
+                                    setShowRecommendations(false);
+                                  }}
+                                  disabled={!projectEditable}
+                                >
+                                  {issue.product?.modelId === 'power-strip' ? '加购插排' : '加购 UPS'}
+                                </button>
+                              )}
                               {issue.code === 'buy_ups_overload' && (
                                 <>
                                   <button
