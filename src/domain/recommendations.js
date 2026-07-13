@@ -41,6 +41,14 @@ function isWanPort(port) {
   return port.id === 'wan' || port.name?.toLowerCase().includes('wan');
 }
 
+function requiresPowerButIsUnpowered(object, occupiedPorts) {
+  const powerInputs = (object.ports || []).filter(port =>
+    ['ac_input', 'dc_input'].includes(port.type) && isPortDirectionConsistent(port)
+  );
+  return powerInputs.length > 0
+    && powerInputs.every(port => !occupiedPorts.get(object.id)?.has(port.id));
+}
+
 function getRouterReachableObjectIds(objects, connections, invalidConnectionIds) {
   const objectIds = new Set(objects.map(object => object.id));
   const isNetworkForwarder = object => object.modelId === 'router' || object.type === 'router'
@@ -260,7 +268,10 @@ export function buildFreeImprovements(room, objects, connections = [], options =
 
   for (const switchDevice of objects) {
     const isSwitch = switchDevice.modelId === 'switch' || switchDevice.type === 'switch';
-    if (freeRouterLanPortCount <= unconnectedNetworkEndpointCount || !isSwitch || routerReachableObjectIds.has(switchDevice.id)) continue;
+    if (freeRouterLanPortCount <= unconnectedNetworkEndpointCount
+      || !isSwitch
+      || routerReachableObjectIds.has(switchDevice.id)
+      || requiresPowerButIsUnpowered(switchDevice, occupiedPorts)) continue;
 
     let bestUplink = null;
     for (const router of objects) {

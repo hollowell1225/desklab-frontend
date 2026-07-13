@@ -963,6 +963,25 @@ test('does not uplink a switch through its WAN port', () => {
   );
 });
 
+test('does not uplink a switch before its power input is connected', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router',
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch', modelId: 'switch',
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+
+  const suggestions = buildFreeImprovements(room, [router, switchDevice], []);
+
+  assert.equal(suggestions.some(item => item.code === 'auto_uplink_switch'), false,
+    'a switch must be powered before an uplink can deliver network access');
+});
+
 test('keeps a switch uplink suggestion when router capacity also covers an endpoint', () => {
   const router = object('router', {
     type: 'router', modelId: 'router', position: { x: 2, y: 0, z: 0.2 },
