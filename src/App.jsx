@@ -36,6 +36,7 @@ import {
   getCanvasObjectClickAction,
 } from './domain/project-access.js';
 import { createProjectExport } from './domain/project-export.js';
+import { assertProjectImportSize, getProjectImportByteLength } from './domain/project-import-limits.js';
 import { applyAllImprovements, applyImprovement, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
 import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
@@ -766,9 +767,7 @@ export default function App() {
     }
 
     try {
-      if (file.size > 5 * 1024 * 1024) {
-        throw new Error('导入文件不能超过 5MB');
-      }
+      assertProjectImportSize(file.size);
       const parsed = JSON.parse(await file.text());
       const result = await projectClient.validate(parsed);
 
@@ -824,6 +823,7 @@ export default function App() {
       if (!text || text.trim().length === 0) {
         throw new Error('剪贴板中未发现内容');
       }
+      assertProjectImportSize(getProjectImportByteLength(text));
       const parsed = JSON.parse(text);
       const result = await projectClient.validate(parsed);
 
