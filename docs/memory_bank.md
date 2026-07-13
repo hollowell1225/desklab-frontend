@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `72a9f2e feat: apply newly unlocked free improvements`
+- Feature HEAD: `9d81dbc fix: require power for network capacity`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+9d81dbc fix: require power for network capacity
 72a9f2e feat: apply newly unlocked free improvements
 9659963 fix: require switch power before uplink
 a41e62c fix: reject WAN switch uplinks
@@ -1332,6 +1333,26 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `72a9f2e feat: apply newly unlocked free improvements` (pushed).
+
+### Powered network-capacity guard (2026-07-14)
+
+- Fixed a topology bug where reachability traversal added every adjacent device
+  to the router-reachable set before deciding whether that device could forward
+  traffic. An Ethernet-uplinked but unpowered switch could consequently be
+  used as an automatic network source and counted as capacity; an unpowered
+  router could be used as a source as well.
+- Router roots, forwarding switches, free router LAN capacity, and automatic
+  uplink candidates now require a valid connected AC/DC input when one is
+  modeled. Traversal records only operational routers and switches, so the same
+  invariant drives auto-networking and switch-purchase capacity.
+- Test-first regressions verify that an unpowered router is not a network
+  source and an unpowered uplinked switch cannot suppress a needed switch
+  recommendation.
+- Verification: focused recommendations 55/55; `npm test` 245/245; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `9d81dbc fix: require power for network capacity` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
