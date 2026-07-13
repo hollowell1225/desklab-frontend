@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `cc991f7 fix: reject stale connection port conflicts`
+- Feature HEAD: `8f6ca7c fix: reject deleted connection endpoints`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+8f6ca7c fix: reject deleted connection endpoints
 cc991f7 fix: reject stale connection port conflicts
 97d60c3 fix: make automatic connections idempotent
 51353a9 fix: reject malformed power roots
@@ -1482,6 +1483,24 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `cc991f7 fix: reject stale connection port conflicts` (pushed).
+
+### Deleted connection-endpoint guard (2026-07-14)
+
+- Completed the stale automatic-connection safety boundary: before appending a
+  generated connection, `applyImprovement()` now verifies that both referenced
+  devices still exist in the current project.
+- A delayed callback can no longer reintroduce a deleted device as a dangling
+  connection reference and leave the local project unsavable by the backend.
+  Duplicate IDs and occupied endpoint ports remain protected by the adjacent
+  guards.
+- Test-first regression removes the target device before applying its old power
+  suggestion and verifies the operation is a no-op. Existing retry and occupied
+  port tests now use present endpoints to retain their intended coverage.
+- Verification: focused recommendations 62/62; `npm test` 253/253; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No new
+  browser or visual QA was performed for this domain-only change.
+- Commit: `8f6ca7c fix: reject deleted connection endpoints` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
