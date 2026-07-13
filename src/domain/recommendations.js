@@ -770,6 +770,29 @@ export function applyAllImprovements(project, suggestions) {
 }
 
 /**
+ * Repeatedly recompute and apply free improvements until no new suggestion is
+ * available. This allows prerequisite fixes (for example, powering a switch)
+ * to unlock a subsequent safe wiring suggestion in one user action.
+ */
+export function applyAllAvailableImprovements(project) {
+  if (!project?.room) return project;
+
+  let current = project;
+  const appliedSuggestionIds = new Set();
+  while (true) {
+    const suggestions = buildFreeImprovements(
+      current.room,
+      current.objects || [],
+      current.connections || []
+    ).filter(suggestion => !appliedSuggestionIds.has(suggestion.id));
+    if (suggestions.length === 0) return current;
+
+    for (const suggestion of suggestions) appliedSuggestionIds.add(suggestion.id);
+    current = applyAllImprovements(current, suggestions);
+  }
+}
+
+/**
  * Project-shaped facade: derive every recommendation for a project in one call.
  * Returns { freeImprovements, purchases, total } so the UI can render a panel
  * and badge without orchestrating the individual builders.

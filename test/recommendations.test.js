@@ -2,6 +2,7 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 
 import {
+  applyAllAvailableImprovements,
   applyAllImprovements,
   applyImprovement,
   buildFreeImprovements,
@@ -778,6 +779,39 @@ test('applyAllImprovements resolves every reported issue at once', () => {
 
   assert.equal(buildFreeImprovements(next.room, next.objects, next.connections).length, 0);
   assert.equal(project.objects[0].position.z, 1.5, 'original project must be untouched');
+});
+
+test('applyAllAvailableImprovements follows newly unlocked switch uplinks', () => {
+  const outlet = object('outlet', {
+    type: 'outlet', modelId: 'wall-outlet',
+    ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+  });
+  const router = object('router', {
+    type: 'router', modelId: 'router',
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch', modelId: 'switch',
+    ports: [
+      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
+      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const project = { room, objects: [outlet, router, switchDevice], connections: [] };
+
+  assert.equal(buildFreeImprovements(room, project.objects, project.connections)
+    .some(item => item.code === 'auto_uplink_switch'), false,
+  'the initial pass must power the switch before it can suggest an uplink');
+
+  const next = applyAllAvailableImprovements(project);
+
+  assert.equal(next.connections.some(connection => connection.cableType === 'power'), true);
+  assert.equal(next.connections.some(connection =>
+    connection.cableType === 'ethernet'
+    && connection.fromObjectId === 'router'
+    && connection.toObjectId === 'switch'
+  ), true, 'the follow-up pass should uplink the newly powered switch');
+  assert.equal(buildFreeImprovements(next.room, next.objects, next.connections).length, 0);
 });
 
 test('suggests networking an unconnected ethernet device and the fix creates a valid connection', () => {

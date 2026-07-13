@@ -38,7 +38,7 @@ import {
 import { createProjectExport } from './domain/project-export.js';
 import { assertProjectImportSize, getProjectImportByteLength } from './domain/project-import-limits.js';
 import { getPurchaseGuidance } from './domain/purchase-guidance.js';
-import { applyAllImprovements, applyImprovement, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
+import { applyAllAvailableImprovements, applyAllImprovements, applyImprovement, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
 import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
 import PropertiesEditor from './components/PropertiesEditor.jsx';
@@ -1854,11 +1854,11 @@ export default function App() {
                     className="ui-button ui-button-primary wiring-cleanup-button"
                     onClick={() => {
                       if (!projectEditable) return;
-                      const next = applyAllImprovements({ room, objects, connections }, recommendations.freeImprovements);
+                      const next = applyAllAvailableImprovements({ room, objects, connections });
                       recordHistory();
                       setObjects(next.objects);
                       setConnections(next.connections);
-                      showStatus({ text: `已自动应用 ${recommendations.freeImprovements.length} 项免费改进`, type: 'success' });
+                      showStatus({ text: '已自动应用所有可用免费改进', type: 'success' });
                     }}
                     disabled={!projectEditable}
                   >
