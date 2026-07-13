@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `51353a9 fix: reject malformed power roots`
+- Feature HEAD: `97d60c3 fix: make automatic connections idempotent`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+97d60c3 fix: make automatic connections idempotent
 51353a9 fix: reject malformed power roots
 33eff79 fix: preserve independent power loads
 206adcd fix: require rooted power paths
@@ -1448,6 +1449,23 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `51353a9 fix: reject malformed power roots` (pushed).
+
+### Automatic-connection idempotency guard (2026-07-14)
+
+- Fixed `applyImprovement()` appending the same automatic connection patch more
+  than once. A rapid double click or stale callback could previously create a
+  duplicate connection ID, leaving a locally invalid project that the backend
+  correctly rejects on save.
+- The new-connection patch path now returns the existing project unchanged when
+  its connection ID already exists, making automatic power, network, display,
+  and switch-uplink applications safe to retry.
+- Test-first regression applies a deterministic automatic power connection twice
+  and verifies the second application is a no-op.
+- Verification: focused recommendations 60/60; `npm test` 251/251; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `97d60c3 fix: make automatic connections idempotent` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
