@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `f64d4e7 test: cover generic assets for catalog models`
-- Tests: `npm test` → 193 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `60ca14c fix: keep generic l-desk within catalog bounds`
+- Tests: `npm test` → 194 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+60ca14c fix: keep generic l-desk within catalog bounds
 f64d4e7 test: cover generic assets for catalog models
 13d483d feat: add generic l-desk model asset
 18ce68a feat: add generic standing desk model asset
@@ -164,8 +165,9 @@ Code-native generic model assets now exist for:
 - `l-desk`
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
-covered. The next safe target is a focused geometry-bound regression test for
-generic assets.
+covered. L-desk geometry is now constrained through a shared normalized layout
+module. The next safe target is extending that bound regression coverage to the
+other generic furniture models.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -535,6 +537,24 @@ generic assets.
   Codex IAB, page screenshots, and Base64 image output.
 - Commit: `f64d4e7 test: cover generic assets for catalog models` (pushed).
 
+### Generic L desk geometry-bound regression fix (2026-07-13)
+- Fixed a real L-desk rendering defect: the right desktop slab extended to
+  normalized depth `0.54`, beyond the catalog footprint limit of `0.5`.
+- Added `src/domain/generic-model-layouts.js` as the shared layout seam for the
+  L-desk desktop slabs, legs, and cable trays. `SceneObjects.jsx` now renders
+  from this layout instead of duplicating placement constants.
+- Added `test/generic-model-layouts.test.js`; its public-interface assertion
+  failed against the previous right-top position and passed after the slab was
+  moved inside the footprint.
+- Verification: focused geometry/model-asset tests passed 20/20; `npm test`
+  passed 194/194; `npm run lint` passed; `npm run build` passed with the
+  existing non-fatal large chunk warning.
+- Runtime endpoint QA: frontend and local backend `curl` checks both returned
+  HTTP 200. No backend write/save was performed.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `60ca14c fix: keep generic l-desk within catalog bounds` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -740,8 +760,8 @@ Remaining work:
    - Browser/visual QA of the new fix buttons
 
 2. **If continuing autonomously without product direction**:
-   - Add focused geometry-bound regression coverage for the generic model
-     render paths, keeping catalog bounds and fallback behavior stable.
+   - Extend normalized layout-bound regression coverage to the other generic
+     furniture render paths, keeping catalog bounds and fallback behavior stable.
    - Browser/visual QA for rendered UI behavior.
    - Small focused hardening found from current code evidence.
 
