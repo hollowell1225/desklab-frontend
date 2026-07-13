@@ -194,8 +194,8 @@ export function analyzeProjectWiring(objects, connections) {
       continue;
     }
 
-    const hasFromPort = Boolean(connection.fromPortId);
-    const hasToPort = Boolean(connection.toPortId);
+    const hasFromPort = connection.fromPortId !== undefined && connection.fromPortId !== null;
+    const hasToPort = connection.toPortId !== undefined && connection.toPortId !== null;
     if (!hasFromPort && !hasToPort) {
       appendLengthIssues(issues, connection, objects);
       issues.push({

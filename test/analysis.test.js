@@ -144,6 +144,21 @@ test('reports stale object and port references as errors', () => {
   assert.ok(issues.some(issue => issue.code === 'partial_port_binding'));
 });
 
+test('does not treat blank port ids as legacy unbound connections', () => {
+  const objects = [
+    object('source', [port('out', 'hdmi', 'output')]),
+    object('target', [port('in', 'hdmi', 'input')]),
+  ];
+  const blankPorts = connection('blank-ports', 'source', '', 'target', '');
+  blankPorts.cableType = 'hdmi';
+
+  const issues = analyzeProjectWiring(objects, [blankPorts]);
+
+  assert.ok(issues.some(issue => issue.code === 'missing_connection_port'));
+  assert.equal(issues.some(issue => issue.code === 'legacy_connection'), false);
+  assert.deepEqual(getInvalidConnectionIds(issues), ['blank-ports']);
+});
+
 test('reports self-referencing connections as invalid instead of a power loop', () => {
   const device = object('device', [
     port('ac-in', 'ac_input', 'input'),
