@@ -782,6 +782,16 @@ export function applyImprovement(project, suggestion) {
     if (connections.some(connection => connection.id === patch.newConnection.id)) {
       return project;
     }
+    const proposedPortRefs = [
+      [patch.newConnection.fromObjectId, patch.newConnection.fromPortId],
+      [patch.newConnection.toObjectId, patch.newConnection.toPortId],
+    ].filter(([, portId]) => portId !== undefined && portId !== null);
+    const hasOccupiedPort = proposedPortRefs.some(([objectId, portId]) =>
+      connections.some(connection =>
+        (connection.fromObjectId === objectId && connection.fromPortId === portId)
+        || (connection.toObjectId === objectId && connection.toPortId === portId))
+    );
+    if (hasOccupiedPort) return project;
     return {
       ...project,
       connections: [

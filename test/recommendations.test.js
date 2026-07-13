@@ -823,6 +823,28 @@ test('applyImprovement does not append an automatic connection twice', () => {
   assert.equal(twice, once, 'reapplying a stale automatic connection must be a no-op');
 });
 
+test('applyImprovement does not use a port claimed by a newer connection', () => {
+  const project = {
+    room,
+    objects: [],
+    connections: [{
+      id: 'newer-connection', name: 'Newer connection', cableType: 'power', length: 1,
+      fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'monitor', toPortId: 'ac-in',
+    }],
+  };
+  const staleSuggestion = {
+    patch: {
+      newConnection: {
+        id: 'c-auto-power-pc-ac-in', name: 'PC power', cableType: 'power', length: 1.5,
+        fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'pc', toPortId: 'ac-in',
+      },
+    },
+  };
+
+  assert.equal(applyImprovement(project, staleSuggestion), project,
+    'a stale automatic connection must not create duplicate physical-port occupancy');
+});
+
 test('buildRecommendations aggregates free and purchase suggestions with a total', () => {
   const strip = (id, x) => object(id, {
     type: 'power_strip', modelId: 'power-strip',
