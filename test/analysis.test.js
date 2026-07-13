@@ -159,6 +159,26 @@ test('does not treat blank port ids as legacy unbound connections', () => {
   assert.deepEqual(getInvalidConnectionIds(issues), ['blank-ports']);
 });
 
+test('reports duplicate connection ids even when their ports differ', () => {
+  const objects = [
+    object('source', [
+      port('out-1', 'hdmi', 'output'),
+      port('out-2', 'hdmi', 'output'),
+    ]),
+    object('target-a', [port('in', 'hdmi', 'input')]),
+    object('target-b', [port('in', 'hdmi', 'input')]),
+  ];
+  const first = connection('duplicate-id', 'source', 'out-1', 'target-a', 'in');
+  const duplicate = connection('duplicate-id', 'source', 'out-2', 'target-b', 'in');
+  first.cableType = 'hdmi';
+  duplicate.cableType = 'hdmi';
+
+  const issues = analyzeProjectWiring(objects, [first, duplicate]);
+
+  assert.ok(issues.some(issue => issue.code === 'duplicate_connection_id'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['duplicate-id']);
+});
+
 test('reports self-referencing connections as invalid instead of a power loop', () => {
   const device = object('device', [
     port('ac-in', 'ac_input', 'input'),

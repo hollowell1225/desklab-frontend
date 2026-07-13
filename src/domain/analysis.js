@@ -160,8 +160,24 @@ export function analyzeProjectWiring(objects, connections) {
   const objectById = new Map(objects.map(object => [object.id, object]));
   const occupiedPorts = new Map();
   const powerEdges = [];
+  const seenConnectionIds = new Set();
 
   for (const connection of connections) {
+    if (seenConnectionIds.has(connection.id)) {
+      issues.push({
+        id: `duplicate-connection-id:${connection.id}`,
+        code: 'duplicate_connection_id',
+        severity: 'error',
+        title: `连接 ID “${connection.id}”重复`,
+        description: '每条连接必须使用唯一 ID。请删除或重新创建重复连接。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
+    seenConnectionIds.add(connection.id);
+
     const fromObject = objectById.get(connection.fromObjectId);
     const toObject = objectById.get(connection.toObjectId);
     const existingObjectIds = [connection.fromObjectId, connection.toObjectId]
