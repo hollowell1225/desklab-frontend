@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `f6c4b16 fix: keep generic wall outlet within catalog bounds`
-- Tests: `npm test` → 202 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `a6ad8cd fix: keep generic nas within catalog bounds`
+- Tests: `npm test` → 203 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+a6ad8cd fix: keep generic nas within catalog bounds
 f6c4b16 fix: keep generic wall outlet within catalog bounds
 6706f06 fix: keep generic power adapter within catalog bounds
 c15e614 fix: keep generic mini pc within catalog bounds
@@ -174,9 +175,9 @@ Code-native generic model assets now exist for:
 - `l-desk`
 
 The generic model-asset backlog for catalog models with `assetUrl: null` is now
-covered. All generic furniture, monitors, computers, power adapters, and wall
-outlets are now constrained through a shared normalized layout module. The next
-safe target is a focused geometry-bound audit of the generic laptop.
+covered. All generic furniture, monitors, computers, power adapters, wall
+outlets, and NAS geometry is now constrained through a shared normalized layout
+module. The next safe target is a focused geometry-bound audit of the modem.
 
 ### Runtime QA performed (2026-06-25, real, not faked)
 - Booted both servers: backend `node server.js` (3001) + frontend `vite` (5173),
@@ -711,6 +712,21 @@ safe target is a focused geometry-bound audit of the generic laptop.
   Codex IAB, page screenshots, and Base64 image output.
 - Commit: `f6c4b16 fix: keep generic wall outlet within catalog bounds`
   (pushed).
+
+### Generic NAS geometry-bound regression fix (2026-07-13)
+- Added one normalized shared layout for the NAS body, front panel, two drive
+  bays, drive handles, and status lights, mapped to `nas-2bay` in
+  `src/domain/generic-model-layouts.js`.
+- Added a public layout-bound assertion for `nas-2bay` and made rendering consume
+  the same layout data.
+- Fixed the front components' real normalized-depth overflow (up to `0.615`):
+  panel, bays, handles, and lights now remain within `z <= 0.5`.
+- Verification: focused layout tests 10/10; `npm test` 203/203; `npm run lint`
+  and `npm run build` passed with the existing non-fatal large chunk warning;
+  local frontend and backend `curl` checks returned HTTP 200.
+- Browser/visual QA: not performed because the user explicitly disallowed
+  Codex IAB, page screenshots, and Base64 image output.
+- Commit: `a6ad8cd fix: keep generic nas within catalog bounds` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
