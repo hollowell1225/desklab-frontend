@@ -37,6 +37,10 @@ function getInvalidConnectionIds(wiringIssues) {
   return new Set(wiringIssues.flatMap(issue => issue?.invalidConnectionIds || []));
 }
 
+function isWanPort(port) {
+  return port.id === 'wan' || port.name?.toLowerCase().includes('wan');
+}
+
 function getRouterReachableObjectIds(objects, connections, invalidConnectionIds) {
   const objectIds = new Set(objects.map(object => object.id));
   const isNetworkForwarder = object => object.modelId === 'router' || object.type === 'router'
@@ -268,6 +272,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
         if (occupiedPorts.get(router.id)?.has(routerPort.id)) continue;
         for (const switchPort of switchDevice.ports || []) {
           if (switchPort.type !== 'ethernet'
+            || isWanPort(switchPort)
             || !(switchPort.direction === 'input' || switchPort.direction === 'bidirectional')
             || !isPortDirectionConsistent(switchPort)) continue;
           if (occupiedPorts.get(switchDevice.id)?.has(switchPort.id)) continue;
@@ -322,7 +327,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
 
         for (const candidatePort of candidate.ports || []) {
           if (candidatePort.type !== 'ethernet') continue;
-          if (candidatePort.id === 'wan' || candidatePort.name?.toLowerCase().includes('wan')) continue;
+          if (isWanPort(candidatePort)) continue;
           const canProvideNetwork = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
           if (!canProvideNetwork || !isPortDirectionConsistent(candidatePort)) continue;
 
@@ -569,8 +574,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
       .reduce((count, switchDevice) => count + (switchDevice.ports || []).filter(port =>
         port.type === 'ethernet'
-        && port.id !== 'wan'
-        && !port.name?.toLowerCase().includes('wan')
+        && !isWanPort(port)
         && (port.direction === 'output' || port.direction === 'bidirectional')
         && isPortDirectionConsistent(port)
         && !occupiedPorts.get(switchDevice.id)?.has(port.id)

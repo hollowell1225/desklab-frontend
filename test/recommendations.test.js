@@ -946,6 +946,23 @@ test('does not uplink a switch through an output-only ethernet port', () => {
   );
 });
 
+test('does not uplink a switch through its WAN port', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router',
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch', modelId: 'switch',
+    ports: [{ id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' }],
+  });
+
+  assert.equal(
+    buildFreeImprovements(room, [router, switchDevice], []).some(item => item.code === 'auto_uplink_switch'),
+    false,
+    'a WAN port cannot provide the downstream network capacity promised by an uplink'
+  );
+});
+
 test('keeps a switch uplink suggestion when router capacity also covers an endpoint', () => {
   const router = object('router', {
     type: 'router', modelId: 'router', position: { x: 2, y: 0, z: 0.2 },
