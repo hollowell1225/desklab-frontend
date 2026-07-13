@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `ae4d983 fix: count invalid connections accurately`
-- Tests: `npm test` → 227 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `d7656ab fix: dedupe power graph connection ids`
+- Tests: `npm test` → 228 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+d7656ab fix: dedupe power graph connection ids
 ae4d983 fix: count invalid connections accurately
 0e50733 fix: apply unpowered purchase recommendations
 3d39356 fix: apply display connection recommendations
@@ -1118,6 +1119,17 @@ code evidence.
   warning); local frontend/backend HTTP checks passed. No browser or visual QA.
 - Commit: `ae4d983 fix: count invalid connections accurately` (pushed).
 
+### Duplicate power-graph connection-ID guard (2026-07-14)
+
+- Fixed a remaining split between wiring analysis and the shared power graph:
+  later connections that reused a connection ID could still inflate load totals.
+- The graph now skips later duplicate IDs in deterministic input order, matching
+  analysis and preventing false overload/UPS recommendations.
+- Verification: test-first 600W→300W regression; `npm test` 228/228; lint;
+  build (known non-fatal large-chunk warning); local frontend/backend HTTP
+  checks passed. No browser or visual QA was performed.
+- Commit: `d7656ab fix: dedupe power graph connection ids` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1296,7 +1308,7 @@ sudo systemctl restart desklab-backend-tunnel
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 227 tests
+npm test          # 228 tests
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
