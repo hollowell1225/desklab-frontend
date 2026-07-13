@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { DEVICE_CATALOG } from '../src/domain/catalog.js';
 import { isGenericModelLayoutWithinBounds } from '../src/domain/generic-model-layouts.js';
 
 test('generic l-desk layout remains inside its catalog footprint', () => {
@@ -71,4 +72,14 @@ test('generic all-in-one layout remains inside its catalog footprint', () => {
 
 test('generic laptop layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('laptop-15'), true);
+});
+
+test('every catalog generic model has an in-bounds shared layout', () => {
+  const genericModelIds = DEVICE_CATALOG.flatMap(category => category.models)
+    .filter(model => model.assetUrl === null)
+    .map(model => model.modelId);
+
+  for (const modelId of genericModelIds) {
+    assert.equal(isGenericModelLayoutWithinBounds(modelId), true, `${modelId} should have an in-bounds layout`);
+  }
 });
