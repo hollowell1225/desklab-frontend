@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `51f12ba fix: validate optional power metadata`
-- Tests: `npm test` → 216 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `bb3d27b fix: validate auto-network port directions`
+- Tests: `npm test` → 217 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+bb3d27b fix: validate auto-network port directions
 51f12ba fix: validate optional power metadata
 cfd9581 fix: prevent clock rollback history grouping
 26be343 fix: respect zero project history limit
@@ -895,6 +896,18 @@ code evidence.
 - Verification: backend validate 23/23; `npm test` 32/32;
   `npm run check:contracts` passed. No browser or visual QA performed.
 - Commit: backend `9ecbcc9 fix: normalize null model metadata` (pushed).
+
+### Auto-network direction guard (2026-07-14)
+- Fixed invalid auto-network recommendations for custom/imported ethernet ports:
+  the previous matching logic checked only type and occupancy, so an
+  output-only device port could be suggested as a connection target.
+- The suggestion now requires the device port to receive and the distributor
+  port to provide network traffic, with the existing port-semantics guard on
+  both ends. Regression coverage fails against the prior suggestion and passes
+  after the change.
+- Verification: recommendations 36/36; `npm test` 217/217; lint, build, and
+  local frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `bb3d27b fix: validate auto-network port directions` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
