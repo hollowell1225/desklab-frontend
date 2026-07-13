@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `8f6ca7c fix: reject deleted connection endpoints`
+- Feature HEAD: `f26c112 fix: validate stale connection ports`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+f26c112 fix: validate stale connection ports
 8f6ca7c fix: reject deleted connection endpoints
 cc991f7 fix: reject stale connection port conflicts
 97d60c3 fix: make automatic connections idempotent
@@ -1501,6 +1502,25 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No new
   browser or visual QA was performed for this domain-only change.
 - Commit: `8f6ca7c fix: reject deleted connection endpoints` (pushed).
+
+### Stale connection-port validity guard (2026-07-14)
+
+- Extended automatic-connection application to verify current port-level
+  semantics before appending: both ports must still exist, have valid source/
+  target directions and compatible types, and still imply the patch's cable
+  type.
+- A stale suggestion now becomes a no-op if a user deletes or reconfigures an
+  endpoint port, instead of introducing a connection the backend would reject.
+  This completes the stale-patch boundary across device existence, port
+  existence/semantics, port occupancy, and duplicate connection IDs.
+- Test-first regression removes the source power port while retaining both
+  devices; the old power suggestion is rejected. Existing stale-ID and occupied
+  port regressions now define valid endpoint ports to preserve their scope.
+- Verification: focused recommendations 63/63; `npm test` 254/254; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No new
+  browser or visual QA was performed for this domain-only change.
+- Commit: `f26c112 fix: validate stale connection ports` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
