@@ -1,6 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
+import { DEVICE_CATALOG } from '../src/domain/catalog.js';
 import { getGenericModelAsset, hasGenericModelAsset } from '../src/domain/model-assets.js';
 
 test('monitor catalog models resolve to the generic in-house monitor asset', () => {
@@ -156,6 +157,23 @@ test('l-desk resolves to the generic in-house furniture asset', () => {
   assert.equal(asset.source, 'in-house-generated');
   assert.equal(asset.license, 'DeskLab-owned');
   assert.equal(asset.category, 'furniture');
+});
+
+test('every catalog model without an external asset has a matching generic asset', () => {
+  const models = DEVICE_CATALOG.flatMap(category => category.models.map(model => ({
+    ...model,
+    category: category.category,
+  })))
+    .filter(model => model.assetUrl === null);
+
+  for (const model of models) {
+    const asset = getGenericModelAsset(model.modelId);
+
+    assert.ok(asset, `${model.modelId} should have a generic asset`);
+    assert.equal(asset.category, model.category);
+    assert.equal(asset.source, 'in-house-generated');
+    assert.equal(asset.license, 'DeskLab-owned');
+  }
 });
 
 test('unknown or externally loaded models keep the fallback rendering path', () => {
