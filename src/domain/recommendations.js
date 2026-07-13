@@ -426,7 +426,11 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       || obj.modelId === 'switch' || obj.type === 'switch';
     const unconnectedEthernetDevices = objects.filter(obj => {
       if (isNetworkDistributor(obj)) return false;
-      const ethPorts = (obj.ports || []).filter(p => p.type === 'ethernet');
+      const ethPorts = (obj.ports || []).filter(p =>
+        p.type === 'ethernet'
+        && (p.direction === 'input' || p.direction === 'bidirectional')
+        && isPortDirectionConsistent(p)
+      );
       if (ethPorts.length === 0) return false;
       const occupied = occupiedPorts.get(obj.id) || new Set();
       return ethPorts.some(p => !occupied.has(p.id));
@@ -436,7 +440,12 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     let availableLanPorts = 0;
     let occupiedLanCount = 0;
     if (router) {
-      const lanPorts = (router.ports || []).filter(p => p.type === 'ethernet' && p.id.includes('lan'));
+      const lanPorts = (router.ports || []).filter(p =>
+        p.type === 'ethernet'
+        && p.id.includes('lan')
+        && (p.direction === 'output' || p.direction === 'bidirectional')
+        && isPortDirectionConsistent(p)
+      );
       if (lanPorts.length > 0) {
         availableLanPorts = lanPorts.length;
         const routerOccupied = occupiedPorts.get(router.id) || new Set();

@@ -261,6 +261,15 @@ test('recommends a switch purchase when ethernet endpoints exceed router LAN por
   assert.equal(purchasesWithSwitch.some(item => item.code === 'buy_switch'), false);
 });
 
+test('does not recommend a switch for an output-only ethernet device port', () => {
+  const device = object('uplink-only', {
+    ports: [{ id: 'uplink', name: 'Uplink', type: 'ethernet', direction: 'output' }],
+  });
+
+  const purchases = buildPurchaseSuggestions([device], []);
+  assert.equal(purchases.some(item => item.code === 'buy_switch'), false);
+});
+
 test('does not recommend a switch when all ethernet devices are already connected to the router', () => {
   const router = object('router-1', {
     modelId: 'router',
