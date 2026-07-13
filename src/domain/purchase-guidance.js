@@ -20,7 +20,7 @@ export function getPurchaseGuidance(modelId, options = {}) {
   if (modelId === 'switch' && options.requiresLanPortMigration) {
     return {
       ...PURCHASE_GUIDANCE.switch,
-      description: '先接通交换机电源；再将一台已接入路由器的终端迁移到交换机，腾出 LAN 口；随后将该 LAN 口上联到交换机，最后连接其余设备。',
+      description: '先接通交换机电源；再腾出一个可用于上联的路由器 LAN 口（可将普通终端迁移到交换机）；随后将该 LAN 口上联到交换机，最后连接其余设备。',
     };
   }
   return PURCHASE_GUIDANCE[modelId] ?? null;

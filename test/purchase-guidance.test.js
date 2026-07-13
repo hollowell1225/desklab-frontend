@@ -27,7 +27,7 @@ test('does not invent a wiring plan for unknown hardware', () => {
 test('guides a switch purchase through LAN migration when the router is full', () => {
   assert.deepEqual(getPurchaseGuidance('switch', { requiresLanPortMigration: true }), {
     title: '下一步：开始布线',
-    description: '先接通交换机电源；再将一台已接入路由器的终端迁移到交换机，腾出 LAN 口；随后将该 LAN 口上联到交换机，最后连接其余设备。',
+    description: '先接通交换机电源；再腾出一个可用于上联的路由器 LAN 口（可将普通终端迁移到交换机）；随后将该 LAN 口上联到交换机，最后连接其余设备。',
     actionLabel: '打开连接面板',
   });
 });
