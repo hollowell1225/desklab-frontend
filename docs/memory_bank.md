@@ -864,6 +864,17 @@ code evidence.
   `npm run check:contracts` passed. No browser or visual QA performed.
 - Commit: backend `fd2eb33 fix: preserve null port anchors` (pushed).
 
+### Nullable port-anchor contract alignment (2026-07-14)
+- Aligned the JSON Schema and OpenAPI 3.1 Port schemas with the runtime and
+  frontend behavior: optional `anchor` now explicitly accepts either a
+  normalized vector or `null`.
+- Updated the read-only contract checker to require both alternatives while
+  retaining the normalized-vector range checks. The checker was red before
+  the update and green afterward.
+- Verification: `npm run check:contracts`; backend `npm test` 31/31. No
+  browser or visual QA performed.
+- Commit: backend `ddf4c1e contract: allow null port anchors` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number — drafts/imports can carry them as strings, which
@@ -888,17 +899,17 @@ c14f5d2 feat: auto-connect USB-C displays
 ```
 
 ### Backend `D:\desklab\backend`
-- HEAD: `fd2eb33 fix: preserve null port anchors`
+- HEAD: `ddf4c1e contract: allow null port anchors`
 - Tests: `npm test` → 31 passed. Contracts check passed.
 - Untracked (DO NOT touch): `?? .vscode/`
 
 Last 5 commits:
 ```
+ddf4c1e contract: allow null port anchors
 fd2eb33 fix: preserve null port anchors
 967bfcf contract: add wattage and maxLoad to Object schema
 e15b9de fix: preserve wattage and maxLoad through backend validation
 cabed03 test: lock multi-value If-Match version preconditions
-96aa66c test: lock normalization idempotency for ETag stability
 ```
 
 Always re-check `git status` and recent commits before making changes.
