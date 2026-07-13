@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-13 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `59597c1 test: require bounds layouts for generic catalog models`
-- Tests: `npm test` → 211 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `b2db1ed fix: limit clipboard project imports`
+- Tests: `npm test` → 213 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+b2db1ed fix: limit clipboard project imports
 59597c1 test: require bounds layouts for generic catalog models
 d8b3682 test: cover generic laptop layout bounds
 0ac9589 test: cover generic all-in-one layout bounds
@@ -808,6 +809,16 @@ code evidence.
   frontend/backend HTTP checks passed. Browser QA not performed.
 - Commit: `59597c1 test: require bounds layouts for generic catalog models`
   (pushed).
+
+### Clipboard import size guard (2026-07-14)
+- Added `project-import-limits.js` with the shared 5MB byte limit and UTF-8 text
+  byte measurement. File and clipboard imports now use the same guard before
+  JSON parsing or validation.
+- This fixes the prior clipboard-only gap, where arbitrarily large text could be
+  parsed before the backend's request-size protection applied.
+- Verification: focused 2/2; `npm test` 213/213; lint, build, and local
+  frontend/backend HTTP checks passed. Browser QA not performed.
+- Commit: `b2db1ed fix: limit clipboard project imports` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
