@@ -96,12 +96,13 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `d7656ab fix: dedupe power graph connection ids`
-- Tests: `npm test` → 228 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
+- Feature HEAD: `7841a36 feat: guide wiring after hardware purchase`
+- Tests: `npm test` → 230 passed. Lint + build clean; build retains the known non-fatal large chunk warning.
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+7841a36 feat: guide wiring after hardware purchase
 d7656ab fix: dedupe power graph connection ids
 ae4d983 fix: count invalid connections accurately
 0e50733 fix: apply unpowered purchase recommendations
@@ -1130,6 +1131,28 @@ code evidence.
   checks passed. No browser or visual QA was performed.
 - Commit: `d7656ab fix: dedupe power graph connection ids` (pushed).
 
+### Post-purchase wiring guidance (2026-07-14)
+
+- Problem: purchasing a recommended UPS, power strip, or switch only added the
+  object and closed the recommendation modal. The new hardware was selected but
+  the user received neither a safe connection order nor a direct route to the
+  wiring tools.
+- Test-first regression: `test/purchase-guidance.test.js` requires each of the
+  three purchasable hardware models to expose a concrete, safe next step and
+  requires unknown hardware to return no invented plan. The focused test first
+  failed because the guidance module did not exist.
+- Fix: `src/domain/purchase-guidance.js` owns the UPS, power-strip, and switch
+  guidance. `App.jsx` preserves the recommendation modal after a hardware
+  purchase, keeps the new device selected, displays the model-specific order,
+  and offers “打开连接面板”. The action opens the selected device's connection
+  tab; it deliberately creates no automatic links because the real source,
+  uplink, and loads are user-specific physical decisions.
+- Verification: focused test first red then green; `npm test` 230/230;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
+  No browser or visual QA was performed.
+- Commit: `7841a36 feat: guide wiring after hardware purchase` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1331,7 +1354,8 @@ Remaining work:
 
 1. **Product-design-dependent** (confirm intent with product owner first):
    - Richer paid purchase recommendations (which products, when, quantities)
-   - "Step-by-step changes after purchase" flow
+   - Deeper multi-step changes after purchase beyond the shipped safe
+     add → selected hardware → connection-panel guidance
    - Browser/visual QA of the new fix buttons
 
 2. **If continuing autonomously without product direction**:
