@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `797fbdc fix: require powered auto power sources`
+- Feature HEAD: `206adcd fix: require rooted power paths`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+206adcd fix: require rooted power paths
 797fbdc fix: require powered auto power sources
 89097cd fix: reapply changed free improvements
 9d81dbc fix: require power for network capacity
@@ -1393,6 +1394,26 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `797fbdc fix: require powered auto power sources` (pushed).
+
+### Rooted power-path guard (2026-07-14)
+
+- Hardened the powered-source check from direct input occupancy to a real path
+  through `buildPowerGraph()`: sources are usable only when reachable from a
+  modeled root source with no valid AC/DC input, over valid compatible power
+  connections.
+- An unpowered upstream strip or adapter can no longer make a downstream strip,
+  router, or switch appear operational. The same powered set now gates automatic
+  power cabling, purchase suppression, router LAN capacity, switch capacity,
+  automatic switch uplinks, and automatic network connections.
+- Test-first regressions cover a strip fed only by an unpowered upstream strip
+  and a router fed by an unpowered adapter; both are excluded until a root power
+  path exists. `buildRecommendations()` also shares its already-built power graph
+  with free improvements.
+- Verification: focused recommendations 58/58; `npm test` 248/248; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `206adcd fix: require rooted power paths` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
