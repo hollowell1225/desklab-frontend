@@ -754,9 +754,11 @@ export function applyImprovement(project, suggestion) {
   if (!patch) return project;
 
   if (patch.objectId) {
+    const objects = project.objects || [];
+    if (!objects.some(object => object.id === patch.objectId)) return project;
     return {
       ...project,
-      objects: (project.objects || []).map(object =>
+      objects: objects.map(object =>
         object.id === patch.objectId
           ? {
               ...object,
@@ -768,9 +770,11 @@ export function applyImprovement(project, suggestion) {
   }
 
   if (patch.connectionId) {
+    const connections = project.connections || [];
+    if (!connections.some(connection => connection.id === patch.connectionId)) return project;
     return {
       ...project,
-      connections: (project.connections || []).map(connection =>
+      connections: connections.map(connection =>
         connection.id === patch.connectionId
           ? { ...connection, length: patch.length }
           : connection),

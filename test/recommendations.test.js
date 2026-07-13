@@ -805,6 +805,21 @@ test('applyImprovement returns the project unchanged for an empty patch', () => 
   assert.equal(applyImprovement(project, undefined), project);
 });
 
+test('applyImprovement ignores patches for deleted objects and connections', () => {
+  const project = {
+    room,
+    objects: [object('desk')],
+    connections: [{ id: 'existing', length: 1 }],
+  };
+
+  assert.equal(applyImprovement(project, {
+    patch: { objectId: 'deleted-object', position: { x: 1, y: 0, z: 1 } },
+  }), project, 'a stale layout patch must be a no-op');
+  assert.equal(applyImprovement(project, {
+    patch: { connectionId: 'deleted-connection', length: 2 },
+  }), project, 'a stale cable patch must be a no-op');
+});
+
 test('applyImprovement does not append an automatic connection twice', () => {
   const project = {
     room,
