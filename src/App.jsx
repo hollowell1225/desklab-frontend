@@ -37,6 +37,7 @@ import {
 } from './domain/project-access.js';
 import { createProjectExport } from './domain/project-export.js';
 import { assertProjectImportSize, getProjectImportByteLength } from './domain/project-import-limits.js';
+import { getPurchaseGuidance } from './domain/purchase-guidance.js';
 import { applyAllImprovements, applyImprovement, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
 import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
@@ -144,7 +145,13 @@ export default function App() {
   const [showWiringReport, setShowWiringReport] = useState(false);
   const [showLayoutReport, setShowLayoutReport] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [purchaseGuidance, setPurchaseGuidance] = useState(null);
   const [hoveredDeviceId, setHoveredDeviceId] = useState(null);
+
+  const closeRecommendations = useCallback(() => {
+    setPurchaseGuidance(null);
+    setShowRecommendations(false);
+  }, []);
 
   const projectStateRef = useRef({ room, objects, connections, selectedObjectId });
   const historyRef = useRef(null);
@@ -403,13 +410,13 @@ export default function App() {
           setShowLayoutReport(false);
         }
         if (showRecommendations) {
-          setShowRecommendations(false);
+          closeRecommendations();
         }
       }
     };
     window.addEventListener('keydown', handleKeyDownEsc);
     return () => window.removeEventListener('keydown', handleKeyDownEsc);
-  }, [connectionMode, showGlobalConnections, showWiringReport, showLayoutReport, showRecommendations]);
+  }, [closeRecommendations, connectionMode, showGlobalConnections, showWiringReport, showLayoutReport, showRecommendations]);
 
   useEffect(() => {
     const handleHistoryKeys = (e) => {
@@ -859,7 +866,7 @@ export default function App() {
   };
 
   const handleAddDevice = useCallback((modelTemplate, categoryId) => {
-    if (!projectEditable) return;
+    if (!projectEditable) return null;
     const result = placeCatalogObject({
       modelTemplate,
       categoryId,
@@ -867,34 +874,38 @@ export default function App() {
     });
     if (!result.valid) {
       showStatus({ text: `无法添加${modelTemplate.displayName}：${result.reason}`, type: 'error' }, 4000);
-      return;
+      return null;
     }
 
     recordHistory();
     setObjects([...objects, result.object]);
     setSelectedObjectId(result.object.id);
+    return result.object;
   }, [objects, projectEditable, recordHistory, room, showStatus]);
 
-  const handleAddRecommendedPowerSource = useCallback(() => {
+  const handleAddRecommendedDevice = useCallback((modelId, categoryId) => {
     if (!projectEditable) return;
-    const template = findModelTemplate({ modelId: 'ups' });
+    const template = findModelTemplate({ modelId });
     if (!template) return;
-    handleAddDevice(template, 'power');
-  }, [handleAddDevice, projectEditable]);
+    const addedObject = handleAddDevice(template, categoryId);
+    const guidance = getPurchaseGuidance(modelId);
+    if (!addedObject || !guidance) return;
+    setPurchaseGuidance({ ...guidance, objectId: addedObject.id });
+    setShowRecommendations(true);
+    showStatus({ text: `已添加${template.displayName}，请按下一步完成布线`, type: 'success' }, 4000);
+  }, [handleAddDevice, projectEditable, showStatus]);
+
+  const handleAddRecommendedPowerSource = useCallback(() => {
+    handleAddRecommendedDevice('ups', 'power');
+  }, [handleAddRecommendedDevice]);
 
   const handleAddRecommendedSwitch = useCallback(() => {
-    if (!projectEditable) return;
-    const template = findModelTemplate({ modelId: 'switch' });
-    if (!template) return;
-    handleAddDevice(template, 'network');
-  }, [handleAddDevice, projectEditable]);
+    handleAddRecommendedDevice('switch', 'network');
+  }, [handleAddRecommendedDevice]);
 
   const handleAddRecommendedPowerStrip = useCallback(() => {
-    if (!projectEditable) return;
-    const template = findModelTemplate({ modelId: 'power-strip' });
-    if (!template) return;
-    handleAddDevice(template, 'power');
-  }, [handleAddDevice, projectEditable]);
+    handleAddRecommendedDevice('power-strip', 'power');
+  }, [handleAddRecommendedDevice]);
 
   const handleUpdateRoom = () => {
     if (!projectEditable) return;
@@ -924,6 +935,16 @@ export default function App() {
     const invalidIds = new Set(invalidConnectionIds);
     return connections.filter(connection => invalidIds.has(connection.id)).length;
   }, [connections, invalidConnectionIds]);
+
+  const handleStartPurchaseWiring = () => {
+    if (!purchaseGuidance) return;
+    setSelectedObjectId(purchaseGuidance.objectId);
+    setActiveTab('connections');
+    setIsPanelOpen(true);
+    if (isMobile) setIsLeftPanelOpen(false);
+    closeRecommendations();
+  };
+
   const actionableWiringIssueCount = wiringSummary.error + wiringSummary.warning;
   const layoutIssues = useMemo(() => analyzeProjectLayout(room, objects), [room, objects]);
   const layoutSummary = useMemo(() => summarizeLayoutIssues(layoutIssues), [layoutIssues]);
@@ -1800,7 +1821,7 @@ export default function App() {
         <div
           className="modal-overlay"
           onClick={(event) => {
-            if (event.target === event.currentTarget) setShowRecommendations(false);
+            if (event.target === event.currentTarget) closeRecommendations();
           }}
         >
           <div
@@ -1813,7 +1834,7 @@ export default function App() {
               <h3 id="recommendations-title" className="modal-title">AI 优化与改进建议</h3>
               <button
                 type="button"
-                onClick={() => setShowRecommendations(false)}
+                onClick={closeRecommendations}
                 className="side-panel-close"
                 aria-label="关闭改进建议"
                 title="关闭"
@@ -1843,6 +1864,20 @@ export default function App() {
                   </button>
                 )}
               </div>
+
+              {purchaseGuidance && (
+                <div className="wiring-issue wiring-issue-info" style={{ marginTop: '16px' }}>
+                  <div className="wiring-issue-content">
+                    <div className="wiring-issue-title">{purchaseGuidance.title}</div>
+                    <div className="wiring-issue-description">{purchaseGuidance.description}</div>
+                  </div>
+                  <div className="connection-item-actions">
+                    <button type="button" className="ui-button ui-button-primary" onClick={handleStartPurchaseWiring}>
+                      {purchaseGuidance.actionLabel}
+                    </button>
+                  </div>
+                </div>
+              )}
 
               {recommendations.total === 0 ? (
                 <div className="empty-state" style={{ marginTop: '24px' }}>
@@ -1957,7 +1992,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   className="ui-button ui-button-primary"
-                                  onClick={() => { handleAddRecommendedPowerSource(); setShowRecommendations(false); }}
+                                  onClick={handleAddRecommendedPowerSource}
                                   disabled={!projectEditable}
                                 >
                                   加购 UPS
@@ -1977,7 +2012,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   className="ui-button ui-button-primary"
-                                  onClick={() => { handleAddRecommendedSwitch(); setShowRecommendations(false); }}
+                                  onClick={handleAddRecommendedSwitch}
                                   disabled={!projectEditable}
                                 >
                                   加购交换机
@@ -1987,7 +2022,7 @@ export default function App() {
                                 <button
                                   type="button"
                                   className="ui-button ui-button-primary"
-                                  onClick={() => { handleAddRecommendedPowerStrip(); setShowRecommendations(false); }}
+                                  onClick={handleAddRecommendedPowerStrip}
                                   disabled={!projectEditable}
                                 >
                                   加购插排
@@ -2003,7 +2038,6 @@ export default function App() {
                                     } else {
                                       handleAddRecommendedPowerSource();
                                     }
-                                    setShowRecommendations(false);
                                   }}
                                   disabled={!projectEditable}
                                 >
@@ -2015,7 +2049,7 @@ export default function App() {
                                   <button
                                     type="button"
                                     className="ui-button ui-button-primary"
-                                    onClick={() => { handleAddRecommendedPowerSource(); setShowRecommendations(false); }}
+                                    onClick={handleAddRecommendedPowerSource}
                                     disabled={!projectEditable}
                                   >
                                     加购 UPS
@@ -2023,7 +2057,7 @@ export default function App() {
                                   <button
                                     type="button"
                                     className="ui-button"
-                                    onClick={() => { handleAddRecommendedPowerStrip(); setShowRecommendations(false); }}
+                                    onClick={handleAddRecommendedPowerStrip}
                                     disabled={!projectEditable}
                                   >
                                     加购插排分流
@@ -2037,7 +2071,7 @@ export default function App() {
                                         setActiveTab('properties');
                                         setIsPanelOpen(true);
                                         if (isMobile) setIsLeftPanelOpen(false);
-                                        setShowRecommendations(false);
+                                        closeRecommendations();
                                       }}
                                     >
                                       定位
