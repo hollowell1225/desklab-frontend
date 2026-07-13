@@ -399,6 +399,27 @@ test('computeDevicePowerLoad correctly aggregates power load recursively', () =>
   assert.equal(pcLoad, 0); // 没有外接设备，外接负载为0
 });
 
+test('computes an independent power branch despite an unrelated power cycle', () => {
+  const hub = object('hub', [port('ac-out', 'ac_output', 'output')]);
+  const load = object('load', [port('ac-in', 'ac_input', 'input')], { wattage: 300 });
+  const cycleA = object('cycle-a', [
+    port('in-1', 'ac_input', 'input'),
+    port('out-1', 'ac_output', 'output'),
+  ]);
+  const cycleB = object('cycle-b', [
+    port('in-1', 'ac_input', 'input'),
+    port('out-1', 'ac_output', 'output'),
+  ]);
+  const connections = [
+    connection('hub-load', 'hub', 'ac-out', 'load', 'ac-in'),
+    connection('cycle-ab', 'cycle-a', 'out-1', 'cycle-b', 'in-1'),
+    connection('cycle-ba', 'cycle-b', 'out-1', 'cycle-a', 'in-1'),
+  ];
+
+  assert.equal(computeDevicePowerLoad('hub', [hub, load, cycleA, cycleB], connections), 300,
+    'an unrelated invalid cycle must not suppress the known load on a separate branch');
+});
+
 test('power graph ignores invalid direction and type power connections', () => {
   const wrongDirectionSource = object('wrong-direction-source', [
     port('ac-out', 'ac_output', 'input'),

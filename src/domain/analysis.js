@@ -461,18 +461,18 @@ export function getInvalidConnectionIds(issues) {
 
 export function computeDevicePowerLoad(deviceId, objects, connections, existingPowerGraph = null) {
   const graph = existingPowerGraph || buildPowerGraph(objects, connections);
-  const { objectById, childrenBySource, hasCycle } = graph;
-
-  if (hasCycle) {
-    return 0;
-  }
+  const { objectById, childrenBySource } = graph;
 
   const loadCache = new Map();
+  const activeObjectIds = new Set();
   function getLoad(id) {
     if (loadCache.has(id)) return loadCache.get(id);
+    if (activeObjectIds.has(id)) return 0;
+    activeObjectIds.add(id);
     let sum = 0;
     const children = childrenBySource.get(id) || [];
     for (const childId of children) {
+      if (activeObjectIds.has(childId)) continue;
       const childObj = objectById.get(childId);
       if (childObj) {
         const template = findModelTemplate(childObj);
@@ -480,6 +480,7 @@ export function computeDevicePowerLoad(deviceId, objects, connections, existingP
         sum += getLoad(childId) + childSelfWattage;
       }
     }
+    activeObjectIds.delete(id);
     loadCache.set(id, sum);
     return sum;
   }
