@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `97bfffe fix: count reachable switch capacity`
+- Feature HEAD: `7530afe fix: count capacity across routers`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+7530afe fix: count capacity across routers
 97bfffe fix: count reachable switch capacity
 f619fed fix: validate switch uplink direction
 a8c0ef9 fix: preserve uplinks with spare router capacity
@@ -1231,6 +1232,35 @@ code evidence.
   warning), and local frontend/backend HTTP 200. No browser or visual QA.
 - Commit: `1bde233 feat: suggest switch uplinks` (pushed).
 
+### Reachable switch capacity guard (2026-07-14)
+
+- Fixed `buy_switch` capacity planning so an arbitrary switch object no longer
+  suppresses a purchase recommendation. Only free Ethernet output or
+  bidirectional ports on switches with a valid router-originated path count as
+  available downstream capacity.
+- Regression coverage uses a portless, disconnected switch alongside more
+  unconnected endpoints than the router can serve; the purchase recommendation
+  must remain present.
+- Verification: focused recommendations 48/48; `npm test` 238/238; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `97bfffe fix: count reachable switch capacity` (pushed).
+
+### Multi-router capacity guard (2026-07-14)
+
+- Fixed `buy_switch` planning to sum valid, unoccupied LAN capacity across all
+  routers instead of considering only the first router in the object list.
+  This avoids a false purchase recommendation when a later router can serve
+  the remaining Ethernet endpoint.
+- Test-first regression: the new test failed against the first-router-only
+  logic and passes after the aggregate-capacity change.
+- Verification: focused recommendations 49/49; `npm test` 239/239; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `7530afe fix: count capacity across routers` (pushed).
+
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
   non-negative number as defense in depth for malformed transient live state)
@@ -1303,16 +1333,17 @@ Test files under `test/` mirror the domain modules.
 | `drop_to_support` | 1 | Drop floating object to support/floor |
 | `snap_outlet_to_wall` | 2 | Snap wall outlet to nearest wall |
 | `auto_power_device` | 3 | Connect unpowered device to nearest power source |
-| `auto_network_device` | 4 | Connect unnetworked device to nearest switch/router |
-| `auto_connect_display` | 5 | Connect HDMI/DP/USB-C output to nearest monitor |
-| `extend_cable` | 6 | Extend cable to recommended length |
+| `auto_uplink_switch` | 4 | Join an unconnected switch to an available router LAN port |
+| `auto_network_device` | 5 | Connect an unnetworked device to a router-reachable switch/router |
+| `auto_connect_display` | 6 | Connect HDMI/DP/USB-C output to nearest monitor |
+| `extend_cable` | 7 | Extend cable to recommended length |
 
 **Purchase suggestions** (`buildPurchaseSuggestions(objects, connections)`):
 | Code | Trigger |
 |------|---------|
 | `buy_power_source` | Daisy-chained power strips → UPS |
 | `buy_cable` | Short cable / low slack → longer cable |
-| `buy_switch` | Unconnected ethernet devices > free LAN ports |
+| `buy_switch` | Unconnected ethernet devices exceed free router LAN plus router-reachable switch capacity |
 | `buy_power_strip` | Power strip all AC outputs occupied |
 | `buy_ups_overload` | Power hub external load > maxLoad |
 | `buy_power_for_unpowered` | Unpowered device with no nearby free port → strip/UPS |
