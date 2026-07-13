@@ -748,6 +748,96 @@ test('suggests networking an unconnected ethernet device and the fix creates a v
   assert.equal(connect2, undefined, 'recommendation should disappear after connection is applied');
 });
 
+test('does not connect a device through a switch that lacks a router uplink', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router', position: { x: 5, y: 0, z: 0.2 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const disconnectedSwitch = object('switch', {
+    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
+    ports: [{ id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const pc = object('pc', {
+    position: { x: 0.2, y: 0, z: 0.2 },
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
+  });
+
+  const suggestions = buildFreeImprovements(room, [router, disconnectedSwitch, pc], []);
+  const connect = suggestions.find(item => item.code === 'auto_network_device');
+
+  assert.ok(connect, 'the reachable router remains a valid network source');
+  assert.equal(connect.patch.newConnection.fromObjectId, 'router');
+  assert.equal(connect.patch.newConnection.fromPortId, 'lan-1');
+});
+
+test('does not treat an ordinary dual-port device as a switch uplink', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router', position: { x: 5, y: 0, z: 0.2 },
+    ports: [
+      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const dualPortPc = object('dual-port-pc', {
+    position: { x: 3, y: 0, z: 0.2 },
+    ports: [
+      { id: 'eth-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'eth-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
+    ports: [
+      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'eth-2', name: 'Port 2', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const target = object('target', {
+    position: { x: 0.2, y: 0, z: 0.2 },
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
+  });
+  const connections = [
+    { id: 'router-pc', cableType: 'ethernet', fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'dual-port-pc', toPortId: 'eth-1' },
+    { id: 'pc-switch', cableType: 'ethernet', fromObjectId: 'dual-port-pc', fromPortId: 'eth-2', toObjectId: 'switch', toPortId: 'eth-1' },
+  ];
+
+  const suggestions = buildFreeImprovements(room, [router, dualPortPc, switchDevice, target], connections);
+  const connect = suggestions.find(item => item.code === 'auto_network_device' && item.objectIds.includes('target'));
+
+  assert.ok(connect, 'the spare router LAN port remains a valid network source');
+  assert.equal(connect.patch.newConnection.fromObjectId, 'router');
+  assert.equal(connect.patch.newConnection.fromPortId, 'lan-2');
+});
+
+test('uses a switch after it is validly uplinked to a router', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router', position: { x: 5, y: 0, z: 0.2 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
+    ports: [
+      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'eth-2', name: 'Port 2', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const target = object('target', {
+    position: { x: 0.2, y: 0, z: 0.2 },
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
+  });
+  const connections = [{
+    id: 'router-switch', cableType: 'ethernet',
+    fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'switch', toPortId: 'eth-1',
+  }];
+
+  const suggestions = buildFreeImprovements(room, [router, switchDevice, target], connections);
+  const connect = suggestions.find(item => item.code === 'auto_network_device');
+
+  assert.ok(connect, 'the uplinked switch is available to downstream devices');
+  assert.equal(connect.patch.newConnection.fromObjectId, 'switch');
+  assert.equal(connect.patch.newConnection.fromPortId, 'eth-2');
+});
+
 test('does not suggest networking an ethernet output-only device port', () => {
   const router = object('router', {
     type: 'router',

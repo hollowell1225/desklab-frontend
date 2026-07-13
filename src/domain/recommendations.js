@@ -36,6 +36,42 @@ function getInvalidConnectionIds(wiringIssues) {
   return new Set(wiringIssues.flatMap(issue => issue?.invalidConnectionIds || []));
 }
 
+function getRouterReachableObjectIds(objects, connections, invalidConnectionIds) {
+  const objectIds = new Set(objects.map(object => object.id));
+  const isNetworkForwarder = object => object.modelId === 'router' || object.type === 'router'
+    || object.modelId === 'switch' || object.type === 'switch';
+  const reachable = new Set(objects
+    .filter(object => object.modelId === 'router' || object.type === 'router')
+    .map(object => object.id));
+  const forwarderIds = new Set(objects.filter(isNetworkForwarder).map(object => object.id));
+  const neighbors = new Map();
+
+  for (const connection of connections) {
+    if (connection.cableType !== 'ethernet' || invalidConnectionIds.has(connection.id)) continue;
+    if (!objectIds.has(connection.fromObjectId) || !objectIds.has(connection.toObjectId)) continue;
+    for (const [from, to] of [[connection.fromObjectId, connection.toObjectId], [connection.toObjectId, connection.fromObjectId]]) {
+      let adjacent = neighbors.get(from);
+      if (!adjacent) {
+        adjacent = new Set();
+        neighbors.set(from, adjacent);
+      }
+      adjacent.add(to);
+    }
+  }
+
+  const pending = [...reachable];
+  while (pending.length > 0) {
+    const objectId = pending.pop();
+    for (const neighborId of neighbors.get(objectId) || []) {
+      if (reachable.has(neighborId)) continue;
+      reachable.add(neighborId);
+      if (forwarderIds.has(neighborId)) pending.push(neighborId);
+    }
+  }
+
+  return reachable;
+}
+
 /**
  * Compose detected layout/wiring issues into actionable "free improvement"
  * suggestions — changes the user can apply without buying anything. Each
@@ -195,6 +231,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   }
 
   // 3. 自动连接网络 (auto_network_device)
+  const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds);
   for (const object of objects) {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) continue;
@@ -213,7 +250,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
       for (const candidate of objects) {
         if (candidate.id === object.id) continue;
         const candidateIsDistributor = ['router', 'switch'].includes(candidate.type) || ['router', 'switch'].includes(candidate.modelId);
-        if (!candidateIsDistributor) continue;
+        if (!candidateIsDistributor || !routerReachableObjectIds.has(candidate.id)) continue;
 
         for (const candidatePort of candidate.ports || []) {
           if (candidatePort.type !== 'ethernet') continue;
