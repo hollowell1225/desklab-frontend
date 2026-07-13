@@ -779,6 +779,11 @@ export function applyImprovement(project, suggestion) {
 
   if (patch.newConnection) {
     const connections = project.connections || [];
+    const objectIds = new Set((project.objects || []).map(object => object.id));
+    if (!objectIds.has(patch.newConnection.fromObjectId)
+      || !objectIds.has(patch.newConnection.toObjectId)) {
+      return project;
+    }
     if (connections.some(connection => connection.id === patch.newConnection.id)) {
       return project;
     }
