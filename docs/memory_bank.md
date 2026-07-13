@@ -96,11 +96,12 @@ npm start
 ## Current Git State (2026-07-14 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `89097cd fix: reapply changed free improvements`
+- Feature HEAD: `797fbdc fix: require powered auto power sources`
 - Untracked: none expected.
 
 Current commits (most recent first, baseline at bottom):
 ```
+797fbdc fix: require powered auto power sources
 89097cd fix: reapply changed free improvements
 9d81dbc fix: require power for network capacity
 72a9f2e feat: apply newly unlocked free improvements
@@ -1372,6 +1373,26 @@ code evidence.
   frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
   browser or visual QA was performed.
 - Commit: `89097cd fix: reapply changed free improvements` (pushed).
+
+### Powered-source supply guard (2026-07-14)
+
+- Fixed automatic power recommendations and purchase suppression that treated an
+  unplugged power strip, UPS, or adapter as a usable source merely because it
+  exposed a free output port. This could wire a device to a dead upstream and
+  then hide the power recommendation it still needed.
+- Both `auto_power_device` and the `buy_power_for_unpowered` availability check
+  now exclude any candidate that models AC/DC inputs but has none connected by
+  a valid link. Wall outlets and other modeled root sources with no input stay
+  eligible.
+- Test-first regression verifies an unpowered strip neither powers a PC nor
+  suppresses the PC's purchase recommendation. Existing positive tests now use
+  explicit wall-outlet→strip/adapter supply links, preserving coverage for
+  automatic AC/DC cabling, invalid occupancy, and free-port purchase handling.
+- Verification: focused recommendations 57/57; `npm test` 247/247; `npm run
+  lint`; `npm run build` (known non-fatal large-chunk warning only); local
+  frontend `/` and backend `/api/projects/default` HTTP checks both 200. No
+  browser or visual QA was performed.
+- Commit: `797fbdc fix: require powered auto power sources` (pushed).
 
 Notes on the power-load slices (2026-06-25):
 - `analysis.js` now exports `toPowerValue(value)` (coerce wattage/maxLoad to a safe
