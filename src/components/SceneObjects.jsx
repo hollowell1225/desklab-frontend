@@ -409,13 +409,17 @@ function GenericUpsModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
-  const ventCount = 5;
-  const ventSpacing = height * 0.22 / (ventCount - 1);
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [frontPanel] = layout.frontPanels;
+  const [display] = layout.displays;
+  const [powerButton] = layout.powerButtons;
+  const [statusLight] = layout.statusLights;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -423,25 +427,25 @@ function GenericUpsModel({ obj, materialProps }) {
           roughness={0.68}
         />
       </mesh>
-      <mesh position={[0, height * 0.14, depth * 0.51]}>
-        <boxGeometry args={[width * 0.72, height * 0.5, depth * 0.08]} />
+      <mesh position={[width * frontPanel.x, height * 0.14, depth * frontPanel.z]}>
+        <boxGeometry args={[width * frontPanel.width, height * 0.5, depth * frontPanel.depth]} />
         <meshStandardMaterial color="#263238" roughness={0.72} />
       </mesh>
-      <mesh position={[0, height * 0.28, depth * 0.56]}>
-        <boxGeometry args={[width * 0.42, height * 0.16, depth * 0.06]} />
+      <mesh position={[width * display.x, height * 0.28, depth * display.z]}>
+        <boxGeometry args={[width * display.width, height * 0.16, depth * display.depth]} />
         <meshStandardMaterial color="#111827" roughness={0.5} />
       </mesh>
-      <mesh position={[0, height * 0.02, depth * 0.58]}>
+      <mesh position={[width * powerButton.x, height * 0.02, depth * powerButton.z]}>
         <cylinderGeometry args={[width * 0.13, width * 0.13, depth * 0.08, 24]} />
         <meshStandardMaterial color="#0f172a" roughness={0.55} />
       </mesh>
-      <mesh position={[0, height * 0.02, depth * 0.63]}>
+      <mesh position={[width * statusLight.x, height * 0.02, depth * statusLight.z]}>
         <sphereGeometry args={[width * 0.04, 12, 8]} />
         <meshStandardMaterial color="#76ff03" emissive="#76ff03" emissiveIntensity={0.45} />
       </mesh>
-      {Array.from({ length: ventCount }, (_, index) => (
-        <mesh key={index} position={[0, -height * 0.24 + ventSpacing * index, depth * 0.56]}>
-          <boxGeometry args={[width * 0.5, height * 0.025, depth * 0.06]} />
+      {layout.vents.map((vent, index) => (
+        <mesh key={index} position={[width * vent.x, height * (-0.24 + index * 0.055), depth * vent.z]}>
+          <boxGeometry args={[width * vent.width, height * 0.025, depth * vent.depth]} />
           <meshStandardMaterial color="#1f2937" roughness={0.8} />
         </mesh>
       ))}
