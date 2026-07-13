@@ -40,3 +40,7 @@ test('generic power adapter layout remains inside its catalog footprint', () => 
 test('generic wall outlet layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('wall-outlet'), true);
 });
+
+test('generic NAS layout remains inside its catalog footprint', () => {
+  assert.equal(isGenericModelLayoutWithinBounds('nas-2bay'), true);
+});

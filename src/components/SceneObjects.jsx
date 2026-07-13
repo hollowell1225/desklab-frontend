@@ -698,11 +698,14 @@ function GenericNasModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
   const depth = obj.scale.y;
+  const layout = getGenericModelLayout(obj.modelId);
+  const [body] = layout.bodies;
+  const [frontPanel] = layout.frontPanels;
 
   return (
     <group>
-      <mesh>
-        <boxGeometry args={[width, height, depth]} />
+      <mesh position={[width * body.x, 0, depth * body.z]}>
+        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
         <meshStandardMaterial
           color={obj.color}
           emissive={materialProps.emissiveColor}
@@ -710,30 +713,39 @@ function GenericNasModel({ obj, materialProps }) {
           roughness={0.64}
         />
       </mesh>
-      <mesh position={[0, 0, depth * 0.51]}>
-        <boxGeometry args={[width * 0.88, height * 0.84, depth * 0.06]} />
+      <mesh position={[width * frontPanel.x, 0, depth * frontPanel.z]}>
+        <boxGeometry args={[width * frontPanel.width, height * 0.84, depth * frontPanel.depth]} />
         <meshStandardMaterial color="#1f2937" roughness={0.7} />
       </mesh>
-      {[-width * 0.23, width * 0.23].map((x, index) => (
-        <group key={index} position={[x, -height * 0.04, depth * 0.56]}>
+      {layout.driveBays.map((bay, index) => {
+        const handle = layout.driveHandles[index];
+        return (
+        <group key={index} position={[width * bay.x, -height * 0.04, depth * bay.z]}>
           <mesh>
-            <boxGeometry args={[width * 0.34, height * 0.62, depth * 0.05]} />
+            <boxGeometry args={[width * bay.width, height * 0.62, depth * bay.depth]} />
             <meshStandardMaterial color="#0f172a" roughness={0.76} />
           </mesh>
-          <mesh position={[0, -height * 0.22, depth * 0.04]}>
-            <boxGeometry args={[width * 0.18, height * 0.045, depth * 0.025]} />
+          <mesh position={[0, -height * 0.22, depth * (handle.z - bay.z)]}>
+            <boxGeometry args={[width * handle.width, height * 0.045, depth * handle.depth]} />
             <meshStandardMaterial color="#64748b" metalness={0.35} roughness={0.45} />
           </mesh>
         </group>
+        );
+      })}
+      {layout.statusLights.map((light, index) => (
+        <mesh
+          key={index}
+          position={[width * light.x, height * 0.38, depth * light.z]}
+          scale={[width * light.width / 2, width * light.width / 2, depth * light.depth / 2]}
+        >
+          <sphereGeometry args={[1, 10, 8]} />
+          <meshStandardMaterial
+            color={index === 0 ? "#4ade80" : "#60a5fa"}
+            emissive={index === 0 ? "#4ade80" : "#60a5fa"}
+            emissiveIntensity={index === 0 ? 0.4 : 0.35}
+          />
+        </mesh>
       ))}
-      <mesh position={[-width * 0.27, height * 0.38, depth * 0.58]}>
-        <sphereGeometry args={[width * 0.035, 10, 8]} />
-        <meshStandardMaterial color="#4ade80" emissive="#4ade80" emissiveIntensity={0.4} />
-      </mesh>
-      <mesh position={[-width * 0.12, height * 0.38, depth * 0.58]}>
-        <sphereGeometry args={[width * 0.035, 10, 8]} />
-        <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.35} />
-      </mesh>
     </group>
   );
 }

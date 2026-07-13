@@ -163,6 +163,27 @@ const GENERIC_WALL_OUTLET_LAYOUT = Object.freeze({
   ]),
 });
 
+const GENERIC_NAS_LAYOUT = Object.freeze({
+  bodies: Object.freeze([
+    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
+  ]),
+  frontPanels: Object.freeze([
+    Object.freeze({ x: 0, z: 0.47, width: 0.88, depth: 0.06 }),
+  ]),
+  driveBays: Object.freeze([
+    Object.freeze({ x: -0.23, z: 0.445, width: 0.34, depth: 0.05 }),
+    Object.freeze({ x: 0.23, z: 0.445, width: 0.34, depth: 0.05 }),
+  ]),
+  driveHandles: Object.freeze([
+    Object.freeze({ x: -0.23, z: 0.485, width: 0.18, depth: 0.025 }),
+    Object.freeze({ x: 0.23, z: 0.485, width: 0.18, depth: 0.025 }),
+  ]),
+  statusLights: Object.freeze([
+    Object.freeze({ x: -0.27, z: 0.48, width: 0.07, depth: 0.03652173913043478 }),
+    Object.freeze({ x: -0.12, z: 0.48, width: 0.07, depth: 0.03652173913043478 }),
+  ]),
+});
+
 const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'l-desk': GENERIC_L_DESK_LAYOUT,
   'standing-desk': GENERIC_STANDING_DESK_LAYOUT,
@@ -175,6 +196,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'mini-pc': GENERIC_MINI_PC_LAYOUT,
   'power-adapter': GENERIC_POWER_ADAPTER_LAYOUT,
   'wall-outlet': GENERIC_WALL_OUTLET_LAYOUT,
+  'nas-2bay': GENERIC_NAS_LAYOUT,
 });
 
 export function getGenericModelLayout(modelId) {
