@@ -6,6 +6,7 @@ export function createProjectHistory({
   groupWindowMs = DEFAULT_GROUP_WINDOW_MS,
   now = Date.now,
 } = {}) {
+  const historyLimit = normalizeHistoryLimit(limit);
   let past = [];
   let future = [];
   let activeGroup = null;
@@ -34,7 +35,7 @@ export function createProjectHistory({
       snapshot.camera = clone(camera);
       snapshot.cameraDirty = Boolean(cameraDirty);
     }
-    past = appendBounded(past, snapshot, limit);
+    past = appendBounded(past, snapshot, historyLimit);
     future = [];
     activeGroup = groupKey ? { key: groupKey, time: timestamp } : null;
     return status();
@@ -51,7 +52,7 @@ export function createProjectHistory({
     }
 
     const nextSource = source.slice(0, -1);
-    const nextDestination = appendBounded(destination, reciprocal, limit);
+    const nextDestination = appendBounded(destination, reciprocal, historyLimit);
     activeGroup = null;
     return {
       snapshot: clone(snapshot),
@@ -94,7 +95,13 @@ export function createProjectHistory({
 }
 
 function appendBounded(items, item, limit) {
+  if (limit === 0) return [];
   return [...items, item].slice(-limit);
+}
+
+function normalizeHistoryLimit(limit) {
+  if (!Number.isFinite(limit)) return DEFAULT_HISTORY_LIMIT;
+  return Math.max(0, Math.floor(limit));
 }
 
 function clone(value) {

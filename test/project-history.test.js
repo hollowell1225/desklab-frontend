@@ -105,3 +105,12 @@ test('history limit keeps the newest undo snapshots only', () => {
   assert.deepEqual(secondUndo.snapshot, state('two'));
   assert.deepEqual(secondUndo.status, { canUndo: false, canRedo: true });
 });
+
+test('a zero history limit disables undo snapshots', () => {
+  const history = createProjectHistory({ limit: 0 });
+
+  history.record(state('before'));
+
+  assert.deepEqual(history.status(), { canUndo: false, canRedo: false });
+  assert.equal(history.undo(state('after')).snapshot, null);
+});
