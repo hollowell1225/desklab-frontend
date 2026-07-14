@@ -1611,6 +1611,27 @@ code evidence.
   No browser or visual QA was performed for this domain-only change.
 - Commit: `546722d fix: reject blank connection ids in analysis` (pushed).
 
+### Blank connection-name analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted project contract for
+  connection names. Missing, empty, and whitespace-only names are now reported
+  as `invalid_connection_name` and skipped before endpoint occupancy or
+  topology analysis, so an unsavable link cannot hide an unpowered port.
+- The shared power graph applies the same non-blank name requirement, preventing
+  malformed power links from creating false powered paths, load totals,
+  overload warnings, or purchase suggestions.
+- Test-first regressions failed against both prior behaviors: analysis omitted
+  the invalid-name error and treated the target as powered, while the shared
+  graph counted a 300W load across a whitespace-name connection. Both passed
+  after the guards were added. Existing recommendation fixtures that model
+  valid topology now carry explicit non-blank connection names.
+- Verification: focused analysis regressions passed; `npm test` 263/263;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200;
+  `git diff --check` passed. No browser or visual QA was performed for this
+  domain-only change.
+- Commit: `617e6b0 fix: reject blank connection names in analysis` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
