@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-07-14, Asia/Shanghai
+Last updated: 2026-07-15, Asia/Shanghai
 
 ## Mission
 
@@ -1591,6 +1591,25 @@ code evidence.
   local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
   No browser or visual QA was performed for this domain-only change.
 - Commit: `dc0a188 fix: reject invalid connection lengths in analysis` (pushed).
+
+### Blank connection-ID analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted project contract for
+  connection IDs. Missing, empty, and whitespace-only IDs are now reported as
+  `invalid_connection_id`, retain their raw value for cleanup filtering, and
+  are skipped before endpoint occupancy or topology analysis.
+- The shared power graph applies the same non-blank ID requirement, preventing
+  malformed power links from creating false powered paths, load totals,
+  overload warnings, or purchase suggestions.
+- Test-first regressions failed against both prior behaviors: analysis omitted
+  the invalid-ID error and treated the target as powered, while the shared graph
+  counted a 300W load across a whitespace-ID connection. Both passed after the
+  guards were added.
+- Verification: focused analysis regressions passed; `npm test` 261/261;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
+  No browser or visual QA was performed for this domain-only change.
+- Commit: `546722d fix: reject blank connection ids in analysis` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
