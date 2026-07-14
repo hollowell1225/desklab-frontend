@@ -1672,6 +1672,30 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `390cd15 fix: report unsupported port directions` (pushed).
 
+### Duplicate port-ID ambiguity guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted per-device port-ID uniqueness
+  contract. Duplicate IDs previously produced no object-level issue, and port
+  lookup silently selected the first match when a connection referenced the
+  ambiguous ID.
+- Analysis now indexes duplicate port IDs once per device and reports one
+  `duplicate_port_id_definition` error per duplicated value, including when the
+  ports are unused. Connections that reference an ambiguous endpoint produce
+  the cleanup-eligible `ambiguous_connection_port` error and stop before port
+  occupancy or topology analysis.
+- The shared power graph applies the same ambiguity guard, preventing malformed
+  devices from creating false powered paths, load totals, overload warnings, or
+  downstream purchase suggestions.
+- Three public-interface TDD cycles were confirmed RED then GREEN: unused
+  duplicates lacked a device error; an ambiguous connection hid an unpowered
+  target; and the standalone power graph counted a false 300W load.
+- Verification: focused regressions passed; complete analysis tests 36/36;
+  `npm test` 268/268; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `0eeb79c fix: reject duplicate port id ambiguity` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
