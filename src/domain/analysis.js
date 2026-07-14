@@ -41,6 +41,19 @@ const getPort = (object, portId) => object?.ports?.find(port => port.id === port
 const isPowerStrip = (object) =>
   object?.modelId === 'power-strip' || object?.type === 'power_strip';
 
+function getDuplicatePortIds(object) {
+  const seenPortIds = new Set();
+  const duplicatePortIds = new Set();
+  for (const port of object.ports || []) {
+    if (seenPortIds.has(port.id)) {
+      duplicatePortIds.add(port.id);
+    } else {
+      seenPortIds.add(port.id);
+    }
+  }
+  return duplicatePortIds;
+}
+
 function getOccupiedPort(occupiedPorts, objectId, portId) {
   return occupiedPorts.get(objectId)?.get(portId) || null;
 }
@@ -106,6 +119,9 @@ function appendLengthIssues(issues, connection, objects) {
 
 export function buildPowerGraph(objects, connections) {
   const objectById = new Map(objects.map(object => [object.id, object]));
+  const duplicatePortIdsByObject = new Map(
+    objects.map(object => [object.id, getDuplicatePortIds(object)])
+  );
   const powerEdges = [];
   const occupiedPorts = new Map();
   const seenConnectionIds = new Set();
@@ -120,6 +136,8 @@ export function buildPowerGraph(objects, connections) {
     const fromObj = objectById.get(connection.fromObjectId);
     const toObj = objectById.get(connection.toObjectId);
     if (!fromObj || !toObj) continue;
+    if (duplicatePortIdsByObject.get(fromObj.id)?.has(connection.fromPortId)) continue;
+    if (duplicatePortIdsByObject.get(toObj.id)?.has(connection.toPortId)) continue;
     const fromPort = getPort(fromObj, connection.fromPortId);
     const toPort = getPort(toObj, connection.toPortId);
     const sourceDirectionValid = fromPort?.direction === 'output' || fromPort?.direction === 'bidirectional';
@@ -169,6 +187,9 @@ export function buildPowerGraph(objects, connections) {
 export function analyzeProjectWiring(objects, connections) {
   const issues = [];
   const objectById = new Map(objects.map(object => [object.id, object]));
+  const duplicatePortIdsByObject = new Map(
+    objects.map(object => [object.id, getDuplicatePortIds(object)])
+  );
   const occupiedPorts = new Map();
   const powerEdges = [];
   const seenConnectionIds = new Set();
@@ -306,6 +327,23 @@ export function analyzeProjectWiring(objects, connections) {
       continue;
     }
 
+    const hasAmbiguousPort = duplicatePortIdsByObject
+      .get(fromObject.id)?.has(connection.fromPortId)
+      || duplicatePortIdsByObject.get(toObject.id)?.has(connection.toPortId);
+    if (hasAmbiguousPort) {
+      issues.push({
+        id: `ambiguous-port:${connection.id}`,
+        code: 'ambiguous_connection_port',
+        severity: 'error',
+        title: `连接“${connection.name}”引用了重复端口 ID`,
+        description: '连接端点无法唯一解析。请修复设备端口定义并重新创建连接。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
+
     const fromPort = getPort(fromObject, connection.fromPortId);
     const toPort = getPort(toObject, connection.toPortId);
     if (!fromPort || !toPort) {
@@ -435,6 +473,17 @@ export function analyzeProjectWiring(objects, connections) {
   }
 
   for (const object of objects) {
+    for (const duplicatePortId of duplicatePortIdsByObject.get(object.id) || []) {
+      issues.push({
+        id: `duplicate-port-id:${object.id}:${duplicatePortId}`,
+        code: 'duplicate_port_id_definition',
+        severity: 'error',
+        title: `${object.name} 的端口 ID 重复`,
+        description: `端口 ID “${duplicatePortId}”在同一设备内必须唯一。`,
+        connectionIds: [],
+        objectIds: [object.id],
+      });
+    }
     for (const port of object.ports || []) {
       if (!VALID_PORT_DIRECTIONS.has(port.direction)) {
         issues.push({

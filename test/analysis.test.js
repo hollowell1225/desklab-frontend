@@ -356,6 +356,37 @@ test('reports unused ports with unsupported directions', () => {
   assert.deepEqual(invalidDirection?.objectIds, ['device']);
 });
 
+test('reports duplicate port ids even when unused', () => {
+  const device = object('device', [
+    port('duplicate', 'hdmi', 'output'),
+    port('duplicate', 'ethernet', 'output'),
+  ]);
+
+  const issues = analyzeProjectWiring([device], []);
+
+  const duplicatePort = issues.find(issue => issue.code === 'duplicate_port_id_definition');
+  assert.equal(duplicatePort?.severity, 'error');
+  assert.deepEqual(duplicatePort?.connectionIds, []);
+  assert.deepEqual(duplicatePort?.objectIds, ['device']);
+});
+
+test('rejects connections that reference duplicate port ids without occupying power inputs', () => {
+  const objects = [
+    object('source', [
+      port('out', 'ac_output', 'output'),
+      port('out', 'hdmi', 'output'),
+    ]),
+    object('target', [port('in', 'ac_input', 'input')]),
+  ];
+  const ambiguous = connection('ambiguous', 'source', 'out', 'target', 'in');
+
+  const issues = analyzeProjectWiring(objects, [ambiguous]);
+
+  assert.ok(issues.some(issue => issue.code === 'ambiguous_connection_port'));
+  assert.ok(issues.some(issue => issue.id === 'unpowered:target:in'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['ambiguous']);
+});
+
 test('reports power ports whose direction contradicts their type', () => {
   const objects = [
     object('bad-source', [port('bad-out', 'ac_input', 'output')]),
@@ -557,6 +588,19 @@ test('power graph ignores connections with blank names', () => {
   blankName.name = '   ';
 
   assert.equal(computeDevicePowerLoad('source', objects, [blankName]), 0);
+});
+
+test('power graph ignores connections that reference duplicate port ids', () => {
+  const objects = [
+    object('source', [
+      port('out', 'ac_output', 'output'),
+      port('out', 'hdmi', 'output'),
+    ]),
+    object('target', [port('in', 'ac_input', 'input')], { wattage: 300 }),
+  ];
+  const ambiguous = connection('ambiguous', 'source', 'out', 'target', 'in');
+
+  assert.equal(computeDevicePowerLoad('source', objects, [ambiguous]), 0);
 });
 
 test('power graph ignores a later connection that reuses a physical port', () => {
