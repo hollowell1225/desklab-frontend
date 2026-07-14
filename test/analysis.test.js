@@ -370,6 +370,35 @@ test('reports duplicate port ids even when unused', () => {
   assert.deepEqual(duplicatePort?.objectIds, ['device']);
 });
 
+test('reports duplicate object ids even when unused', () => {
+  const objects = [
+    object('duplicate', [], { name: 'First device' }),
+    object('duplicate', [], { name: 'Second device' }),
+  ];
+
+  const issues = analyzeProjectWiring(objects, []);
+
+  const duplicateObject = issues.find(issue => issue.code === 'duplicate_object_id_definition');
+  assert.equal(duplicateObject?.severity, 'error');
+  assert.deepEqual(duplicateObject?.connectionIds, []);
+  assert.deepEqual(duplicateObject?.objectIds, ['duplicate']);
+});
+
+test('rejects connections that reference duplicate object ids without occupying power inputs', () => {
+  const objects = [
+    object('source', [port('out', 'hdmi', 'output')], { name: 'First source' }),
+    object('source', [port('out', 'ac_output', 'output')], { name: 'Second source' }),
+    object('target', [port('in', 'ac_input', 'input')]),
+  ];
+  const ambiguous = connection('ambiguous-object', 'source', 'out', 'target', 'in');
+
+  const issues = analyzeProjectWiring(objects, [ambiguous]);
+
+  assert.ok(issues.some(issue => issue.code === 'ambiguous_connection_object'));
+  assert.ok(issues.some(issue => issue.id === 'unpowered:target:in'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['ambiguous-object']);
+});
+
 test('rejects connections that reference duplicate port ids without occupying power inputs', () => {
   const objects = [
     object('source', [
@@ -599,6 +628,17 @@ test('power graph ignores connections that reference duplicate port ids', () => 
     object('target', [port('in', 'ac_input', 'input')], { wattage: 300 }),
   ];
   const ambiguous = connection('ambiguous', 'source', 'out', 'target', 'in');
+
+  assert.equal(computeDevicePowerLoad('source', objects, [ambiguous]), 0);
+});
+
+test('power graph ignores connections that reference duplicate object ids', () => {
+  const objects = [
+    object('source', [port('out', 'hdmi', 'output')], { name: 'First source' }),
+    object('source', [port('out', 'ac_output', 'output')], { name: 'Second source' }),
+    object('target', [port('in', 'ac_input', 'input')], { wattage: 300 }),
+  ];
+  const ambiguous = connection('ambiguous-object', 'source', 'out', 'target', 'in');
 
   assert.equal(computeDevicePowerLoad('source', objects, [ambiguous]), 0);
 });

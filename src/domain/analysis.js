@@ -41,18 +41,20 @@ const getPort = (object, portId) => object?.ports?.find(port => port.id === port
 const isPowerStrip = (object) =>
   object?.modelId === 'power-strip' || object?.type === 'power_strip';
 
-function getDuplicatePortIds(object) {
-  const seenPortIds = new Set();
-  const duplicatePortIds = new Set();
-  for (const port of object.ports || []) {
-    if (seenPortIds.has(port.id)) {
-      duplicatePortIds.add(port.id);
+function getDuplicateIds(items) {
+  const seenIds = new Set();
+  const duplicateIds = new Set();
+  for (const item of items) {
+    if (seenIds.has(item.id)) {
+      duplicateIds.add(item.id);
     } else {
-      seenPortIds.add(port.id);
+      seenIds.add(item.id);
     }
   }
-  return duplicatePortIds;
+  return duplicateIds;
 }
+
+const getDuplicatePortIds = object => getDuplicateIds(object.ports || []);
 
 function getOccupiedPort(occupiedPorts, objectId, portId) {
   return occupiedPorts.get(objectId)?.get(portId) || null;
@@ -119,6 +121,7 @@ function appendLengthIssues(issues, connection, objects) {
 
 export function buildPowerGraph(objects, connections) {
   const objectById = new Map(objects.map(object => [object.id, object]));
+  const duplicateObjectIds = getDuplicateIds(objects);
   const duplicatePortIdsByObject = new Map(
     objects.map(object => [object.id, getDuplicatePortIds(object)])
   );
@@ -132,6 +135,8 @@ export function buildPowerGraph(objects, connections) {
     seenConnectionIds.add(connection.id);
     if (!isNonBlankString(connection.name)) continue;
     if (!Number.isFinite(connection.length) || connection.length <= 0) continue;
+    if (duplicateObjectIds.has(connection.fromObjectId)) continue;
+    if (duplicateObjectIds.has(connection.toObjectId)) continue;
 
     const fromObj = objectById.get(connection.fromObjectId);
     const toObj = objectById.get(connection.toObjectId);
@@ -187,6 +192,7 @@ export function buildPowerGraph(objects, connections) {
 export function analyzeProjectWiring(objects, connections) {
   const issues = [];
   const objectById = new Map(objects.map(object => [object.id, object]));
+  const duplicateObjectIds = getDuplicateIds(objects);
   const duplicatePortIdsByObject = new Map(
     objects.map(object => [object.id, getDuplicatePortIds(object)])
   );
@@ -251,6 +257,21 @@ export function analyzeProjectWiring(objects, connections) {
         connectionIds: [connection.id],
         invalidConnectionIds: [connection.id],
         objectIds: existingObjectIds,
+      });
+      continue;
+    }
+
+    if (duplicateObjectIds.has(connection.fromObjectId)
+      || duplicateObjectIds.has(connection.toObjectId)) {
+      issues.push({
+        id: `ambiguous-object:${connection.id}`,
+        code: 'ambiguous_connection_object',
+        severity: 'error',
+        title: `连接“${connection.name}”引用了重复设备 ID`,
+        description: '连接端点设备无法唯一解析。请修复设备 ID 并重新创建连接。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
       });
       continue;
     }
@@ -469,6 +490,18 @@ export function analyzeProjectWiring(objects, connections) {
       description: '电源设备之间形成了循环连接。请断开环路并确认每条电源线的实际方向。',
       connectionIds: [],
       objectIds: [],
+    });
+  }
+
+  for (const duplicateObjectId of duplicateObjectIds) {
+    issues.push({
+      id: `duplicate-object-id:${duplicateObjectId}`,
+      code: 'duplicate_object_id_definition',
+      severity: 'error',
+      title: `设备 ID “${duplicateObjectId}”重复`,
+      description: '每台设备必须使用唯一 ID。请修复导入或草稿数据。',
+      connectionIds: [],
+      objectIds: [duplicateObjectId],
     });
   }
 
