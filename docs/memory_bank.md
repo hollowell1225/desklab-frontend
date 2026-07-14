@@ -1632,6 +1632,26 @@ code evidence.
   domain-only change.
 - Commit: `617e6b0 fix: reject blank connection names in analysis` (pushed).
 
+### Unknown connection cable-type analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted cable-type enum. A legacy
+  center-to-center connection with a missing or unknown `cableType` previously
+  received only the informational `legacy_connection` issue even though project
+  loading and the backend reject it.
+- Unsupported values now produce the cleanup-eligible
+  `invalid_connection_cable_type` error before legacy or port-level analysis.
+  Valid legacy connections remain informational, while valid cable types that
+  mismatch bound ports retain the existing `cable_type_mismatch` behavior.
+- The public-interface regression was confirmed RED because analysis omitted the
+  invalid-type error, then GREEN after reusing the shared `CABLE_TYPE_VALUES`
+  contract in analysis.
+- Verification: focused regression passed; complete analysis tests 32/32;
+  `npm test` 264/264; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `64cd92f fix: reject unknown cable types in analysis` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
