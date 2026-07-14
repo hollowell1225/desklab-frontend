@@ -124,6 +124,22 @@ test('reports legacy center-to-center connections as informational', () => {
   assert.deepEqual(getInvalidConnectionIds(issues), []);
 });
 
+test('rejects legacy connections with unknown cable types', () => {
+  const objects = [object('a', []), object('b', [])];
+  const issues = analyzeProjectWiring(objects, [{
+    id: 'unknown-cable',
+    name: 'Unknown cable',
+    cableType: 'mystery',
+    fromObjectId: 'a',
+    toObjectId: 'b',
+    length: 1,
+  }]);
+
+  assert.ok(issues.some(issue => issue.code === 'invalid_connection_cable_type'));
+  assert.equal(issues.some(issue => issue.code === 'legacy_connection'), false);
+  assert.deepEqual(getInvalidConnectionIds(issues), ['unknown-cable']);
+});
+
 test('reports stale object and port references as errors', () => {
   const objects = [
     object('source', [port('out', 'hdmi', 'output')]),

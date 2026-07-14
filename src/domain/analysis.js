@@ -1,5 +1,6 @@
 import {
   arePortTypesCompatible,
+  CABLE_TYPE_VALUES,
   evaluateConnectionLength,
   inferCableType,
   isPortDirectionConsistent,
@@ -8,6 +9,7 @@ import { findModelTemplate } from './catalog.js';
 
 const POWER_INPUT_TYPES = new Set(['ac_input', 'dc_input']);
 const POWER_OUTPUT_TYPES = new Set(['ac_output', 'dc_output']);
+const VALID_CABLE_TYPES = new Set(CABLE_TYPE_VALUES);
 const isNonBlankString = value => typeof value === 'string' && value.trim().length > 0;
 
 // Coerce a stored wattage/maxLoad to a safe non-negative number. Imported or
@@ -252,6 +254,20 @@ export function analyzeProjectWiring(objects, connections) {
         severity: 'error',
         title: `连接“${connection.name}”的线长无效`,
         description: '线材长度必须是大于 0 的有限数值。请删除该连接后重新创建。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
+
+    if (!VALID_CABLE_TYPES.has(connection.cableType)) {
+      issues.push({
+        id: `invalid-connection-cable-type:${connection.id}`,
+        code: 'invalid_connection_cable_type',
+        severity: 'error',
+        title: `连接“${connection.name}”的线材类型无效`,
+        description: '线材类型不在支持范围内。请删除该连接后重新创建。',
         connectionIds: [connection.id],
         invalidConnectionIds: [connection.id],
         objectIds: [connection.fromObjectId, connection.toObjectId],
