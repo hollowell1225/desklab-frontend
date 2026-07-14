@@ -351,7 +351,7 @@ test('does not recommend a switch when another router has free LAN capacity', ()
   const connected = pc('connected');
   const unconnected = pc('unconnected');
   const connections = [{
-    id: 'router-connected', cableType: 'ethernet', length: 1,
+    id: 'router-connected', name: 'Router connection', cableType: 'ethernet', length: 1,
     fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'connected', toPortId: 'eth-1',
   }];
 
@@ -378,7 +378,7 @@ test('recommends a switch when a reachable switch only has a WAN port free', () 
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
   });
   const connections = [{
-    id: 'router-switch', cableType: 'ethernet', length: 1,
+    id: 'router-switch', name: 'Router switch uplink', cableType: 'ethernet', length: 1,
     fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'switch-1', toPortId: 'uplink',
   }];
 
@@ -406,7 +406,7 @@ test('recommends a switch when a reachable switch is unpowered', () => {
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
   });
   const connections = [{
-    id: 'router-switch', cableType: 'ethernet', length: 1,
+    id: 'router-switch', name: 'Router switch uplink', cableType: 'ethernet', length: 1,
     fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'switch-1', toPortId: 'eth-1',
   }];
 
@@ -428,7 +428,7 @@ test('marks a switch purchase as requiring LAN migration when the router is full
   const connected = pc('connected');
   const unconnected = pc('unconnected');
   const connections = [{
-    id: 'router-connected', cableType: 'ethernet', length: 1,
+    id: 'router-connected', name: 'Router connection', cableType: 'ethernet', length: 1,
     fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'connected', toPortId: 'eth-1',
   }];
 
@@ -514,7 +514,7 @@ test('suggests powering an unpowered device and the fix creates a valid connecti
   });
   const objects = [outlet, strip, pc];
   const connections = [{
-    id: 'outlet-strip', cableType: 'power', length: 1,
+    id: 'outlet-strip', name: 'Outlet strip power', cableType: 'power', length: 1,
     fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'strip1', toPortId: 'ac-in',
   }];
 
@@ -558,7 +558,7 @@ test('auto_power_device infers cable type correctly for dc_input devices', () =>
   });
   const objects = [outlet, adapter, laptop];
   const connections = [{
-    id: 'outlet-adapter', cableType: 'power', length: 1,
+    id: 'outlet-adapter', name: 'Outlet adapter power', cableType: 'power', length: 1,
     fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'adapter', toPortId: 'ac-in',
   }];
 
@@ -622,7 +622,7 @@ test('does not use a power strip fed only by an unpowered upstream strip', () =>
     ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
   });
   const connections = [{
-    id: 'strip-chain', cableType: 'power', length: 1,
+    id: 'strip-chain', name: 'Strip chain', cableType: 'power', length: 1,
     fromObjectId: 'upstream', fromPortId: 'ac-out', toObjectId: 'downstream', toPortId: 'ac-in',
   }];
 
@@ -696,7 +696,7 @@ test('ignores invalid connection occupancy when recommending power fixes', () =>
   });
   const connections = [
     {
-      id: 'outlet-source', cableType: 'power', length: 1,
+      id: 'outlet-source', name: 'Outlet source power', cableType: 'power', length: 1,
       fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'source', toPortId: 'ac-in',
     },
     {
@@ -740,7 +740,7 @@ test('auto_power_device with real catalog power-adapter and laptop clears unpowe
   }).object;
   const objects = [outlet, adapter, laptop];
   const connections = [{
-    id: 'outlet-adapter', cableType: 'power', length: 1,
+    id: 'outlet-adapter', name: 'Outlet adapter power', cableType: 'power', length: 1,
     fromObjectId: 'outlet', fromPortId: 'ac-out-1', toObjectId: 'adapter', toPortId: 'ac-in',
   }];
 
@@ -1169,7 +1169,7 @@ test('does not use an unpowered router as an automatic network source', () => {
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
   });
   const connections = [{
-    id: 'adapter-router', cableType: 'power', length: 1,
+    id: 'adapter-router', name: 'Adapter router power', cableType: 'power', length: 1,
     fromObjectId: 'adapter', fromPortId: 'dc-out', toObjectId: 'router', toPortId: 'dc-in',
   }];
 
@@ -1228,8 +1228,8 @@ test('does not treat an ordinary dual-port device as a switch uplink', () => {
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
   });
   const connections = [
-    { id: 'router-pc', cableType: 'ethernet', length: 1, fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'dual-port-pc', toPortId: 'eth-1' },
-    { id: 'pc-switch', cableType: 'ethernet', length: 1, fromObjectId: 'dual-port-pc', fromPortId: 'eth-2', toObjectId: 'switch', toPortId: 'eth-1' },
+    { id: 'router-pc', name: 'Router PC link', cableType: 'ethernet', length: 1, fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'dual-port-pc', toPortId: 'eth-1' },
+    { id: 'pc-switch', name: 'PC switch link', cableType: 'ethernet', length: 1, fromObjectId: 'dual-port-pc', fromPortId: 'eth-2', toObjectId: 'switch', toPortId: 'eth-1' },
   ];
 
   const suggestions = buildFreeImprovements(room, [router, dualPortPc, switchDevice, target], connections);
@@ -1257,7 +1257,7 @@ test('uses a switch after it is validly uplinked to a router', () => {
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
   });
   const connections = [{
-    id: 'router-switch', cableType: 'ethernet', length: 1,
+    id: 'router-switch', name: 'Router switch uplink', cableType: 'ethernet', length: 1,
     fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'switch', toPortId: 'eth-1',
   }];
 
@@ -1510,7 +1510,7 @@ test('does not suggest buying power when unpowered device has a nearby free port
   });
   const objects = [outlet, strip, pc];
   const connections = [{
-    id: 'outlet-strip', cableType: 'power', length: 1,
+    id: 'outlet-strip', name: 'Outlet strip power', cableType: 'power', length: 1,
     fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'strip1', toPortId: 'ac-in',
   }];
 

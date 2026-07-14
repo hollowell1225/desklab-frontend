@@ -173,6 +173,21 @@ test('rejects blank connection ids without occupying power ports', () => {
   assert.deepEqual(getInvalidConnectionIds(issues), ['   ']);
 });
 
+test('rejects blank connection names without occupying power ports', () => {
+  const objects = [
+    object('source', [port('out', 'ac_output', 'output')]),
+    object('target', [port('in', 'ac_input', 'input')]),
+  ];
+  const blankName = connection('blank-name', 'source', 'out', 'target', 'in');
+  blankName.name = '   ';
+
+  const issues = analyzeProjectWiring(objects, [blankName]);
+
+  assert.ok(issues.some(issue => issue.code === 'invalid_connection_name'));
+  assert.ok(issues.some(issue => issue.id === 'unpowered:target:in'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['blank-name']);
+});
+
 test('reports duplicate connection ids even when their ports differ', () => {
   const objects = [
     object('source', [
@@ -504,6 +519,17 @@ test('power graph ignores connections with blank ids', () => {
   const blankId = connection('   ', 'source', 'out', 'target', 'in');
 
   assert.equal(computeDevicePowerLoad('source', objects, [blankId]), 0);
+});
+
+test('power graph ignores connections with blank names', () => {
+  const objects = [
+    object('source', [port('out', 'ac_output', 'output')]),
+    object('target', [port('in', 'ac_input', 'input')], { wattage: 300 }),
+  ];
+  const blankName = connection('blank-name', 'source', 'out', 'target', 'in');
+  blankName.name = '   ';
+
+  assert.equal(computeDevicePowerLoad('source', objects, [blankName]), 0);
 });
 
 test('power graph ignores a later connection that reuses a physical port', () => {

@@ -111,6 +111,7 @@ export function buildPowerGraph(objects, connections) {
     if (!isNonBlankString(connection.id)) continue;
     if (seenConnectionIds.has(connection.id)) continue;
     seenConnectionIds.add(connection.id);
+    if (!isNonBlankString(connection.name)) continue;
     if (!Number.isFinite(connection.length) || connection.length <= 0) continue;
 
     const fromObj = objectById.get(connection.fromObjectId);
@@ -197,6 +198,20 @@ export function analyzeProjectWiring(objects, connections) {
       continue;
     }
     seenConnectionIds.add(connection.id);
+
+    if (!isNonBlankString(connection.name)) {
+      issues.push({
+        id: `invalid-connection-name:${connection.id}`,
+        code: 'invalid_connection_name',
+        severity: 'error',
+        title: `连接“${connection.id}”的名称不能为空`,
+        description: '连接名称必须是非空字符串。请删除该连接后重新创建。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
 
     const fromObject = objectById.get(connection.fromObjectId);
     const toObject = objectById.get(connection.toObjectId);
