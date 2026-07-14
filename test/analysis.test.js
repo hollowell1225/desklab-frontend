@@ -345,6 +345,17 @@ test('does not flag matching custom/future port types carried as other cables', 
   assert.deepEqual(getInvalidConnectionIds(issues), []);
 });
 
+test('reports unused ports with unsupported directions', () => {
+  const device = object('device', [port('hdmi', 'hdmi', 'sideways')]);
+
+  const issues = analyzeProjectWiring([device], []);
+
+  const invalidDirection = issues.find(issue => issue.code === 'invalid_port_direction_definition');
+  assert.equal(invalidDirection?.severity, 'error');
+  assert.deepEqual(invalidDirection?.connectionIds, []);
+  assert.deepEqual(invalidDirection?.objectIds, ['device']);
+});
+
 test('reports power ports whose direction contradicts their type', () => {
   const objects = [
     object('bad-source', [port('bad-out', 'ac_input', 'output')]),

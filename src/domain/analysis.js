@@ -10,6 +10,7 @@ import { findModelTemplate } from './catalog.js';
 const POWER_INPUT_TYPES = new Set(['ac_input', 'dc_input']);
 const POWER_OUTPUT_TYPES = new Set(['ac_output', 'dc_output']);
 const VALID_CABLE_TYPES = new Set(CABLE_TYPE_VALUES);
+const VALID_PORT_DIRECTIONS = new Set(['input', 'output', 'bidirectional']);
 const isNonBlankString = value => typeof value === 'string' && value.trim().length > 0;
 
 // Coerce a stored wattage/maxLoad to a safe non-negative number. Imported or
@@ -435,6 +436,18 @@ export function analyzeProjectWiring(objects, connections) {
 
   for (const object of objects) {
     for (const port of object.ports || []) {
+      if (!VALID_PORT_DIRECTIONS.has(port.direction)) {
+        issues.push({
+          id: `invalid-port-direction:${object.id}:${port.id}`,
+          code: 'invalid_port_direction_definition',
+          severity: 'error',
+          title: `${object.name} 的端口方向无效`,
+          description: `端口“${port.name}”的方向必须是 input、output 或 bidirectional。`,
+          connectionIds: [],
+          objectIds: [object.id],
+        });
+        continue;
+      }
       if (!isPortDirectionConsistent(port)) {
         issues.push({
           id: `invalid-power-port:${object.id}:${port.id}`,
