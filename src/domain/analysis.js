@@ -135,6 +135,8 @@ export function buildPowerGraph(objects, connections) {
     seenConnectionIds.add(connection.id);
     if (!isNonBlankString(connection.name)) continue;
     if (!Number.isFinite(connection.length) || connection.length <= 0) continue;
+    if (!isNonBlankString(connection.fromObjectId)) continue;
+    if (!isNonBlankString(connection.toObjectId)) continue;
     if (duplicateObjectIds.has(connection.fromObjectId)) continue;
     if (duplicateObjectIds.has(connection.toObjectId)) continue;
 
@@ -236,6 +238,21 @@ export function analyzeProjectWiring(objects, connections) {
         severity: 'error',
         title: `连接“${connection.id}”的名称不能为空`,
         description: '连接名称必须是非空字符串。请删除该连接后重新创建。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
+
+    if (!isNonBlankString(connection.fromObjectId)
+      || !isNonBlankString(connection.toObjectId)) {
+      issues.push({
+        id: `invalid-connection-object-id:${connection.id}`,
+        code: 'invalid_connection_object_id',
+        severity: 'error',
+        title: `连接“${connection.name}”的设备 ID 无效`,
+        description: '连接起点和终点必须使用非空设备 ID。请删除该连接后重新创建。',
         connectionIds: [connection.id],
         invalidConnectionIds: [connection.id],
         objectIds: [connection.fromObjectId, connection.toObjectId],
@@ -492,6 +509,19 @@ export function analyzeProjectWiring(objects, connections) {
       objectIds: [],
     });
   }
+
+  objects.forEach((object, index) => {
+    if (isNonBlankString(object.id)) return;
+    issues.push({
+      id: `invalid-object-id:${index}`,
+      code: 'invalid_object_id_definition',
+      severity: 'error',
+      title: '设备 ID 不能为空',
+      description: '每台设备必须使用非空 ID。请修复导入或草稿数据。',
+      connectionIds: [],
+      objectIds: [object.id],
+    });
+  });
 
   for (const duplicateObjectId of duplicateObjectIds) {
     issues.push({

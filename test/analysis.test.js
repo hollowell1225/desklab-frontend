@@ -384,6 +384,31 @@ test('reports duplicate object ids even when unused', () => {
   assert.deepEqual(duplicateObject?.objectIds, ['duplicate']);
 });
 
+test('reports blank object ids even when unused', () => {
+  const device = object('   ', [], { name: 'Unnamed device' });
+
+  const issues = analyzeProjectWiring([device], []);
+
+  const invalidObject = issues.find(issue => issue.code === 'invalid_object_id_definition');
+  assert.equal(invalidObject?.severity, 'error');
+  assert.deepEqual(invalidObject?.connectionIds, []);
+  assert.deepEqual(invalidObject?.objectIds, ['   ']);
+});
+
+test('rejects blank connection object ids without occupying power inputs', () => {
+  const objects = [
+    object('   ', [port('out', 'ac_output', 'output')], { name: 'Invalid source' }),
+    object('target', [port('in', 'ac_input', 'input')]),
+  ];
+  const invalidEndpoint = connection('blank-object', '   ', 'out', 'target', 'in');
+
+  const issues = analyzeProjectWiring(objects, [invalidEndpoint]);
+
+  assert.ok(issues.some(issue => issue.code === 'invalid_connection_object_id'));
+  assert.ok(issues.some(issue => issue.id === 'unpowered:target:in'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['blank-object']);
+});
+
 test('rejects connections that reference duplicate object ids without occupying power inputs', () => {
   const objects = [
     object('source', [port('out', 'hdmi', 'output')], { name: 'First source' }),
@@ -641,6 +666,16 @@ test('power graph ignores connections that reference duplicate object ids', () =
   const ambiguous = connection('ambiguous-object', 'source', 'out', 'target', 'in');
 
   assert.equal(computeDevicePowerLoad('source', objects, [ambiguous]), 0);
+});
+
+test('power graph ignores connections with blank object ids', () => {
+  const objects = [
+    object('   ', [port('out', 'ac_output', 'output')], { name: 'Invalid source' }),
+    object('target', [port('in', 'ac_input', 'input')], { wattage: 300 }),
+  ];
+  const invalidEndpoint = connection('blank-object', '   ', 'out', 'target', 'in');
+
+  assert.equal(computeDevicePowerLoad('   ', objects, [invalidEndpoint]), 0);
 });
 
 test('power graph ignores a later connection that reuses a physical port', () => {
