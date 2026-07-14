@@ -1652,6 +1652,26 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `64cd92f fix: reject unknown cable types in analysis` (pushed).
 
+### Unsupported port-direction analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted port-direction enum. An
+  unused non-power port whose direction was outside `input`, `output`, and
+  `bidirectional` previously produced no issue even though project loading and
+  the backend reject the object.
+- Every port is now checked independently of connection occupancy. Unsupported
+  directions produce the object-level `invalid_port_direction_definition`
+  error, so malformed imported/live data has a visible device-scoped diagnosis.
+  Existing valid-enum directions that contradict AC/DC port types retain the
+  more specific `invalid_power_port_definition` behavior.
+- The public-interface regression was confirmed RED with an unused HDMI port
+  using `sideways`, then GREEN after the enum guard was added.
+- Verification: focused regression passed; complete analysis tests 33/33;
+  `npm test` 265/265; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `390cd15 fix: report unsupported port directions` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
