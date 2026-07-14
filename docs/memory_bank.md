@@ -1696,6 +1696,31 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `0eeb79c fix: reject duplicate port id ambiguity` (pushed).
 
+### Duplicate object-ID ambiguity guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted project-wide object-ID
+  uniqueness contract. Duplicate device IDs previously produced no analysis
+  issue, and `Map` construction silently selected the last matching object when
+  resolving connection endpoints.
+- Analysis now reports one `duplicate_object_id_definition` error per duplicated
+  value, including when the devices are unused. Connections that reference an
+  ambiguous device produce the cleanup-eligible `ambiguous_connection_object`
+  error and stop before self-reference, port occupancy, or topology analysis.
+- The shared power graph applies the same ambiguity guard, preventing array
+  ordering from creating false powered paths, load totals, overload warnings,
+  or downstream purchase suggestions.
+- Three public-interface TDD cycles were confirmed RED then GREEN: unused
+  duplicates lacked an object error; an ambiguous connection hid an unpowered
+  target; and the standalone power graph counted a false 300W load. The GREEN
+  refactor then consolidated object and port duplicate scans into the shared
+  internal `getDuplicateIds` helper.
+- Verification: focused regressions passed; complete analysis tests 39/39;
+  `npm test` 271/271; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `a1b93f9 fix: reject duplicate object id ambiguity` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
