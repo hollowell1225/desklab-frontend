@@ -1557,6 +1557,22 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `4008b33 fix: make improvement patches idempotent` (pushed).
 
+### Case-insensitive WAN port recognition (2026-07-14)
+
+- Fixed custom/imported switch ports whose ID used uppercase `WAN` while their
+  display name did not contain WAN. The shared predicate previously compared
+  only the ID's exact lowercase spelling, so such a port could be offered for
+  automatic switch uplink and counted as downstream network capacity.
+- WAN port IDs now compare case-insensitively, matching the existing port-name
+  behavior and the router LAN ID handling. Test-first coverage confirms an
+  uppercase `WAN` ID named `Internet` cannot receive an automatic uplink.
+- Verification: focused regression failed before the fix and passed afterward;
+  `npm test` 257/257; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200. No browser or visual QA was
+  performed for this domain-only change.
+- Commit: `3515306 fix: match WAN port ids case-insensitively` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
