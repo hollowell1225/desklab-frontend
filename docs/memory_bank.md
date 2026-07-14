@@ -1721,6 +1721,29 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `a1b93f9 fix: reject duplicate object id ambiguity` (pushed).
 
+### Blank object and endpoint-ID analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted non-blank object-ID contract.
+  A device whose ID was missing, empty, or whitespace-only previously produced
+  no object-level analysis issue.
+- Invalid device IDs now produce `invalid_object_id_definition`, including when
+  the device is unused. Connections whose `fromObjectId` or `toObjectId` is not
+  a non-blank string produce the cleanup-eligible
+  `invalid_connection_object_id` error before object lookup, port occupancy, or
+  topology analysis.
+- The shared power graph applies the same endpoint-ID guard, preventing invalid
+  object keys from creating false powered paths, load totals, overload warnings,
+  or downstream purchase suggestions.
+- Three public-interface TDD cycles were confirmed RED then GREEN: an unused
+  whitespace-ID device lacked an error; a connection to that device hid an
+  unpowered target; and the standalone power graph counted a false 300W load.
+- Verification: focused regressions passed; complete analysis tests 42/42;
+  `npm test` 274/274; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `398eb00 fix: reject blank object ids in analysis` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
