@@ -45,7 +45,7 @@ function getInvalidConnectionIds(wiringIssues) {
 }
 
 function isWanPort(port) {
-  return port.id === 'wan' || port.name?.toLowerCase().includes('wan');
+  return String(port.id).toLowerCase() === 'wan' || port.name?.toLowerCase().includes('wan');
 }
 
 function hasPowerInput(object) {

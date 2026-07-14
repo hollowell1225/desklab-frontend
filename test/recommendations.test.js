@@ -1320,6 +1320,23 @@ test('does not uplink a switch through its WAN port', () => {
   );
 });
 
+test('recognizes custom switch WAN port ids regardless of case', () => {
+  const router = object('router', {
+    type: 'router', modelId: 'router',
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch', modelId: 'switch',
+    ports: [{ id: 'WAN', name: 'Internet', type: 'ethernet', direction: 'bidirectional' }],
+  });
+
+  assert.equal(
+    buildFreeImprovements(room, [router, switchDevice], []).some(item => item.code === 'auto_uplink_switch'),
+    false,
+    'an uppercase WAN id must not be treated as downstream switch capacity'
+  );
+});
+
 test('does not uplink a switch before its power input is connected', () => {
   const router = object('router', {
     type: 'router', modelId: 'router',
