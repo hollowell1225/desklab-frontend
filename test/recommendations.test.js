@@ -455,8 +455,8 @@ test('recommends a power strip purchase when a power strip is fully occupied', (
   const objects = [strip, pc('pc1'), pc('pc2')];
   // Occupy all ac_output ports of the strip (ac-out-1 and ac-out-2)
   const connections = [
-    { id: 'c1', name: 'p1', cableType: 'power', fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'pc1', toPortId: 'ac-in' },
-    { id: 'c2', name: 'p2', cableType: 'power', fromObjectId: 'strip-1', fromPortId: 'ac-out-2', toObjectId: 'pc2', toPortId: 'ac-in' },
+    { id: 'c1', name: 'p1', cableType: 'power', length: 1, fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'pc1', toPortId: 'ac-in' },
+    { id: 'c2', name: 'p2', cableType: 'power', length: 1, fromObjectId: 'strip-1', fromPortId: 'ac-out-2', toObjectId: 'pc2', toPortId: 'ac-in' },
   ];
 
   const purchases = buildPurchaseSuggestions(objects, connections);
@@ -468,7 +468,7 @@ test('recommends a power strip purchase when a power strip is fully occupied', (
 
   // Verify it doesn't recommend if the strip has vacant ac_output ports
   const vacantConnections = [
-    { id: 'c1', name: 'p1', cableType: 'power', fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'pc1', toPortId: 'ac-in' },
+    { id: 'c1', name: 'p1', cableType: 'power', length: 1, fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'pc1', toPortId: 'ac-in' },
   ];
   const purchasesVacant = buildPurchaseSuggestions(objects, vacantConnections);
   assert.equal(purchasesVacant.some(item => item.code === 'buy_power_strip'), false);
@@ -1228,8 +1228,8 @@ test('does not treat an ordinary dual-port device as a switch uplink', () => {
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
   });
   const connections = [
-    { id: 'router-pc', cableType: 'ethernet', fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'dual-port-pc', toPortId: 'eth-1' },
-    { id: 'pc-switch', cableType: 'ethernet', fromObjectId: 'dual-port-pc', fromPortId: 'eth-2', toObjectId: 'switch', toPortId: 'eth-1' },
+    { id: 'router-pc', cableType: 'ethernet', length: 1, fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'dual-port-pc', toPortId: 'eth-1' },
+    { id: 'pc-switch', cableType: 'ethernet', length: 1, fromObjectId: 'dual-port-pc', fromPortId: 'eth-2', toObjectId: 'switch', toPortId: 'eth-1' },
   ];
 
   const suggestions = buildFreeImprovements(room, [router, dualPortPc, switchDevice, target], connections);
@@ -1257,7 +1257,7 @@ test('uses a switch after it is validly uplinked to a router', () => {
     ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
   });
   const connections = [{
-    id: 'router-switch', cableType: 'ethernet',
+    id: 'router-switch', cableType: 'ethernet', length: 1,
     fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'switch', toPortId: 'eth-1',
   }];
 
@@ -1424,8 +1424,8 @@ test('suggests purchasing a UPS/power split when a power hub is overloaded', () 
   const objects = [ups, pc, monitor];
 
   const connections = [
-    { id: 'c1', name: 'c1', cableType: 'power', fromObjectId: 'my-ups', fromPortId: 'ac-out-1', toObjectId: 'my-pc', toPortId: 'ac-in' },
-    { id: 'c2', name: 'c2', cableType: 'power', fromObjectId: 'my-ups', fromPortId: 'ac-out-2', toObjectId: 'my-monitor', toPortId: 'ac-in' }
+    { id: 'c1', name: 'c1', cableType: 'power', length: 1, fromObjectId: 'my-ups', fromPortId: 'ac-out-1', toObjectId: 'my-pc', toPortId: 'ac-in' },
+    { id: 'c2', name: 'c2', cableType: 'power', length: 1, fromObjectId: 'my-ups', fromPortId: 'ac-out-2', toObjectId: 'my-monitor', toPortId: 'ac-in' }
   ];
 
   const suggestions = buildPurchaseSuggestions(objects, connections);

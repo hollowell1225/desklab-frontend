@@ -109,6 +109,7 @@ export function buildPowerGraph(objects, connections) {
   for (const connection of connections) {
     if (seenConnectionIds.has(connection.id)) continue;
     seenConnectionIds.add(connection.id);
+    if (!Number.isFinite(connection.length) || connection.length <= 0) continue;
 
     const fromObj = objectById.get(connection.fromObjectId);
     const toObj = objectById.get(connection.toObjectId);
@@ -210,6 +211,20 @@ export function analyzeProjectWiring(objects, connections) {
         connectionIds: [connection.id],
         invalidConnectionIds: [connection.id],
         objectIds: [connection.fromObjectId],
+      });
+      continue;
+    }
+
+    if (!Number.isFinite(connection.length) || connection.length <= 0) {
+      issues.push({
+        id: `invalid-connection-length:${connection.id}`,
+        code: 'invalid_connection_length',
+        severity: 'error',
+        title: `连接“${connection.name}”的线长无效`,
+        description: '线材长度必须是大于 0 的有限数值。请删除该连接后重新创建。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
       });
       continue;
     }

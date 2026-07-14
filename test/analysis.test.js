@@ -193,6 +193,20 @@ test('reports self-referencing connections as invalid instead of a power loop', 
   assert.deepEqual(getInvalidConnectionIds(issues), ['self-power']);
 });
 
+test('rejects non-positive cable lengths without occupying power ports', () => {
+  const objects = [
+    object('source', [port('out', 'ac_output', 'output')]),
+    object('target', [port('in', 'ac_input', 'input')]),
+  ];
+  const invalidLength = connection('zero-length', 'source', 'out', 'target', 'in', 0);
+
+  const issues = analyzeProjectWiring(objects, [invalidLength]);
+
+  assert.ok(issues.some(issue => issue.code === 'invalid_connection_length'));
+  assert.ok(issues.some(issue => issue.id === 'unpowered:target:in'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['zero-length']);
+});
+
 test('reports invalid semantics and duplicate physical port occupancy', () => {
   const objects = [
     object('source', [port('out', 'hdmi', 'output')]),
@@ -456,6 +470,16 @@ test('power graph ignores invalid direction and type power connections', () => {
   assert.equal(computeDevicePowerLoad('wrong-direction-source', objects, connections, graph), 0);
   assert.equal(computeDevicePowerLoad('incompatible-source', objects, connections, graph), 0);
   assert.equal(computeDevicePowerLoad('wrong-cable-source', objects, connections, graph), 0);
+});
+
+test('power graph ignores connections with invalid cable lengths', () => {
+  const objects = [
+    object('source', [port('out', 'ac_output', 'output')]),
+    object('target', [port('in', 'ac_input', 'input')], { wattage: 300 }),
+  ];
+  const invalidLength = connection('zero-length', 'source', 'out', 'target', 'in', 0);
+
+  assert.equal(computeDevicePowerLoad('source', objects, [invalidLength]), 0);
 });
 
 test('power graph ignores a later connection that reuses a physical port', () => {
