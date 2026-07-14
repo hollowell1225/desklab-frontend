@@ -1573,6 +1573,25 @@ code evidence.
   performed for this domain-only change.
 - Commit: `3515306 fix: match WAN port ids case-insensitively` (pushed).
 
+### Invalid connection-length analysis guard (2026-07-14)
+
+- Aligned live wiring analysis with the persisted project contract for cable
+  lengths. Connections with a missing, non-finite, zero, or negative length are
+  now reported as `invalid_connection_length`, exposed for invalid-connection
+  cleanup, and skipped before physical ports are occupied.
+- The shared power graph now excludes the same malformed connections, preventing
+  them from creating false powered paths, load totals, overload warnings, or
+  purchase suggestions. Recommendation test fixtures that represented valid
+  topology were updated with explicit positive lengths.
+- Test-first regressions failed against both prior behaviors: analysis did not
+  report the invalid connection, and a zero-length power link contributed a
+  false 300W load. Both passed after the guards were added.
+- Verification: focused analysis regressions passed; `npm test` 259/259;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200.
+  No browser or visual QA was performed for this domain-only change.
+- Commit: `dc0a188 fix: reject invalid connection lengths in analysis` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
