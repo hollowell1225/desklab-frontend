@@ -8,6 +8,7 @@ import { findModelTemplate } from './catalog.js';
 
 const POWER_INPUT_TYPES = new Set(['ac_input', 'dc_input']);
 const POWER_OUTPUT_TYPES = new Set(['ac_output', 'dc_output']);
+const isNonBlankString = value => typeof value === 'string' && value.trim().length > 0;
 
 // Coerce a stored wattage/maxLoad to a safe non-negative number. Imported or
 // draft-restored data can carry these as strings (isProjectObject does not
@@ -107,6 +108,7 @@ export function buildPowerGraph(objects, connections) {
   const seenConnectionIds = new Set();
 
   for (const connection of connections) {
+    if (!isNonBlankString(connection.id)) continue;
     if (seenConnectionIds.has(connection.id)) continue;
     seenConnectionIds.add(connection.id);
     if (!Number.isFinite(connection.length) || connection.length <= 0) continue;
@@ -168,6 +170,19 @@ export function analyzeProjectWiring(objects, connections) {
   const seenConnectionIds = new Set();
 
   for (const connection of connections) {
+    if (!isNonBlankString(connection.id)) {
+      issues.push({
+        id: `invalid-connection-id:${String(connection.id)}`,
+        code: 'invalid_connection_id',
+        severity: 'error',
+        title: '连接 ID 不能为空',
+        description: '每条连接必须使用非空 ID。请删除该连接后重新创建。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
     if (seenConnectionIds.has(connection.id)) {
       issues.push({
         id: `duplicate-connection-id:${connection.id}`,
