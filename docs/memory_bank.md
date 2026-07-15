@@ -1851,6 +1851,28 @@ code evidence.
   `git diff --check` passed. No browser or visual QA was performed.
 - Commit: `57bbb0e fix: ignore malformed ports in endpoint lookup` (pushed).
 
+### Malformed live object/connection collection guard (2026-07-15)
+
+- Problem: the public live-insight APIs assumed every `objects` and
+  `connections` array entry was record-shaped. A transient `null` entry
+  crashed wiring analysis while primitives and arrays could create ghost
+  diagnostics or recommendations from `id === undefined`.
+- Test-first regression: one App-shaped public behavior test mixes `null`,
+  `undefined`, primitives, and array records with a valid floating object.
+  It first failed with `TypeError` at `analyzeProjectWiring()`, then verified
+  every exported analysis/recommendation entry point ignores non-record items
+  without hiding the valid `drop_to_support` suggestion.
+- Fix: added the dependency-free `getRecordItems()` collection seam and used
+  it at the wiring analysis, power graph, layout analysis, free-improvement,
+  purchase-suggestion, and recommendation-facade boundaries. Plain mid-edit
+  records still flow into the existing field-level diagnostics.
+- Verification: focused regression RED 0/1 then GREEN 1/1; `npm test`
+  283/283; `npm run lint`; `npm run build` (known non-fatal large-chunk
+  warning only); local frontend `/` and backend `/api/projects/default`
+  HTTP checks both 200; `git diff --check` passed. No browser or visual QA
+  was performed.
+- Commit: `a81852b fix: ignore non-record live insight entries` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
