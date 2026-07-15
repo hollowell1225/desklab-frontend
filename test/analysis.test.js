@@ -170,7 +170,7 @@ test('does not treat blank port ids as legacy unbound connections', () => {
 
   const issues = analyzeProjectWiring(objects, [blankPorts]);
 
-  assert.ok(issues.some(issue => issue.code === 'missing_connection_port'));
+  assert.ok(issues.some(issue => issue.code === 'invalid_connection_port_id'));
   assert.equal(issues.some(issue => issue.code === 'legacy_connection'), false);
   assert.deepEqual(getInvalidConnectionIds(issues), ['blank-ports']);
 });
@@ -354,6 +354,31 @@ test('reports unused ports with unsupported directions', () => {
   assert.equal(invalidDirection?.severity, 'error');
   assert.deepEqual(invalidDirection?.connectionIds, []);
   assert.deepEqual(invalidDirection?.objectIds, ['device']);
+});
+
+test('reports blank port ids even when unused', () => {
+  const device = object('device', [port('   ', 'hdmi', 'output')]);
+
+  const issues = analyzeProjectWiring([device], []);
+
+  const invalidPort = issues.find(issue => issue.code === 'invalid_port_id_definition');
+  assert.equal(invalidPort?.severity, 'error');
+  assert.deepEqual(invalidPort?.connectionIds, []);
+  assert.deepEqual(invalidPort?.objectIds, ['device']);
+});
+
+test('rejects blank connection port ids without occupying power inputs', () => {
+  const objects = [
+    object('source', [port('   ', 'ac_output', 'output')]),
+    object('target', [port('in', 'ac_input', 'input')]),
+  ];
+  const invalidEndpoint = connection('blank-port', 'source', '   ', 'target', 'in');
+
+  const issues = analyzeProjectWiring(objects, [invalidEndpoint]);
+
+  assert.ok(issues.some(issue => issue.code === 'invalid_connection_port_id'));
+  assert.ok(issues.some(issue => issue.id === 'unpowered:target:in'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['blank-port']);
 });
 
 test('reports duplicate port ids even when unused', () => {
@@ -676,6 +701,16 @@ test('power graph ignores connections with blank object ids', () => {
   const invalidEndpoint = connection('blank-object', '   ', 'out', 'target', 'in');
 
   assert.equal(computeDevicePowerLoad('   ', objects, [invalidEndpoint]), 0);
+});
+
+test('power graph ignores connections with blank port ids', () => {
+  const objects = [
+    object('source', [port('   ', 'ac_output', 'output')]),
+    object('target', [port('in', 'ac_input', 'input')], { wattage: 300 }),
+  ];
+  const invalidEndpoint = connection('blank-port', 'source', '   ', 'target', 'in');
+
+  assert.equal(computeDevicePowerLoad('source', objects, [invalidEndpoint]), 0);
 });
 
 test('power graph ignores a later connection that reuses a physical port', () => {

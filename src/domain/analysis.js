@@ -137,6 +137,8 @@ export function buildPowerGraph(objects, connections) {
     if (!Number.isFinite(connection.length) || connection.length <= 0) continue;
     if (!isNonBlankString(connection.fromObjectId)) continue;
     if (!isNonBlankString(connection.toObjectId)) continue;
+    if (!isNonBlankString(connection.fromPortId)) continue;
+    if (!isNonBlankString(connection.toPortId)) continue;
     if (duplicateObjectIds.has(connection.fromObjectId)) continue;
     if (duplicateObjectIds.has(connection.toObjectId)) continue;
 
@@ -365,6 +367,21 @@ export function analyzeProjectWiring(objects, connections) {
       continue;
     }
 
+    if (!isNonBlankString(connection.fromPortId)
+      || !isNonBlankString(connection.toPortId)) {
+      issues.push({
+        id: `invalid-connection-port-id:${connection.id}`,
+        code: 'invalid_connection_port_id',
+        severity: 'error',
+        title: `连接“${connection.name}”的端口 ID 无效`,
+        description: '端口级连接的起点和终点必须使用非空端口 ID。请删除该连接后重新创建。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
+
     const hasAmbiguousPort = duplicatePortIdsByObject
       .get(fromObject.id)?.has(connection.fromPortId)
       || duplicatePortIdsByObject.get(toObject.id)?.has(connection.toPortId);
@@ -547,7 +564,19 @@ export function analyzeProjectWiring(objects, connections) {
         objectIds: [object.id],
       });
     }
-    for (const port of object.ports || []) {
+    for (const [portIndex, port] of (object.ports || []).entries()) {
+      if (!isNonBlankString(port.id)) {
+        issues.push({
+          id: `invalid-port-id:${object.id}:${portIndex}`,
+          code: 'invalid_port_id_definition',
+          severity: 'error',
+          title: `${object.name} 的端口 ID 不能为空`,
+          description: '每个端口必须使用非空 ID。请修复设备端口定义。',
+          connectionIds: [],
+          objectIds: [object.id],
+        });
+        continue;
+      }
       if (!VALID_PORT_DIRECTIONS.has(port.direction)) {
         issues.push({
           id: `invalid-port-direction:${object.id}:${port.id}`,
