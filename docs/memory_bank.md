@@ -1873,6 +1873,28 @@ code evidence.
   was performed.
 - Commit: `a81852b fix: ignore non-record live insight entries` (pushed).
 
+### Invalid port-anchor live-analysis guard (2026-07-15)
+
+- Problem: frontend/backend persistence validation and both formal schemas
+  require every explicit port anchor to contain finite x/y/z values within
+  `[-0.5, 0.5]`, but live wiring analysis silently accepted malformed or
+  out-of-range anchors. Endpoint geometry then fell back to the device center,
+  which could hide unsavable port data and produce misleading cable lengths.
+- Test-first regression: an unused HDMI output with `anchor.x = 0.75` must
+  produce one device-level `invalid_port_anchor_definition` error without
+  marking any connection for cleanup. The focused public test first returned
+  no diagnostic (RED 0/1), then passed GREEN 1/1.
+- Fix: `project-validation.js` now exports the complete
+  `isValidPortAnchor()` contract, including the valid missing/null cases.
+  Wiring analysis reuses that seam for its explicit diagnostic rather than
+  duplicating coordinate/range rules; existing topology and unpowered-input
+  behavior remain unchanged.
+- Verification: `npm test` 284/284; `npm run lint`; `npm run build` (known
+  non-fatal large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed.
+  No browser or visual QA was performed.
+- Commit: `13a23b0 fix: report invalid port anchors` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
