@@ -378,6 +378,18 @@ test('reports blank port types even when unused', () => {
   assert.deepEqual(invalidType?.objectIds, ['device']);
 });
 
+test('reports blank port names even when unused', () => {
+  const unnamedPort = { ...port('custom', 'hdmi', 'output'), name: '   ' };
+  const device = object('device', [unnamedPort]);
+
+  const issues = analyzeProjectWiring([device], []);
+
+  const invalidName = issues.find(issue => issue.code === 'invalid_port_name_definition');
+  assert.equal(invalidName?.severity, 'error');
+  assert.deepEqual(invalidName?.connectionIds, []);
+  assert.deepEqual(invalidName?.objectIds, ['device']);
+});
+
 test('rejects connections that use blank port types', () => {
   const objects = [
     object('source', [port('out', '   ', 'output')]),

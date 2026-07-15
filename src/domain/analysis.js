@@ -591,6 +591,18 @@ export function analyzeProjectWiring(objects, connections) {
         });
         continue;
       }
+      if (!isNonBlankString(port.name)) {
+        issues.push({
+          id: `invalid-port-name:${object.id}:${port.id}`,
+          code: 'invalid_port_name_definition',
+          severity: 'error',
+          title: `${object.name} 的端口名称不能为空`,
+          description: `端口 ID “${port.id}”必须使用非空名称。请修复设备端口定义。`,
+          connectionIds: [],
+          objectIds: [object.id],
+        });
+        continue;
+      }
       if (!isNonBlankString(port.type)) {
         issues.push({
           id: `invalid-port-type:${object.id}:${port.id}`,
