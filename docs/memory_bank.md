@@ -1895,6 +1895,27 @@ code evidence.
   No browser or visual QA was performed.
 - Commit: `13a23b0 fix: report invalid port anchors` (pushed).
 
+### Non-array live port-collection diagnostic (2026-07-15)
+
+- Problem: the persisted project contract allows `ports` to be missing, `null`,
+  or an array, but live wiring analysis silently converted record, string, and
+  number values to an empty collection. That hid both the unsavable definition
+  and every real wiring need carried by the affected device.
+- Test-first regression: one public `analyzeProjectWiring()` behavior test uses
+  three unused devices with `{}`, string, and number port collections. It first
+  returned no matching issues (RED 0/1), then produced one stable object-level
+  `invalid_port_collection_definition` error for each device (GREEN 1/1).
+- Fix: the object-definition scan now reports every explicit non-null,
+  non-array port collection. Downstream readers still treat the malformed
+  collection as empty so analysis cannot crash or invent ports; missing and
+  `null` values retain their existing valid contract behavior, and no
+  connection is marked for cleanup.
+- Verification: `npm test` 285/285; `npm run lint`; `npm run build` (known
+  non-fatal large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed.
+  No browser or visual QA was performed.
+- Commit: `12139cb fix: report non-array port collections` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
