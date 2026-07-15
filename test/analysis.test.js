@@ -418,6 +418,28 @@ test('rejects blank connection port ids without occupying power inputs', () => {
   assert.deepEqual(getInvalidConnectionIds(issues), ['blank-port']);
 });
 
+test('analyzes connections through valid ports after malformed port entries', () => {
+  const objects = [
+    object('source', [null, port('out', 'dc_output', 'output')]),
+    object('target', [null, port('in', 'dc_input', 'input')]),
+  ];
+
+  const issues = analyzeProjectWiring(
+    objects,
+    [connection('valid-after-null', 'source', 'out', 'target', 'in')]
+  );
+
+  assert.deepEqual({
+    invalidPortDefinitions: issues.filter(issue => issue.code === 'invalid_port_id_definition').length,
+    invalidConnectionIds: getInvalidConnectionIds(issues),
+    targetIsUnpowered: issues.some(issue => issue.id === 'unpowered:target:in'),
+  }, {
+    invalidPortDefinitions: 2,
+    invalidConnectionIds: [],
+    targetIsUnpowered: false,
+  });
+});
+
 test('reports duplicate port ids even when unused', () => {
   const device = object('device', [
     port('duplicate', 'hdmi', 'output'),

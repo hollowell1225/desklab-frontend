@@ -1,3 +1,5 @@
+import { getPortRecords } from './port-collections.js';
+
 export const CABLE_SERVICE_LOOP_FACTOR = 1.1;
 export const CABLE_TYPE_VALUES = ['power', 'hdmi', 'usb_c', 'ethernet', 'displayport', 'other'];
 
@@ -65,7 +67,7 @@ export function calculatePositionDistance(fromPosition, toPosition) {
 
 export function getPortWorldPosition(object, portId) {
   if (!isFinitePosition(object?.position)) return null;
-  const port = object.ports?.find(candidate => candidate.id === portId);
+  const port = getPortRecords(object).find(candidate => candidate.id === portId);
   const anchor = port?.anchor;
   const hasAnchor = anchor && ['x', 'y', 'z'].every(axis =>
     Number.isFinite(anchor[axis]) && anchor[axis] >= -0.5 && anchor[axis] <= 0.5
