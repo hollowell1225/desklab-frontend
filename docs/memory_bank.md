@@ -1791,6 +1791,25 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `9504542 fix: reject blank port types in analysis` (pushed).
 
+### Blank port-name analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted non-blank port-name contract.
+  An unused port whose display name was missing, empty, or whitespace-only
+  previously produced no issue, leaving an unsavable device with a blank label
+  in connection controls and diagnostics.
+- Invalid names now produce the device-level `invalid_port_name_definition`
+  error and identify the affected port by its stable ID. Existing connections
+  are not marked for deletion because a display-name defect does not invalidate
+  their endpoint IDs, directions, types, occupancy, or topology.
+- The public-interface regression was confirmed RED because the blank-name port
+  had no error, then GREEN after adding the focused definition guard.
+- Verification: focused regression passed; complete analysis tests 48/48;
+  `npm test` 280/280; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `400fc34 fix: report blank port names in analysis` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
