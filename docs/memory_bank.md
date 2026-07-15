@@ -1831,6 +1831,26 @@ code evidence.
   `git diff --check` passed. No browser or visual QA was performed.
 - Commit: `5672c1b fix: tolerate malformed live port data` (pushed).
 
+### Malformed port endpoint-lookup guard (2026-07-15)
+
+- Closed the remaining malformed-port crash after the shared collection guard.
+  Wiring analysis and recommendations already filtered non-object port entries,
+  but cable endpoint positioning still called `object.ports.find()` directly.
+  A valid connection whose endpoint arrays began with `null` therefore threw
+  while calculating cable length.
+- `getPortWorldPosition()` now resolves endpoint ports through the existing
+  `getPortRecords()` seam. Malformed entries retain their device-level
+  `invalid_port_id_definition` diagnostics, while a valid later port remains
+  connected, is not marked for cleanup, and still occupies its power input.
+- One public-interface TDD cycle was confirmed RED then GREEN:
+  `analyzeProjectWiring()` first threw while reading `candidate.id`, then
+  successfully analyzed the same connection after the endpoint lookup change.
+- Verification: focused regression passed; `npm test` 282/282; `npm run lint`;
+  `npm run build` (known non-fatal large-chunk warning only); local frontend
+  `/` and backend `/api/projects/default` HTTP checks both 200;
+  `git diff --check` passed. No browser or visual QA was performed.
+- Commit: `57bbb0e fix: ignore malformed ports in endpoint lookup` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
