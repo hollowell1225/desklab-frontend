@@ -1937,6 +1937,35 @@ code evidence.
   No browser or visual QA was performed.
 - Commit: `0942a21 fix: tolerate non-string port names` (pushed).
 
+### Paused invalid maxLoad safety-fallback slice (2026-07-15)
+
+- The user paused work after the public RED and before any source-code GREEN.
+  The clean base was frontend `06d41e2`; no production source was modified.
+- Reproduction: a catalog UPS has a 1000W safety limit and supplies one valid
+  1200W load. Missing/null `maxLoad` correctly uses the catalog and reports
+  both `power_overload` and `buy_ups_overload`; explicit `0` and numeric string
+  `"2500"` correctly suppress them. Invalid `-1`, `NaN`, blank string, and
+  nonnumeric string overrides incorrectly suppress both safety results instead
+  of falling back to the catalog value.
+- One App-shaped table-driven public test was added temporarily to
+  `test/recommendations.test.js`. It first failed RED 0/1 with exactly those
+  four invalid cases false/false instead of true/true; `git diff --check`
+  passed. The test-only diff is saved, not committed, in
+  `stash@{0}` / `78789fd0588bf60cf21baec1dba75b5ff4b8c8f7`
+  (`wip: invalid maxLoad RED`). Resume with
+  `git stash apply 78789fd0588bf60cf21baec1dba75b5ff4b8c8f7`.
+- Planned minimal GREEN: add the single-argument
+  `getEffectiveMaxLoad(object)` seam in `analysis.js`; it must own catalog
+  lookup, safe number/string parsing, and override precedence. Preserve valid
+  explicit zero and nonblank numeric-string coercion; invalid or blank values
+  fall back to catalog, then zero. Route all four effective-limit readers
+  through it: wiring analysis, purchase recommendations, PropertiesEditor, and
+  the SceneObjects power overlay. Do not include the separate wattage fallback
+  behavior without its own later RED.
+- After applying the stash: implement GREEN, rerun the focused test, then run
+  all frontend gates and both HTTP checks before feature commit/push. No full
+  suite, build, browser, or visual QA is claimed for this paused RED-only work.
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
