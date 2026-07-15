@@ -1744,6 +1744,30 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `398eb00 fix: reject blank object ids in analysis` (pushed).
 
+### Blank port and endpoint-ID analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted non-blank port-ID contract.
+  A device port whose ID was missing, empty, or whitespace-only previously
+  produced no object-level issue when the port was unused.
+- Invalid device port IDs now produce `invalid_port_id_definition`.
+  Port-bound connections whose `fromPortId` or `toPortId` is not a non-blank
+  string produce the cleanup-eligible `invalid_connection_port_id` error
+  before endpoint lookup, occupancy, or topology analysis. Explicit blank IDs
+  are no longer mislabeled as missing referenced ports.
+- The shared power graph applies the same endpoint-ID guard, preventing an
+  invalid port key that happens to exist in transient data from creating false
+  powered paths, load totals, overload warnings, or downstream purchase
+  suggestions.
+- Three public-interface TDD cycles were confirmed RED then GREEN: an unused
+  whitespace-ID port lacked an object error; a connection through that port hid
+  an unpowered target; and the standalone power graph counted a false 300W load.
+- Verification: focused regressions passed; complete analysis tests 45/45;
+  `npm test` 277/277; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `a82119c fix: reject blank port ids in analysis` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
