@@ -390,6 +390,33 @@ test('reports blank port names even when unused', () => {
   assert.deepEqual(invalidName?.objectIds, ['device']);
 });
 
+test('reports invalid port anchors even when unused', () => {
+  const invalidPort = {
+    ...port('out', 'hdmi', 'output'),
+    anchor: { x: 0.75, y: 0, z: 0 },
+  };
+  const issues = analyzeProjectWiring([object('device', [invalidPort])], []);
+
+  assert.deepEqual(
+    issues
+      .filter(issue => issue.code === 'invalid_port_anchor_definition')
+      .map(({ id, code, severity, connectionIds, objectIds }) => ({
+        id,
+        code,
+        severity,
+        connectionIds,
+        objectIds,
+      })),
+    [{
+      id: 'invalid-port-anchor:device:out',
+      code: 'invalid_port_anchor_definition',
+      severity: 'error',
+      connectionIds: [],
+      objectIds: ['device'],
+    }]
+  );
+});
+
 test('rejects connections that use blank port types', () => {
   const objects = [
     object('source', [port('out', '   ', 'output')]),

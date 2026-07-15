@@ -78,11 +78,7 @@ function isProjectPort(port) {
     && isNonBlankString(port.type)
     && VALID_PORT_DIRECTIONS.has(port.direction)
     && isPortDirectionConsistent(port)
-    && (
-      port.anchor === undefined
-      || port.anchor === null
-      || isNormalizedVector3(port.anchor)
-    );
+    && isValidPortAnchor(port.anchor);
 }
 
 function isProjectConnection(connection) {
@@ -154,6 +150,10 @@ function isProjectCamera(camera) {
     && !Array.isArray(camera)
     && isVector3(camera.position)
     && isVector3(camera.target);
+}
+
+export function isValidPortAnchor(anchor) {
+  return anchor === undefined || anchor === null || isNormalizedVector3(anchor);
 }
 
 function isNormalizedVector3(value) {

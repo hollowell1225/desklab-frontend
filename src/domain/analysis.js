@@ -8,6 +8,7 @@ import {
 import { findModelTemplate } from './catalog.js';
 import { getPortRecords } from './port-collections.js';
 import { getRecordItems } from './record-collections.js';
+import { isValidPortAnchor } from './project-validation.js';
 
 const POWER_INPUT_TYPES = new Set(['ac_input', 'dc_input']);
 const POWER_OUTPUT_TYPES = new Set(['ac_output', 'dc_output']);
@@ -633,6 +634,17 @@ export function analyzeProjectWiring(rawObjects, rawConnections) {
           objectIds: [object.id],
         });
         continue;
+      }
+      if (!isValidPortAnchor(port.anchor)) {
+        issues.push({
+          id: `invalid-port-anchor:${object.id}:${port.id}`,
+          code: 'invalid_port_anchor_definition',
+          severity: 'error',
+          title: `${object.name} 的端口锚点无效`,
+          description: `端口“${port.name}”的锚点必须包含 x、y、z 三个介于 -0.5 和 0.5 之间的有限数值。`,
+          connectionIds: [],
+          objectIds: [object.id],
+        });
       }
       if (!isPortDirectionConsistent(port)) {
         issues.push({
