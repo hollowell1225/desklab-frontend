@@ -1916,6 +1916,27 @@ code evidence.
   No browser or visual QA was performed.
 - Commit: `12139cb fix: report non-array port collections` (pushed).
 
+### Non-string live port-name recommendation guard (2026-07-15)
+
+- Problem: wiring analysis already reported a non-string port `name` through
+  `invalid_port_name_definition`, but recommendation generation still called
+  `.toLowerCase()` on that value while classifying switch WAN ports. A numeric
+  live name therefore crashed the App-shaped `buildRecommendations()` flow
+  instead of leaving the existing diagnostic visible.
+- Test-first regression: one public behavior test uses a valid router LAN port
+  and a switch Ethernet port whose `name` is `42`. It first failed at
+  `isWanPort()` with `TypeError` (RED 0/1), then retained the wiring definition
+  error and returned the valid `auto_uplink_switch` recommendation (GREEN 1/1).
+- Fix: the existing shared `isWanPort()` seam now inspects the display name
+  only when it is a string. Its three callers inherit the guard without new
+  branches or a wider interface; ID-based, case-insensitive WAN recognition is
+  unchanged.
+- Verification: `npm test` 286/286; `npm run lint`; `npm run build` (known
+  non-fatal large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed.
+  No browser or visual QA was performed.
+- Commit: `0942a21 fix: tolerate non-string port names` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
