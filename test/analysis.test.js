@@ -367,6 +367,31 @@ test('reports blank port ids even when unused', () => {
   assert.deepEqual(invalidPort?.objectIds, ['device']);
 });
 
+test('reports blank port types even when unused', () => {
+  const device = object('device', [port('custom', '   ', 'output')]);
+
+  const issues = analyzeProjectWiring([device], []);
+
+  const invalidType = issues.find(issue => issue.code === 'invalid_port_type_definition');
+  assert.equal(invalidType?.severity, 'error');
+  assert.deepEqual(invalidType?.connectionIds, []);
+  assert.deepEqual(invalidType?.objectIds, ['device']);
+});
+
+test('rejects connections that use blank port types', () => {
+  const objects = [
+    object('source', [port('out', '   ', 'output')]),
+    object('target', [port('in', '   ', 'input')]),
+  ];
+  const invalidEndpoint = connection('blank-type', 'source', 'out', 'target', 'in');
+  invalidEndpoint.cableType = 'other';
+
+  const issues = analyzeProjectWiring(objects, [invalidEndpoint]);
+
+  assert.ok(issues.some(issue => issue.code === 'invalid_connection_port_type'));
+  assert.deepEqual(getInvalidConnectionIds(issues), ['blank-type']);
+});
+
 test('rejects blank connection port ids without occupying power inputs', () => {
   const objects = [
     object('source', [port('   ', 'ac_output', 'output')]),

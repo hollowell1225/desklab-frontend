@@ -415,6 +415,20 @@ export function analyzeProjectWiring(objects, connections) {
       continue;
     }
 
+    if (!isNonBlankString(fromPort.type) || !isNonBlankString(toPort.type)) {
+      issues.push({
+        id: `invalid-connection-port-type:${connection.id}`,
+        code: 'invalid_connection_port_type',
+        severity: 'error',
+        title: `连接“${connection.name}”使用了无效端口类型`,
+        description: '连接端点必须使用非空端口类型。请修复设备端口定义并重新创建连接。',
+        connectionIds: [connection.id],
+        invalidConnectionIds: [connection.id],
+        objectIds: [connection.fromObjectId, connection.toObjectId],
+      });
+      continue;
+    }
+
     const sourceDirectionValid = fromPort.direction === 'output' || fromPort.direction === 'bidirectional';
     const targetDirectionValid = toPort.direction === 'input' || toPort.direction === 'bidirectional';
     if (!isPortDirectionConsistent(fromPort) || !isPortDirectionConsistent(toPort)) {
@@ -572,6 +586,18 @@ export function analyzeProjectWiring(objects, connections) {
           severity: 'error',
           title: `${object.name} 的端口 ID 不能为空`,
           description: '每个端口必须使用非空 ID。请修复设备端口定义。',
+          connectionIds: [],
+          objectIds: [object.id],
+        });
+        continue;
+      }
+      if (!isNonBlankString(port.type)) {
+        issues.push({
+          id: `invalid-port-type:${object.id}:${port.id}`,
+          code: 'invalid_port_type_definition',
+          severity: 'error',
+          title: `${object.name} 的端口类型不能为空`,
+          description: `端口“${port.name}”必须使用非空类型。请修复设备端口定义。`,
           connectionIds: [],
           objectIds: [object.id],
         });
