@@ -991,6 +991,20 @@ test('buildRecommendations facade tolerates malformed-but-valid project data', (
   assert.equal(typeof result.total, 'number');
 });
 
+test('buildRecommendations ignores malformed live port collections and entries', () => {
+  assert.deepEqual(buildRecommendations({
+    objects: [
+      object('bad-collection', { ports: {} }),
+      object('bad-entry', { ports: [null] }),
+    ],
+    connections: [],
+  }), {
+    freeImprovements: [],
+    purchases: [],
+    total: 0,
+  });
+});
+
 test('recommendation builders can reuse precomputed wiring issues', () => {
   const source = object('source', {
     type: 'outlet',

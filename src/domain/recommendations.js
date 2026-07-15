@@ -7,6 +7,7 @@ import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad, toPowerV
 import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
 import { validateAndConstrainObject } from './geometry.js';
 import { findModelTemplate } from './catalog.js';
+import { getPortRecords } from './port-collections.js';
 
 // Round a recommended cable length up to the centimetre so the applied value is
 // never shorter than the computed recommendation (which would leave the slack
@@ -49,7 +50,7 @@ function isWanPort(port) {
 }
 
 function hasPowerInput(object) {
-  return (object.ports || []).some(port =>
+  return getPortRecords(object).some(port =>
     ['ac_input', 'dc_input'].includes(port.type)
   );
 }
@@ -203,7 +204,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
     if (issue.code === 'unpowered_input') {
       const [, objectId, portId] = issue.id.split(':');
       const object = objectsById.get(objectId);
-      const port = object?.ports?.find(p => p.id === portId);
+      const port = getPortRecords(object).find(p => p.id === portId);
       if (object && port && isPortDirectionConsistent(port)) {
         let bestSource = null;
         let minDistance = Number.MAX_VALUE;
@@ -211,7 +212,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
         for (const candidate of objects) {
           if (candidate.id === object.id) continue;
           if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
-          for (const candidatePort of candidate.ports || []) {
+          for (const candidatePort of getPortRecords(candidate)) {
             const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
             if (hasFromDir &&
                 isPortDirectionConsistent(candidatePort) &&
@@ -281,7 +282,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   const unconnectedNetworkEndpointCount = objects.reduce((count, object) => {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) return count;
-    return count + (object.ports || []).filter(port =>
+    return count + getPortRecords(object).filter(port =>
       port.type === 'ethernet'
       && (port.direction === 'input' || port.direction === 'bidirectional')
       && isPortDirectionConsistent(port)
@@ -290,7 +291,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   }, 0);
   const freeRouterLanPortCount = objects.reduce((count, router) => {
     if (!(router.modelId === 'router' || router.type === 'router') || requiresPowerButIsUnpowered(router, poweredObjectIds)) return count;
-    return count + (router.ports || []).filter(port =>
+    return count + getPortRecords(router).filter(port =>
       port.type === 'ethernet'
       && String(port.id).toLowerCase().includes('lan')
       && (port.direction === 'output' || port.direction === 'bidirectional')
@@ -310,11 +311,11 @@ export function buildFreeImprovements(room, objects, connections = [], options =
     for (const router of objects) {
       const isRouter = router.modelId === 'router' || router.type === 'router';
       if (!isRouter || requiresPowerButIsUnpowered(router, poweredObjectIds)) continue;
-      for (const routerPort of router.ports || []) {
+      for (const routerPort of getPortRecords(router)) {
         if (routerPort.type !== 'ethernet' || !String(routerPort.id).toLowerCase().includes('lan')) continue;
         if (!(routerPort.direction === 'output' || routerPort.direction === 'bidirectional') || !isPortDirectionConsistent(routerPort)) continue;
         if (occupiedPorts.get(router.id)?.has(routerPort.id)) continue;
-        for (const switchPort of switchDevice.ports || []) {
+        for (const switchPort of getPortRecords(switchDevice)) {
           if (switchPort.type !== 'ethernet'
             || isWanPort(switchPort)
             || !(switchPort.direction === 'input' || switchPort.direction === 'bidirectional')
@@ -353,7 +354,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) continue;
 
-    for (const port of object.ports || []) {
+    for (const port of getPortRecords(object)) {
       if (port.type !== 'ethernet') continue;
       const canReceiveNetwork = port.direction === 'input' || port.direction === 'bidirectional';
       if (!canReceiveNetwork || !isPortDirectionConsistent(port)) continue;
@@ -369,7 +370,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
         const candidateIsDistributor = ['router', 'switch'].includes(candidate.type) || ['router', 'switch'].includes(candidate.modelId);
         if (!candidateIsDistributor || !routerReachableObjectIds.has(candidate.id)) continue;
 
-        for (const candidatePort of candidate.ports || []) {
+        for (const candidatePort of getPortRecords(candidate)) {
           if (candidatePort.type !== 'ethernet') continue;
           if (isWanPort(candidatePort)) continue;
           const canProvideNetwork = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
@@ -421,7 +422,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
   // 4. 自动连接显示器 (auto_connect_display)
   const DISPLAY_PORT_TYPES = new Set(['hdmi', 'displayport', 'usb_c']);
   for (const object of objects) {
-    for (const port of object.ports || []) {
+    for (const port of getPortRecords(object)) {
       if (!DISPLAY_PORT_TYPES.has(port.type)) continue;
       const isOutput = port.direction === 'output' || port.direction === 'bidirectional';
       if (!isOutput) continue;
@@ -440,7 +441,7 @@ export function buildFreeImprovements(room, objects, connections = [], options =
           || candidate.modelId?.startsWith('ultrawide');
         if (!isDisplay) continue;
 
-        for (const candidatePort of candidate.ports || []) {
+        for (const candidatePort of getPortRecords(candidate)) {
           if (candidatePort.type !== port.type) continue;
           const isInput = candidatePort.direction === 'input' || candidatePort.direction === 'bidirectional';
           if (!isInput) continue;
@@ -588,7 +589,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       || obj.modelId === 'switch' || obj.type === 'switch';
     const unconnectedEthernetDevices = objects.filter(obj => {
       if (isNetworkDistributor(obj)) return false;
-      const ethPorts = (obj.ports || []).filter(p =>
+      const ethPorts = getPortRecords(obj).filter(p =>
         p.type === 'ethernet'
         && (p.direction === 'input' || p.direction === 'bidirectional')
         && isPortDirectionConsistent(p)
@@ -602,7 +603,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
       .filter(obj => (obj.modelId === 'router' || obj.type === 'router')
         && !requiresPowerButIsUnpowered(obj, poweredObjectIds))
       .reduce((capacity, router) => {
-        const lanPorts = (router.ports || []).filter(p =>
+        const lanPorts = getPortRecords(router).filter(p =>
           p.type === 'ethernet'
           && String(p.id).toLowerCase().includes('lan')
           && (p.direction === 'output' || p.direction === 'bidirectional')
@@ -618,7 +619,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, poweredObjectIds);
     const freeSwitchPorts = objects
       .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
-      .reduce((count, switchDevice) => count + (switchDevice.ports || []).filter(port =>
+      .reduce((count, switchDevice) => count + getPortRecords(switchDevice).filter(port =>
         port.type === 'ethernet'
         && !isWanPort(port)
         && (port.direction === 'output' || port.direction === 'bidirectional')
@@ -646,7 +647,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
   for (const object of objects) {
     const isPowerStrip = object?.modelId === 'power-strip' || object?.type === 'power_strip';
     if (isPowerStrip) {
-      const acOutputs = (object.ports || []).filter(p =>
+      const acOutputs = getPortRecords(object).filter(p =>
         p.type === 'ac_output' && isPortDirectionConsistent(p)
       );
       if (acOutputs.length > 0) {
@@ -703,13 +704,13 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     // Skip objects that can supply power — their own unpowered input is valid
     // (wall outlets, power strips, UPS, adapters — they need external power too,
     // but they are infrastructure, not endpoint devices).
-    const hasOutputPort = (object.ports || []).some(
+    const hasOutputPort = getPortRecords(object).some(
       p => p.direction === 'output'
         && (p.type === 'ac_output' || p.type === 'dc_output')
     );
     if (hasOutputPort) continue;
 
-    const port = object.ports?.find(p => issue.id.endsWith(`:${p.id}`));
+    const port = getPortRecords(object).find(p => issue.id.endsWith(`:${p.id}`));
     if (!port || !isPortDirectionConsistent(port)) continue;
 
     // Check if there's a nearby power source with a free compatible port
@@ -717,7 +718,7 @@ export function buildPurchaseSuggestions(objects, connections = [], options = {}
     for (const candidate of objects) {
       if (candidate.id === object.id) continue;
       if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
-      for (const candidatePort of candidate.ports || []) {
+      for (const candidatePort of getPortRecords(candidate)) {
         const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
         if (hasFromDir &&
             isPortDirectionConsistent(candidatePort) &&
@@ -801,8 +802,8 @@ export function applyImprovement(project, suggestion) {
     const objectsById = new Map((project.objects || []).map(object => [object.id, object]));
     const fromObject = objectsById.get(patch.newConnection.fromObjectId);
     const toObject = objectsById.get(patch.newConnection.toObjectId);
-    const fromPort = fromObject?.ports?.find(port => port.id === patch.newConnection.fromPortId);
-    const toPort = toObject?.ports?.find(port => port.id === patch.newConnection.toPortId);
+    const fromPort = getPortRecords(fromObject).find(port => port.id === patch.newConnection.fromPortId);
+    const toPort = getPortRecords(toObject).find(port => port.id === patch.newConnection.toPortId);
     if (!fromObject
       || !toObject
       || !arePortsCompatible(fromPort, toPort)

@@ -6,6 +6,7 @@ import {
   isPortDirectionConsistent,
 } from './connections.js';
 import { findModelTemplate } from './catalog.js';
+import { getPortRecords } from './port-collections.js';
 
 const POWER_INPUT_TYPES = new Set(['ac_input', 'dc_input']);
 const POWER_OUTPUT_TYPES = new Set(['ac_output', 'dc_output']);
@@ -37,7 +38,8 @@ export function classifyPowerLoad(currentLoad, maxLoad) {
   return 'ok';
 }
 
-const getPort = (object, portId) => object?.ports?.find(port => port.id === portId);
+const getPortItems = object => Array.isArray(object?.ports) ? object.ports : [];
+const getPort = (object, portId) => getPortRecords(object).find(port => port.id === portId);
 const isPowerStrip = (object) =>
   object?.modelId === 'power-strip' || object?.type === 'power_strip';
 
@@ -54,7 +56,7 @@ function getDuplicateIds(items) {
   return duplicateIds;
 }
 
-const getDuplicatePortIds = object => getDuplicateIds(object.ports || []);
+const getDuplicatePortIds = object => getDuplicateIds(getPortRecords(object));
 
 function getOccupiedPort(occupiedPorts, objectId, portId) {
   return occupiedPorts.get(objectId)?.get(portId) || null;
@@ -578,8 +580,8 @@ export function analyzeProjectWiring(objects, connections) {
         objectIds: [object.id],
       });
     }
-    for (const [portIndex, port] of (object.ports || []).entries()) {
-      if (!isNonBlankString(port.id)) {
+    for (const [portIndex, port] of getPortItems(object).entries()) {
+      if (port === null || typeof port !== 'object' || Array.isArray(port) || !isNonBlankString(port.id)) {
         issues.push({
           id: `invalid-port-id:${object.id}:${portIndex}`,
           code: 'invalid_port_id_definition',
