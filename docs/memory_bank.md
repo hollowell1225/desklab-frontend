@@ -1810,6 +1810,27 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `400fc34 fix: report blank port names in analysis` (pushed).
 
+### Malformed live port-data guard (2026-07-15)
+
+- Fixed a recommendation-panel crash caused by transient devices whose `ports`
+  value was a non-array collection or whose port array contained `null`.
+  `buildRecommendations()` previously failed while analysis scanned duplicate
+  port IDs, and the recommendation builders had independent unsafe port loops.
+- Added the shared `getPortRecords()` seam. Wiring analysis, the power graph,
+  recommendation generation, and stale-patch validation now treat non-array
+  collections as empty and ignore non-object port entries. Analysis still
+  reports array entries without a usable port record through the existing
+  `invalid_port_id_definition` diagnostic.
+- One public-interface TDD cycle was confirmed RED then GREEN:
+  `buildRecommendations()` threw `TypeError: items is not iterable` for a
+  project containing both `ports: {}` and `ports: [null]`, then returned a
+  stable empty result without inventing recommendations.
+- Verification: focused regression passed; `npm test` 281/281; `npm run lint`;
+  `npm run build` (known non-fatal large-chunk warning only); local frontend
+  `/` and backend `/api/projects/default` HTTP checks both 200;
+  `git diff --check` passed. No browser or visual QA was performed.
+- Commit: `5672c1b fix: tolerate malformed live port data` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
