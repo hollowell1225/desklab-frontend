@@ -575,6 +575,17 @@ export function analyzeProjectWiring(rawObjects, rawConnections) {
   }
 
   for (const object of objects) {
+    if (object.ports !== undefined && object.ports !== null && !Array.isArray(object.ports)) {
+      issues.push({
+        id: `invalid-port-collection:${object.id}`,
+        code: 'invalid_port_collection_definition',
+        severity: 'error',
+        title: '设备端口集合无效',
+        description: '设备端口必须使用数组。请修复导入或草稿数据。',
+        connectionIds: [],
+        objectIds: [object.id],
+      });
+    }
     for (const duplicatePortId of duplicatePortIdsByObject.get(object.id) || []) {
       issues.push({
         id: `duplicate-port-id:${object.id}:${duplicatePortId}`,

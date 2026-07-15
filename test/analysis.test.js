@@ -467,6 +467,51 @@ test('analyzes connections through valid ports after malformed port entries', ()
   });
 });
 
+test('reports non-array port collections even when unused', () => {
+  const objects = [
+    object('record-ports', {}),
+    object('string-ports', 'invalid'),
+    object('number-ports', 42),
+  ];
+
+  const issues = analyzeProjectWiring(objects, []);
+
+  assert.deepEqual(
+    issues
+      .filter(issue => issue.code === 'invalid_port_collection_definition')
+      .map(({ id, code, severity, connectionIds, objectIds }) => ({
+        id,
+        code,
+        severity,
+        connectionIds,
+        objectIds,
+      })),
+    [
+      {
+        id: 'invalid-port-collection:record-ports',
+        code: 'invalid_port_collection_definition',
+        severity: 'error',
+        connectionIds: [],
+        objectIds: ['record-ports'],
+      },
+      {
+        id: 'invalid-port-collection:string-ports',
+        code: 'invalid_port_collection_definition',
+        severity: 'error',
+        connectionIds: [],
+        objectIds: ['string-ports'],
+      },
+      {
+        id: 'invalid-port-collection:number-ports',
+        code: 'invalid_port_collection_definition',
+        severity: 'error',
+        connectionIds: [],
+        objectIds: ['number-ports'],
+      },
+    ]
+  );
+});
+
 test('reports duplicate port ids even when unused', () => {
   const device = object('device', [
     port('duplicate', 'hdmi', 'output'),
