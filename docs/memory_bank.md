@@ -1768,6 +1768,29 @@ code evidence.
   browser or visual QA was performed for this domain-only change.
 - Commit: `a82119c fix: reject blank port ids in analysis` (pushed).
 
+### Blank port-type analysis guard (2026-07-15)
+
+- Aligned live wiring analysis with the persisted non-blank port-type contract.
+  An unused port whose `type` was missing, empty, or whitespace-only previously
+  produced no device-level issue.
+- Invalid port types now produce `invalid_port_type_definition`. A port-bound
+  connection whose resolved endpoint has a blank type produces the
+  cleanup-eligible `invalid_connection_port_type` error before compatibility,
+  cable inference, occupancy, or topology analysis.
+- This closes a concrete semantic bypass: two whitespace-only types were
+  previously considered equal by the compatibility helper and could form an
+  apparently valid `other` connection. Non-blank custom and future port types
+  remain supported through the existing `other` cable behavior.
+- Two public-interface TDD cycles were confirmed RED then GREEN: an unused
+  whitespace-type port lacked an object error, and a connection between two
+  whitespace-type ports was absent from the invalid-connection cleanup set.
+- Verification: focused regressions passed; complete analysis tests 47/47;
+  `npm test` 279/279; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed for this domain-only change.
+- Commit: `9504542 fix: reject blank port types in analysis` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
