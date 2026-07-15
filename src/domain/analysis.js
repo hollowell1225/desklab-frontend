@@ -7,6 +7,7 @@ import {
 } from './connections.js';
 import { findModelTemplate } from './catalog.js';
 import { getPortRecords } from './port-collections.js';
+import { getRecordItems } from './record-collections.js';
 
 const POWER_INPUT_TYPES = new Set(['ac_input', 'dc_input']);
 const POWER_OUTPUT_TYPES = new Set(['ac_output', 'dc_output']);
@@ -121,7 +122,9 @@ function appendLengthIssues(issues, connection, objects) {
   }
 }
 
-export function buildPowerGraph(objects, connections) {
+export function buildPowerGraph(rawObjects, rawConnections) {
+  const objects = getRecordItems(rawObjects);
+  const connections = getRecordItems(rawConnections);
   const objectById = new Map(objects.map(object => [object.id, object]));
   const duplicateObjectIds = getDuplicateIds(objects);
   const duplicatePortIdsByObject = new Map(
@@ -195,7 +198,9 @@ export function buildPowerGraph(objects, connections) {
   };
 }
 
-export function analyzeProjectWiring(objects, connections) {
+export function analyzeProjectWiring(rawObjects, rawConnections) {
+  const objects = getRecordItems(rawObjects);
+  const connections = getRecordItems(rawConnections);
   const issues = [];
   const objectById = new Map(objects.map(object => [object.id, object]));
   const duplicateObjectIds = getDuplicateIds(objects);

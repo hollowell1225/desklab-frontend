@@ -8,6 +8,7 @@ import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible
 import { validateAndConstrainObject } from './geometry.js';
 import { findModelTemplate } from './catalog.js';
 import { getPortRecords } from './port-collections.js';
+import { getRecordItems } from './record-collections.js';
 
 // Round a recommended cable length up to the centimetre so the applied value is
 // never shorter than the computed recommendation (which would leave the slack
@@ -126,7 +127,9 @@ function getRouterReachableObjectIds(objects, connections, invalidConnectionIds,
  * where patch is { objectId, position, rotation? } for layout fixes or
  * { connectionId, length } or { newConnection } for cabling fixes.
  */
-export function buildFreeImprovements(room, objects, connections = [], options = {}) {
+export function buildFreeImprovements(room, rawObjects, rawConnections = [], options = {}) {
+  const objects = getRecordItems(rawObjects);
+  const connections = getRecordItems(rawConnections);
   const suggestions = [];
   const objectsById = new Map(objects.map(object => [object.id, object]));
   const wiringIssues = Array.isArray(options.wiringIssues)
@@ -501,7 +504,9 @@ export function buildFreeImprovements(room, objects, connections = [], options =
  * Returns suggestions with a `product` { category, modelId } pointer, deduped
  * per device pair.
  */
-export function buildPurchaseSuggestions(objects, connections = [], options = {}) {
+export function buildPurchaseSuggestions(rawObjects, rawConnections = [], options = {}) {
+  const objects = getRecordItems(rawObjects);
+  const connections = getRecordItems(rawConnections);
   const suggestions = [];
   const seen = new Set();
   const objectsById = new Map(objects.map(object => [object.id, object]));
@@ -877,8 +882,8 @@ export function applyAllAvailableImprovements(project) {
  */
 export function buildRecommendations(project = {}, options = {}) {
   const { room, objects: rawObjects, connections: rawConnections } = project || {};
-  const objects = Array.isArray(rawObjects) ? rawObjects : [];
-  const connections = Array.isArray(rawConnections) ? rawConnections : [];
+  const objects = getRecordItems(rawObjects);
+  const connections = getRecordItems(rawConnections);
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);

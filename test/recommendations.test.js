@@ -10,7 +10,7 @@ import {
   buildRecommendations,
 } from '../src/domain/recommendations.js';
 import { analyzeProjectLayout } from '../src/domain/layout-analysis.js';
-import { analyzeProjectWiring } from '../src/domain/analysis.js';
+import { analyzeProjectWiring, buildPowerGraph } from '../src/domain/analysis.js';
 import { evaluateConnectionLength } from '../src/domain/connections.js';
 import { findModelTemplate } from '../src/domain/catalog.js';
 import { placeCatalogObject } from '../src/domain/placement.js';
@@ -1002,6 +1002,52 @@ test('buildRecommendations ignores malformed live port collections and entries',
     freeImprovements: [],
     purchases: [],
     total: 0,
+  });
+});
+
+test('live insight APIs ignore non-record entries without hiding valid suggestions', () => {
+  const floating = object('floating', {
+    position: { x: 1.5, y: 0, z: 1.5 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+  });
+  const grounded = object('grounded', { position: { x: -1.5, y: 0, z: 0.5 } });
+  const arrayObject = Object.assign([], object('array-floating', {
+    position: { x: 0, y: 1, z: 1.5 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+  }));
+  const arrayConnection = Object.assign([], {
+    id: 'array-connection',
+    name: 'array-connection',
+    cableType: 'other',
+    length: 1,
+    fromObjectId: 'grounded',
+    toObjectId: 'floating',
+  });
+  const objects = [floating, grounded, null, undefined, 42, 'draft', arrayObject];
+  const connections = [null, undefined, 42, 'draft', arrayConnection];
+
+  const wiringIssues = analyzeProjectWiring(objects, connections);
+  const powerGraph = buildPowerGraph(objects, connections);
+  const recommendations = buildRecommendations({ room, objects, connections }, { wiringIssues });
+
+  assert.deepEqual({
+    wiringCodes: wiringIssues.map(issue => issue.code),
+    powerObjectIds: [...powerGraph.objectById.keys()],
+    layoutCodes: analyzeProjectLayout(room, objects).map(issue => issue.code),
+    freeCodes: buildFreeImprovements(room, objects, connections).map(item => item.code),
+    purchaseCodes: buildPurchaseSuggestions(objects, connections).map(item => item.code),
+    facadeFreeCodes: recommendations.freeImprovements.map(item => item.code),
+    facadePurchaseCodes: recommendations.purchases.map(item => item.code),
+    facadeTotal: recommendations.total,
+  }, {
+    wiringCodes: [],
+    powerObjectIds: ['floating', 'grounded'],
+    layoutCodes: ['floating_object'],
+    freeCodes: ['drop_to_support'],
+    purchaseCodes: [],
+    facadeFreeCodes: ['drop_to_support'],
+    facadePurchaseCodes: [],
+    facadeTotal: 1,
   });
 });
 

@@ -5,6 +5,7 @@ import {
   objectsOverlap,
   validateAndConstrainObject,
 } from './geometry.js';
+import { getRecordItems } from './record-collections.js';
 
 const isWallOutlet = (object) => object.modelId === 'wall-outlet' || object.type === 'outlet';
 
@@ -76,7 +77,8 @@ export function snapWallOutletToNearestWall(room, object) {
   return null;
 }
 
-export function analyzeProjectLayout(room, objects) {
+export function analyzeProjectLayout(room, rawObjects) {
+  const objects = getRecordItems(rawObjects);
   const issues = [];
   const validBounds = [];
 
