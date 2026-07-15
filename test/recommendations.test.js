@@ -1005,6 +1005,46 @@ test('buildRecommendations ignores malformed live port collections and entries',
   });
 });
 
+test('live recommendations tolerate non-string port names already diagnosed by wiring analysis', () => {
+  const router = object('router', {
+    type: 'router',
+    modelId: 'router',
+    position: { x: -1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const switchDevice = object('switch', {
+    type: 'switch',
+    modelId: 'switch',
+    position: { x: 1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'eth-1', name: 42, type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const objects = [router, switchDevice];
+  const wiringIssues = analyzeProjectWiring(objects, []);
+
+  const recommendations = buildRecommendations(
+    { room, objects, connections: [] },
+    { wiringIssues }
+  );
+
+  assert.deepEqual({
+    portNameIssues: wiringIssues
+      .filter(issue => issue.code === 'invalid_port_name_definition')
+      .map(({ code, severity, objectIds }) => ({ code, severity, objectIds })),
+    freeCodes: recommendations.freeImprovements.map(item => item.code),
+    purchaseCodes: recommendations.purchases.map(item => item.code),
+    total: recommendations.total,
+  }, {
+    portNameIssues: [{
+      code: 'invalid_port_name_definition',
+      severity: 'error',
+      objectIds: ['switch'],
+    }],
+    freeCodes: ['auto_uplink_switch'],
+    purchaseCodes: [],
+    total: 1,
+  });
+});
+
 test('live insight APIs ignore non-record entries without hiding valid suggestions', () => {
   const floating = object('floating', {
     position: { x: 1.5, y: 0, z: 1.5 },
