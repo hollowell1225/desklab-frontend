@@ -49,7 +49,13 @@ function getInvalidConnectionIds(wiringIssues) {
 const isNonBlankString = value => typeof value === 'string' && value.trim().length > 0;
 
 function getActionableObjectRecords(objects) {
-  return getRecordItems(objects).filter(object => isNonBlankString(object.id));
+  const records = getRecordItems(objects);
+  const idCounts = new Map();
+  for (const object of records) {
+    if (!isNonBlankString(object.id)) continue;
+    idCounts.set(object.id, (idCounts.get(object.id) || 0) + 1);
+  }
+  return records.filter(object => idCounts.get(object.id) === 1);
 }
 
 function getActionablePortRecords(object) {

@@ -1156,6 +1156,79 @@ test('live recommendations ignore invalid object IDs without hiding valid networ
   });
 });
 
+test('live recommendations ignore duplicate object IDs without hiding valid network fixes', () => {
+  const router = object('router', {
+    type: 'router',
+    modelId: 'router',
+    position: { x: -1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'output' }],
+  });
+  const firstDuplicate = object('duplicate', {
+    name: 'Duplicate A',
+    position: { x: -0.5, y: 0, z: 0.5 },
+    ports: [{ id: 'eth-a', name: 'Ethernet A', type: 'ethernet', direction: 'input' }],
+  });
+  const secondDuplicate = object('duplicate', {
+    name: 'Duplicate B',
+    position: { x: 0.5, y: 0, z: 0.5 },
+    ports: [{ id: 'eth-b', name: 'Ethernet B', type: 'ethernet', direction: 'input' }],
+  });
+  const validEndpoint = object('valid-endpoint', {
+    name: 'Valid endpoint',
+    position: { x: 1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'eth-in', name: 'Ethernet', type: 'ethernet', direction: 'input' }],
+  });
+  const project = {
+    room,
+    objects: [router, firstDuplicate, secondDuplicate, validEndpoint],
+    connections: [],
+  };
+  const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
+
+  const recommendations = buildRecommendations(project, { wiringIssues });
+  const next = applyAllImprovements(project, recommendations.freeImprovements);
+  const nextIssues = analyzeProjectWiring(next.objects, next.connections);
+
+  assert.deepEqual({
+    duplicateObjectIssues: wiringIssues
+      .filter(issue => issue.code === 'duplicate_object_id_definition')
+      .map(({ code, severity, objectIds }) => ({ code, severity, objectIds })),
+    free: recommendations.freeImprovements.map(item => ({
+      code: item.code,
+      toObjectId: item.patch.newConnection?.toObjectId,
+      toPortId: item.patch.newConnection?.toPortId,
+    })),
+    purchases: recommendations.purchases.map(item => item.code),
+    total: recommendations.total,
+    connections: next.connections.map(({
+      fromObjectId, fromPortId, toObjectId, toPortId,
+    }) => ({ fromObjectId, fromPortId, toObjectId, toPortId })),
+    introducedAmbiguousConnections: nextIssues
+      .filter(issue => issue.code === 'ambiguous_connection_object')
+      .map(issue => issue.code),
+  }, {
+    duplicateObjectIssues: [{
+      code: 'duplicate_object_id_definition',
+      severity: 'error',
+      objectIds: ['duplicate'],
+    }],
+    free: [{
+      code: 'auto_network_device',
+      toObjectId: 'valid-endpoint',
+      toPortId: 'eth-in',
+    }],
+    purchases: [],
+    total: 1,
+    connections: [{
+      fromObjectId: 'router',
+      fromPortId: 'lan-1',
+      toObjectId: 'valid-endpoint',
+      toPortId: 'eth-in',
+    }],
+    introducedAmbiguousConnections: [],
+  });
+});
+
 test('live insight APIs ignore non-record entries without hiding valid suggestions', () => {
   const floating = object('floating', {
     position: { x: 1.5, y: 0, z: 1.5 },
