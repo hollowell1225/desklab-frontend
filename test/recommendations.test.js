@@ -1834,6 +1834,41 @@ test('suggests connecting an unconnected HDMI output to a nearby monitor', () =>
     'suggestion should disappear after connection is applied');
 });
 
+test('live recommendations tolerate non-string model IDs when the display type is known', () => {
+  const source = object('source', {
+    position: { x: 0, y: 0, z: 0.5 },
+    ports: [{ id: 'hdmi-out', name: 'HDMI OUT', type: 'hdmi', direction: 'output' }],
+  });
+  const display = object('display', {
+    type: 'monitor',
+    modelId: 42,
+    position: { x: 1, y: 0, z: 0.5 },
+    ports: [{ id: 'hdmi-in', name: 'HDMI IN', type: 'hdmi', direction: 'input' }],
+  });
+  const project = { room, objects: [source, display], connections: [] };
+  const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
+
+  const recommendations = buildRecommendations(project, { wiringIssues });
+
+  assert.deepEqual({
+    free: recommendations.freeImprovements.map(item => ({
+      code: item.code,
+      objectIds: item.objectIds,
+      cableType: item.patch.newConnection?.cableType,
+    })),
+    purchases: recommendations.purchases,
+    total: recommendations.total,
+  }, {
+    free: [{
+      code: 'auto_connect_display',
+      objectIds: ['source', 'display'],
+      cableType: 'hdmi',
+    }],
+    purchases: [],
+    total: 1,
+  });
+});
+
 test('does not suggest display connection when monitor HDMI input is occupied', () => {
   const pc = object('pc', {
     type: 'desktop-pc',

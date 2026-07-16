@@ -452,9 +452,10 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
 
       for (const candidate of objects) {
         if (candidate.id === object.id) continue;
-        const isDisplay = candidate.modelId?.startsWith('monitor')
+        const modelId = typeof candidate.modelId === 'string' ? candidate.modelId : '';
+        const isDisplay = modelId.startsWith('monitor')
           || candidate.type === 'monitor'
-          || candidate.modelId?.startsWith('ultrawide');
+          || modelId.startsWith('ultrawide');
         if (!isDisplay) continue;
 
         for (const candidatePort of getPortRecords(candidate)) {
