@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-07-15, Asia/Shanghai
+Last updated: 2026-07-16, Asia/Shanghai
 
 ## Mission
 
@@ -1937,34 +1937,32 @@ code evidence.
   No browser or visual QA was performed.
 - Commit: `0942a21 fix: tolerate non-string port names` (pushed).
 
-### Paused invalid maxLoad safety-fallback slice (2026-07-15)
+### Invalid maxLoad safety-fallback guard (2026-07-16)
 
-- The user paused work after the public RED and before any source-code GREEN.
-  The clean base was frontend `06d41e2`; no production source was modified.
-- Reproduction: a catalog UPS has a 1000W safety limit and supplies one valid
-  1200W load. Missing/null `maxLoad` correctly uses the catalog and reports
-  both `power_overload` and `buy_ups_overload`; explicit `0` and numeric string
-  `"2500"` correctly suppress them. Invalid `-1`, `NaN`, blank string, and
-  nonnumeric string overrides incorrectly suppress both safety results instead
-  of falling back to the catalog value.
-- One App-shaped table-driven public test was added temporarily to
-  `test/recommendations.test.js`. It first failed RED 0/1 with exactly those
-  four invalid cases false/false instead of true/true; `git diff --check`
-  passed. The test-only diff is saved, not committed, in
-  `stash@{0}` / `78789fd0588bf60cf21baec1dba75b5ff4b8c8f7`
-  (`wip: invalid maxLoad RED`). Resume with
-  `git stash apply 78789fd0588bf60cf21baec1dba75b5ff4b8c8f7`.
-- Planned minimal GREEN: add the single-argument
-  `getEffectiveMaxLoad(object)` seam in `analysis.js`; it must own catalog
-  lookup, safe number/string parsing, and override precedence. Preserve valid
-  explicit zero and nonblank numeric-string coercion; invalid or blank values
-  fall back to catalog, then zero. Route all four effective-limit readers
-  through it: wiring analysis, purchase recommendations, PropertiesEditor, and
-  the SceneObjects power overlay. Do not include the separate wattage fallback
-  behavior without its own later RED.
-- After applying the stash: implement GREEN, rerun the focused test, then run
-  all frontend gates and both HTTP checks before feature commit/push. No full
-  suite, build, browser, or visual QA is claimed for this paused RED-only work.
+- Problem: a catalog UPS with a 1000W safety limit and a valid 1200W downstream
+  load correctly reported `power_overload` and `buy_ups_overload` when its live
+  `maxLoad` was missing or null, but invalid `-1`, `NaN`, blank-string, and
+  nonnumeric-string overrides were coerced to zero and suppressed both safety
+  results instead of falling back to the catalog limit.
+- One App-shaped table-driven public behavior test covers missing, null,
+  explicit zero, negative, `NaN`, blank string, numeric string, and nonnumeric
+  string overrides through `analyzeProjectWiring()` plus
+  `buildRecommendations()`. It was reconfirmed RED 0/1 on the resumed clean
+  base with exactly the four invalid cases false/false, then GREEN 1/1.
+- Added the single-argument `getEffectiveMaxLoad(object)` seam in `analysis.js`.
+  It owns catalog lookup, safe finite non-negative number/string parsing, and
+  override precedence. Explicit `0` and nonblank numeric strings remain valid;
+  unusable live values fall back to the catalog value and then zero.
+- Wiring analysis, purchase recommendations, PropertiesEditor, and the
+  SceneObjects power overlay now use the same effective-limit seam. The separate
+  wattage behavior was deliberately left unchanged.
+- Verification: focused RED 0/1 then GREEN 1/1; `npm test` 287/287;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200;
+  `git diff --check` passed. No browser or visual QA was performed.
+- Commit: `c35262e fix: fall back from invalid max load overrides` (pushed).
+  The saved RED stash was consumed and dropped after the commit was protected
+  on `origin/master`.
 
 ### External Chrome DOM runtime check (2026-07-14)
 
