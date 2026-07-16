@@ -2037,6 +2037,31 @@ code evidence.
   browser or visual QA was performed.
 - Commit: `840ebba fix: tolerate non-string model ids` (pushed).
 
+### Invalid port-ID recommendation guard (2026-07-16)
+
+- Problem: live wiring analysis correctly reported a numeric port ID through
+  `invalid_port_id_definition`, but recommendation action and capacity scans
+  still treated that port as addressable. With one router LAN port, the invalid
+  endpoint received an `auto_network_device` patch carrying `toPortId: 42`,
+  the valid endpoint lost its free fix, and the same invalid demand created a
+  false `buy_switch` suggestion.
+- One App-shaped public behavior test keeps the analysis diagnostic visible and
+  places the invalid endpoint before a valid one. It failed RED 0/1 with the
+  invalid automatic patch, `buy_switch`, and total 2, then passed GREEN 1/1
+  with only the valid endpoint's automatic network patch and total 1.
+- Added the private `getActionablePortRecords()` seam in
+  `recommendations.js`. Automatic power, network, display, and relevant
+  capacity scans now use only record ports whose IDs are nonblank strings.
+  Pure power-input classification deliberately keeps the broader record view,
+  so a device declaring a malformed input cannot become an independent power
+  root.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  74/74; `npm test` 291/291; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `1b63d53 fix: ignore invalid port ids in recommendations` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
