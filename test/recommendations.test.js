@@ -777,6 +777,55 @@ test('applyImprovement applies a layout patch without mutating the input', () =>
   );
 });
 
+test('applyImprovement rejects a stale layout patch when its object ID becomes ambiguous', () => {
+  const stray = object('stray', { position: { x: 10, y: 0, z: 0.5 } });
+  const project = { room, objects: [stray], connections: [] };
+  const suggestion = buildFreeImprovements(room, project.objects, project.connections)
+    .find(item => item.code === 'move_inside_room');
+  assert.ok(suggestion, 'expected a valid move suggestion before the edit');
+
+  const staleProject = {
+    ...project,
+    objects: [
+      ...project.objects,
+      object('stray', {
+        name: 'Duplicate stray',
+        position: { x: -10, y: 0, z: 0.5 },
+      }),
+    ],
+  };
+  const beforeIssues = analyzeProjectWiring(staleProject.objects, staleProject.connections);
+
+  const next = applyImprovement(staleProject, suggestion);
+  const nextIssues = analyzeProjectWiring(next.objects, next.connections);
+  const summarizeDuplicates = issues => issues
+    .filter(issue => issue.code === 'duplicate_object_id_definition')
+    .map(({ code, severity, objectIds }) => ({ code, severity, objectIds }));
+
+  assert.deepEqual({
+    beforeDuplicateIssues: summarizeDuplicates(beforeIssues),
+    unchanged: next === staleProject,
+    positions: next.objects.map(item => item.position),
+    nextDuplicateIssues: summarizeDuplicates(nextIssues),
+  }, {
+    beforeDuplicateIssues: [{
+      code: 'duplicate_object_id_definition',
+      severity: 'error',
+      objectIds: ['stray'],
+    }],
+    unchanged: true,
+    positions: [
+      { x: 10, y: 0, z: 0.5 },
+      { x: -10, y: 0, z: 0.5 },
+    ],
+    nextDuplicateIssues: [{
+      code: 'duplicate_object_id_definition',
+      severity: 'error',
+      objectIds: ['stray'],
+    }],
+  });
+});
+
 test('applyImprovement applies a cable patch and leaves objects untouched', () => {
   const objects = [
     object('source', { position: { x: 0, y: 0, z: 0.1 }, ports: [{ id: 'out', name: 'out', type: 'dc_output', direction: 'output' }] }),

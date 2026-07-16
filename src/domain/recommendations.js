@@ -803,7 +803,8 @@ export function applyImprovement(project, suggestion) {
 
   if (patch.objectId) {
     const objects = project.objects || [];
-    const targetObject = objects.find(object => object.id === patch.objectId);
+    const targetObject = getActionableObjectRecords(objects)
+      .find(object => object.id === patch.objectId);
     if (!targetObject) return project;
     const nextPosition = patch.position ? patch.position : targetObject.position;
     const nextRotation = patch.rotation ? patch.rotation : targetObject.rotation;
