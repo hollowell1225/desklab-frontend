@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `e9f6bd3 fix: ignore duplicate object ids in recommendations`
+- Feature HEAD: `7f2c288 fix: ignore duplicate port ids in recommendations`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2111,6 +2111,31 @@ code evidence.
   browser or visual QA was performed.
 - Commit: `e9f6bd3 fix: ignore duplicate object ids in recommendations`
   (pushed).
+
+### Duplicate port-ID recommendation ambiguity guard (2026-07-16)
+
+- Problem: wiring analysis correctly reported duplicate nonblank port IDs, but
+  recommendation builders still treated those ports as actionable. With one
+  router LAN port, an endpoint containing two `eth-dup` inputs stole the valid
+  endpoint's automatic network fix and created a false `buy_switch`. Applying
+  the generated patch added a connection that analysis immediately rejected as
+  `ambiguous_connection_port`.
+- One App-shaped public behavior test drives the facade → apply → reanalyze
+  path. It failed RED 0/1 with the ambiguous-port patch, false purchase, total
+  2, and a newly introduced connection error, then passed GREEN 1/1 with only
+  the valid endpoint patch, no purchase, total 1, and no new error.
+- Deepened the private `getActionablePortRecords()` seam to count exact
+  nonblank string IDs within each object and admit only ports whose ID occurs
+  once. Both public recommendation builders inherit the guard for automatic
+  actions and capacity/demand scans. Power-role classification, wiring
+  diagnostics, the power graph, and physical endpoint calculations retain the
+  complete port-record view.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  77/77; `npm test` 294/294; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `7f2c288 fix: ignore duplicate port ids in recommendations` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
