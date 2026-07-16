@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `99dc1a6 fix: reject stale ambiguous object patches`
+- Feature HEAD: `a4f1ab7 fix: reject stale ambiguous cable patches`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2209,6 +2209,31 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `99dc1a6 fix: reject stale ambiguous object patches` (pushed).
+
+### Stale ambiguous-connection cable guard (2026-07-16)
+
+- Problem: a valid `extend_cable` suggestion could become stale after a second
+  connection was edited to share the target connection's ID. Application found
+  the first match but then updated every matching record, changing two lengths
+  from `[1, 5]` to `[3.3, 3.3]` despite the existing
+  `duplicate_connection_id` error.
+- One public behavior test generates a real cable-extension suggestion, adds a
+  same-ID connection with a different length, applies the stale suggestion, and
+  reanalyzes the result. It failed RED 0/1 because both records changed and the
+  operation returned a new project, then passed GREEN 1/1 as a strict identity
+  no-op with both original lengths and the duplicate-ID diagnostic preserved.
+- Added the private `getActionableConnectionRecords()` seam, symmetric with the
+  existing object and port helpers. Cable-patch application now resolves only a
+  record-shaped connection whose ID is a nonblank string and unique in the
+  current project. Unrelated duplicate IDs do not block a unique target, and
+  the raw connection array is never filtered or written back.
+- Verification: focused RED 0/1 then GREEN 1/1; normal/ambiguous cable tests
+  2/2; all `applyImprovement` tests 13/13; complete recommendations tests 81/81;
+  `npm test` 298/298; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `a4f1ab7 fix: reject stale ambiguous cable patches` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
