@@ -1033,6 +1033,59 @@ test('applyImprovement rejects a stale connection when an endpoint port becomes 
   });
 });
 
+test('applyImprovement rejects a stale connection when an endpoint object ID becomes ambiguous', () => {
+  const router = object('router', {
+    type: 'router',
+    modelId: 'router',
+    position: { x: -1, y: 0, z: 0.5 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'output' }],
+  });
+  const endpoint = object('endpoint', {
+    position: { x: 1, y: 0, z: 0.5 },
+    ports: [{ id: 'eth-in', name: 'Ethernet', type: 'ethernet', direction: 'input' }],
+  });
+  const project = { room, objects: [router, endpoint], connections: [] };
+  const suggestion = buildFreeImprovements(room, project.objects, project.connections)
+    .find(item => item.code === 'auto_network_device');
+  assert.ok(suggestion, 'expected a valid automatic network suggestion before the edit');
+
+  const staleProject = {
+    ...project,
+    objects: [
+      ...project.objects,
+      object('endpoint', {
+        name: 'Duplicate endpoint',
+        position: { x: 2, y: 0, z: 0.5 },
+        ports: [{ ...endpoint.ports[0] }],
+      }),
+    ],
+  };
+  const beforeIssues = analyzeProjectWiring(staleProject.objects, staleProject.connections);
+
+  const next = applyImprovement(staleProject, suggestion);
+  const nextIssues = analyzeProjectWiring(next.objects, next.connections);
+
+  assert.deepEqual({
+    duplicateObjectIssues: beforeIssues
+      .filter(issue => issue.code === 'duplicate_object_id_definition')
+      .map(({ code, severity, objectIds }) => ({ code, severity, objectIds })),
+    unchanged: next === staleProject,
+    connections: next.connections,
+    introducedAmbiguousConnections: nextIssues
+      .filter(issue => issue.code === 'ambiguous_connection_object')
+      .map(issue => issue.code),
+  }, {
+    duplicateObjectIssues: [{
+      code: 'duplicate_object_id_definition',
+      severity: 'error',
+      objectIds: ['endpoint'],
+    }],
+    unchanged: true,
+    connections: [],
+    introducedAmbiguousConnections: [],
+  });
+});
+
 test('buildRecommendations aggregates free and purchase suggestions with a total', () => {
   const strip = (id, x) => object(id, {
     type: 'power_strip', modelId: 'power-strip',

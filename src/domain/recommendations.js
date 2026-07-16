@@ -840,7 +840,8 @@ export function applyImprovement(project, suggestion) {
 
   if (patch.newConnection) {
     const connections = project.connections || [];
-    const objectsById = new Map((project.objects || []).map(object => [object.id, object]));
+    const objectsById = new Map(getActionableObjectRecords(project.objects || [])
+      .map(object => [object.id, object]));
     const fromObject = objectsById.get(patch.newConnection.fromObjectId);
     const toObject = objectsById.get(patch.newConnection.toObjectId);
     const fromPort = getActionablePortRecords(fromObject)
