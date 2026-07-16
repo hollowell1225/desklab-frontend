@@ -1964,6 +1964,31 @@ code evidence.
   The saved RED stash was consumed and dropped after the commit was protected
   on `origin/master`.
 
+### Invalid wattage safety-fallback guard (2026-07-16)
+
+- Problem: a catalog desktop PC with a 350W default connected to a valid 300W
+  UPS correctly triggered `power_overload` and `buy_ups_overload` when its live
+  `wattage` was missing or null, but invalid `-1`, `NaN`, blank-string, and
+  nonnumeric-string overrides were coerced to zero and hid both safety results.
+- One App-shaped table-driven public behavior test covers missing, null,
+  explicit zero, negative, `NaN`, blank string, numeric string, and nonnumeric
+  string overrides through `analyzeProjectWiring()` plus
+  `buildRecommendations()`. It failed RED 0/1 with exactly the four unusable
+  overrides false/false, then passed GREEN 1/1.
+- Added the single-argument `getEffectiveWattage(object)` seam. It shares the
+  private safe parser and catalog-fallback implementation with
+  `getEffectiveMaxLoad(object)`, preserving explicit zero and numeric strings
+  while falling back only for unusable live values.
+- Recursive power-load calculation and PropertiesEditor now use the shared
+  wattage seam. Wiring analysis, purchase recommendations, and the scene power
+  overlay inherit the same result through `computeDevicePowerLoad()`; unknown
+  devices without a catalog wattage retain the existing zero fallback.
+- Verification: focused RED 0/1 then GREEN 1/1; `npm test` 288/288;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200;
+  `git diff --check` passed. No browser or visual QA was performed.
+- Commit: `5edb671 fix: fall back from invalid wattage overrides` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
