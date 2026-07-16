@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `840ebba fix: tolerate non-string model ids`
+- Feature HEAD: `e9f6bd3 fix: ignore duplicate object ids in recommendations`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2086,6 +2086,31 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `9e17130 fix: ignore invalid object ids in recommendations` (pushed).
+
+### Duplicate object-ID recommendation ambiguity guard (2026-07-16)
+
+- Problem: wiring analysis correctly reported duplicate nonblank object IDs,
+  but recommendation builders still treated every matching device as
+  addressable. With one router LAN port, the first duplicate endpoint stole the
+  valid endpoint's automatic network fix and created a false `buy_switch`.
+  Applying the generated patch was a no-op because object lookup resolved the
+  same ID to the other duplicate, whose port differed.
+- One App-shaped public behavior test drives the facade → apply → reanalyze
+  path. It failed RED 0/1 with the duplicate-target patch, false purchase,
+  total 2, and zero applied connections, then passed GREEN 1/1 with only the
+  valid endpoint patch, no purchase, total 1, and one valid applied connection.
+- Deepened the private `getActionableObjectRecords()` seam to count exact
+  nonblank string IDs and admit only objects whose ID occurs once. Both public
+  recommendation builders inherit the guard for patch targets, topology, and
+  capacity/demand scans, while the complete record view remains available to
+  wiring, power, layout, cable-length, and support-geometry analysis.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  76/76; `npm test` 293/293; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `e9f6bd3 fix: ignore duplicate object ids in recommendations`
+  (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
