@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `7f2c288 fix: ignore duplicate port ids in recommendations`
+- Feature HEAD: `8a82217 fix: reject stale ambiguous port patches`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2136,6 +2136,29 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `7f2c288 fix: ignore duplicate port ids in recommendations` (pushed).
+
+### Stale ambiguous-port connection guard (2026-07-16)
+
+- Problem: a valid automatic network suggestion could become stale after an
+  endpoint was edited to contain two ports with the suggested ID. Applying the
+  old patch still appended the connection, and wiring analysis then reported a
+  newly introduced `ambiguous_connection_port` error alongside the existing
+  duplicate-port diagnostic.
+- One public behavior test generates a real `auto_network_device` suggestion,
+  duplicates the target port before application, applies the stale suggestion,
+  and reanalyzes the result. It failed RED 0/1 because a connection was added
+  and the ambiguity error appeared, then passed GREEN 1/1 with an identity
+  no-op, no connection, and no newly introduced connection error.
+- `applyImprovement()` now resolves both new-connection endpoints through the
+  existing `getActionablePortRecords()` seam. Application therefore revalidates
+  the current project and rejects endpoint port IDs that are blank, invalid, or
+  no longer unique, while normal unique endpoints keep their existing behavior.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  78/78; `npm test` 295/295; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `8a82217 fix: reject stale ambiguous port patches` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
