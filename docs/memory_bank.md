@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `b92d185 fix: preserve opaque IDs in recommendations`
+- Feature HEAD: `840ebba fix: tolerate non-string model ids`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2013,6 +2013,29 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `b92d185 fix: preserve opaque IDs in recommendations` (pushed).
+
+### Non-string live model-ID recommendation guard (2026-07-16)
+
+- Problem: the App recomputes `buildRecommendations()` on every relevant
+  render, but display discovery called `.startsWith()` through optional chaining
+  on each candidate `modelId`. Optional chaining protects only nullish values;
+  a record-shaped live object with numeric `modelId` therefore threw a
+  `TypeError` before its valid `type: 'monitor'` fallback could be used.
+- One App-shaped public behavior test passes precomputed wiring issues into the
+  recommendation facade for an HDMI source and a typed monitor whose live
+  `modelId` is `42`. It failed RED 0/1 with
+  `candidate.modelId?.startsWith is not a function`, then passed GREEN 1/1 and
+  returned the valid `auto_connect_display` HDMI suggestion.
+- Display matching now narrows the live model ID to a string before testing the
+  existing `monitor` and `ultrawide` prefixes. Valid string model IDs and the
+  independent `candidate.type === 'monitor'` fallback retain their behavior;
+  no interface or unrelated recommendation path changed.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  73/73; `npm test` 290/290; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `840ebba fix: tolerate non-string model ids` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
