@@ -1046,6 +1046,57 @@ test('live recommendations tolerate non-string port names already diagnosed by w
   });
 });
 
+test('live recommendations ignore invalid port IDs without hiding valid network fixes', () => {
+  const router = object('router', {
+    type: 'router',
+    modelId: 'router',
+    position: { x: -1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'output' }],
+  });
+  const invalidEndpoint = object('invalid-endpoint', {
+    position: { x: 0, y: 0, z: 0.5 },
+    ports: [{ id: 42, name: 'Ethernet', type: 'ethernet', direction: 'input' }],
+  });
+  const validEndpoint = object('valid-endpoint', {
+    position: { x: 1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'eth-in', name: 'Ethernet', type: 'ethernet', direction: 'input' }],
+  });
+  const project = {
+    room,
+    objects: [router, invalidEndpoint, validEndpoint],
+    connections: [],
+  };
+  const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
+
+  const recommendations = buildRecommendations(project, { wiringIssues });
+
+  assert.deepEqual({
+    invalidPortIssues: wiringIssues
+      .filter(issue => issue.code === 'invalid_port_id_definition')
+      .map(({ code, severity, objectIds }) => ({ code, severity, objectIds })),
+    free: recommendations.freeImprovements.map(item => ({
+      code: item.code,
+      toObjectId: item.patch.newConnection?.toObjectId,
+      toPortId: item.patch.newConnection?.toPortId,
+    })),
+    purchases: recommendations.purchases.map(item => item.code),
+    total: recommendations.total,
+  }, {
+    invalidPortIssues: [{
+      code: 'invalid_port_id_definition',
+      severity: 'error',
+      objectIds: ['invalid-endpoint'],
+    }],
+    free: [{
+      code: 'auto_network_device',
+      toObjectId: 'valid-endpoint',
+      toPortId: 'eth-in',
+    }],
+    purchases: [],
+    total: 1,
+  });
+});
+
 test('live insight APIs ignore non-record entries without hiding valid suggestions', () => {
   const floating = object('floating', {
     position: { x: 1.5, y: 0, z: 1.5 },
