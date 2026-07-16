@@ -1515,6 +1515,70 @@ test('live recommendations ignore duplicate object IDs without hiding valid netw
   });
 });
 
+test('live recommendations ignore duplicate connection IDs without hiding valid cable fixes', () => {
+  const source = object('source', {
+    position: { x: -1, y: 0, z: 0.5 },
+    ports: [
+      { id: 'out-1', name: 'OUT 1', type: 'other', direction: 'output' },
+      { id: 'out-2', name: 'OUT 2', type: 'other', direction: 'output' },
+      { id: 'out-3', name: 'OUT 3', type: 'other', direction: 'output' },
+    ],
+  });
+  const target = object('target', {
+    position: { x: 1, y: 0, z: 0.5 },
+    ports: [
+      { id: 'in-1', name: 'IN 1', type: 'other', direction: 'input' },
+      { id: 'in-2', name: 'IN 2', type: 'other', direction: 'input' },
+      { id: 'in-3', name: 'IN 3', type: 'other', direction: 'input' },
+    ],
+  });
+  const project = {
+    room,
+    objects: [source, target],
+    connections: [
+      {
+        id: 'duplicate-link', name: 'Duplicate short cable', cableType: 'other', length: 0.5,
+        fromObjectId: 'source', fromPortId: 'out-1', toObjectId: 'target', toPortId: 'in-1',
+      },
+      {
+        id: 'duplicate-link', name: 'Duplicate long cable', cableType: 'other', length: 9,
+        fromObjectId: 'source', fromPortId: 'out-2', toObjectId: 'target', toPortId: 'in-2',
+      },
+      {
+        id: 'valid-link', name: 'Valid short cable', cableType: 'other', length: 0.5,
+        fromObjectId: 'source', fromPortId: 'out-3', toObjectId: 'target', toPortId: 'in-3',
+      },
+    ],
+  };
+  const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
+
+  const recommendations = buildRecommendations(project, { wiringIssues });
+
+  assert.deepEqual({
+    duplicateIssues: wiringIssues
+      .filter(issue => issue.code === 'duplicate_connection_id')
+      .map(({ code, severity, connectionIds }) => ({ code, severity, connectionIds })),
+    free: recommendations.freeImprovements.map(item => ({
+      code: item.code,
+      connectionIds: item.connectionIds,
+    })),
+    purchases: recommendations.purchases.map(item => ({
+      code: item.code,
+      connectionIds: item.connectionIds,
+    })),
+    total: recommendations.total,
+  }, {
+    duplicateIssues: [{
+      code: 'duplicate_connection_id',
+      severity: 'error',
+      connectionIds: ['duplicate-link'],
+    }],
+    free: [{ code: 'extend_cable', connectionIds: ['valid-link'] }],
+    purchases: [{ code: 'buy_cable', connectionIds: ['valid-link'] }],
+    total: 2,
+  });
+});
+
 test('live insight APIs ignore non-record entries without hiding valid suggestions', () => {
   const floating = object('floating', {
     position: { x: 1.5, y: 0, z: 1.5 },

@@ -175,6 +175,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
   const objects = getRecordItems(rawObjects);
   const actionableObjects = getActionableObjectRecords(objects);
   const connections = getRecordItems(rawConnections);
+  const actionableConnections = getActionableConnectionRecords(connections);
   const suggestions = [];
   const objectsById = new Map(actionableObjects.map(object => [object.id, object]));
   const wiringIssues = Array.isArray(options.wiringIssues)
@@ -309,7 +310,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       }
     } else if (issue.code === 'short_cable' || issue.code === 'low_cable_slack') {
       const connectionId = issue.connectionIds[0];
-      const connection = connections.find(candidate => candidate.id === connectionId);
+      const connection = actionableConnections.find(candidate => candidate.id === connectionId);
       const status = connection && evaluateConnectionLength(connection, objects);
       if (!status) continue;
       const length = ceilLength(status.recommendedLength);
@@ -554,6 +555,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
   const objects = getRecordItems(rawObjects);
   const actionableObjects = getActionableObjectRecords(objects);
   const connections = getRecordItems(rawConnections);
+  const actionableConnections = getActionableConnectionRecords(connections);
   const suggestions = [];
   const seen = new Set();
   const objectsById = new Map(actionableObjects.map(object => [object.id, object]));
@@ -602,7 +604,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       });
     } else if (issue.code === 'short_cable' || issue.code === 'low_cable_slack') {
       const connectionId = issue.connectionIds[0];
-      const connection = connections.find(candidate => candidate.id === connectionId);
+      const connection = actionableConnections.find(candidate => candidate.id === connectionId);
       const status = connection && evaluateConnectionLength(connection, objects);
       if (!status) continue;
       const length = ceilLength(status.recommendedLength);
