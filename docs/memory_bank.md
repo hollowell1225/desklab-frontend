@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-07-16, Asia/Shanghai
+Last updated: 2026-07-17, Asia/Shanghai
 
 ## Mission
 
@@ -93,10 +93,10 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-07-16 handoff)
+## Current Git State (2026-07-17 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `a4f1ab7 fix: reject stale ambiguous cable patches`
+- Feature HEAD: `599ce0b fix: skip ambiguous cable recommendations`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2234,6 +2234,31 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `a4f1ab7 fix: reject stale ambiguous cable patches` (pushed).
+
+### Duplicate connection-ID cable recommendation guard (2026-07-17)
+
+- Problem: wiring analysis can report both `duplicate_connection_id` and a
+  length warning for the first record in a duplicate-ID group. The free and
+  purchase builders then used first-match lookup on the raw connection array,
+  producing `extend_cable` and `buy_cable` suggestions that could not identify
+  which physical cable to change; the free patch was already rejected as a
+  no-op by the application guard.
+- One public `buildRecommendations()` behavior test uses one short and one long
+  connection sharing `duplicate-link`, plus an unrelated unique short
+  `valid-link`. It failed RED 0/1 because both duplicate and unique IDs received
+  free and purchase suggestions (total 4), then passed GREEN 1/1 with only the
+  unique cable suggestions retained (total 2) while the duplicate diagnostic
+  remained visible.
+- Both length-warning consumers now resolve their target through the existing
+  `getActionableConnectionRecords()` seam. Raw connections still feed wiring
+  analysis, power graphs, occupancy, and reachability, so the change only
+  removes cable actions whose target ID is blank, invalid, or non-unique.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  82/82; `npm test` 299/299; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `599ce0b fix: skip ambiguous cable recommendations` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
