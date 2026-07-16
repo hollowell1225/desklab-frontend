@@ -849,6 +849,65 @@ test('applyImprovement applies a cable patch and leaves objects untouched', () =
   assert.equal(project.connections[0].length, 1, 'original project must be untouched');
 });
 
+test('applyImprovement rejects a stale cable patch when its connection ID becomes ambiguous', () => {
+  const objects = [
+    object('source', {
+      position: { x: 0, y: 0, z: 0.1 },
+      ports: [{ id: 'out', name: 'out', type: 'dc_output', direction: 'output' }],
+    }),
+    object('target', {
+      position: { x: 3, y: 0, z: 0.1 },
+      ports: [{ id: 'in', name: 'in', type: 'dc_input', direction: 'input' }],
+    }),
+  ];
+  const project = {
+    room,
+    objects,
+    connections: [{
+      id: 'c1', name: 'Power cable', cableType: 'power', length: 1,
+      fromObjectId: 'source', fromPortId: 'out', toObjectId: 'target', toPortId: 'in',
+    }],
+  };
+  const suggestion = buildFreeImprovements(room, project.objects, project.connections)
+    .find(item => item.code === 'extend_cable');
+  assert.ok(suggestion, 'expected a valid cable extension suggestion before the edit');
+
+  const staleProject = {
+    ...project,
+    connections: [
+      ...project.connections,
+      { ...project.connections[0], name: 'Duplicate power cable', length: 5 },
+    ],
+  };
+  const beforeIssues = analyzeProjectWiring(staleProject.objects, staleProject.connections);
+
+  const next = applyImprovement(staleProject, suggestion);
+  const nextIssues = analyzeProjectWiring(next.objects, next.connections);
+  const summarizeDuplicates = issues => issues
+    .filter(issue => issue.code === 'duplicate_connection_id')
+    .map(({ code, severity, connectionIds }) => ({ code, severity, connectionIds }));
+
+  assert.deepEqual({
+    beforeDuplicateIssues: summarizeDuplicates(beforeIssues),
+    unchanged: next === staleProject,
+    lengths: next.connections.map(connection => connection.length),
+    nextDuplicateIssues: summarizeDuplicates(nextIssues),
+  }, {
+    beforeDuplicateIssues: [{
+      code: 'duplicate_connection_id',
+      severity: 'error',
+      connectionIds: ['c1'],
+    }],
+    unchanged: true,
+    lengths: [1, 5],
+    nextDuplicateIssues: [{
+      code: 'duplicate_connection_id',
+      severity: 'error',
+      connectionIds: ['c1'],
+    }],
+  });
+});
+
 test('applyImprovement returns the project unchanged for an empty patch', () => {
   const project = { room, objects: [], connections: [] };
   assert.equal(applyImprovement(project, {}), project);

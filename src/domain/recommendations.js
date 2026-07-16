@@ -58,6 +58,16 @@ function getActionableObjectRecords(objects) {
   return records.filter(object => idCounts.get(object.id) === 1);
 }
 
+function getActionableConnectionRecords(connections) {
+  const records = getRecordItems(connections);
+  const idCounts = new Map();
+  for (const connection of records) {
+    if (!isNonBlankString(connection.id)) continue;
+    idCounts.set(connection.id, (idCounts.get(connection.id) || 0) + 1);
+  }
+  return records.filter(connection => idCounts.get(connection.id) === 1);
+}
+
 function getActionablePortRecords(object) {
   const ports = getPortRecords(object);
   const idCounts = new Map();
@@ -827,7 +837,8 @@ export function applyImprovement(project, suggestion) {
 
   if (patch.connectionId) {
     const connections = project.connections || [];
-    const targetConnection = connections.find(connection => connection.id === patch.connectionId);
+    const targetConnection = getActionableConnectionRecords(connections)
+      .find(connection => connection.id === patch.connectionId);
     if (!targetConnection || targetConnection.length === patch.length) return project;
     return {
       ...project,
