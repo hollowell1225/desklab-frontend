@@ -93,13 +93,14 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-07-14 handoff)
+## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `4008b33 fix: make improvement patches idempotent`
+- Feature HEAD: `b92d185 fix: preserve opaque IDs in recommendations`
 - Untracked: none expected.
 
-Current commits (most recent first, baseline at bottom):
+Historical commits captured at the 2026-07-14 baseline (most recent first,
+baseline at bottom):
 ```
 4008b33 fix: make improvement patches idempotent
 d36aecf fix: ignore missing improvement targets
@@ -1988,6 +1989,30 @@ code evidence.
   local frontend `/` and backend `/api/projects/default` HTTP checks both 200;
   `git diff --check` passed. No browser or visual QA was performed.
 - Commit: `5edb671 fix: fall back from invalid wattage overrides` (pushed).
+
+### Opaque-ID recommendation resolution (2026-07-16)
+
+- Problem: the persisted project contract accepts any nonblank string for
+  object and port IDs, including `:`, but recommendation generation parsed the
+  display-oriented `unpowered:<object>:<port>` issue ID with `split(':')` and
+  `endsWith()`. A contract-valid project with colon-bearing IDs therefore kept
+  both `unpowered_input` issues while silently losing its valid free power fix
+  and no-source purchase suggestion.
+- One App-shaped public behavior test first proves the fixture passes
+  `isProjectEnvelope()`, then reuses `analyzeProjectWiring()` output through
+  `buildRecommendations()`. It failed RED 0/1 with `free=[]`, `purchases=[]`,
+  and `total=0`, then passed GREEN 1/1 with `auto_power_device` plus
+  `buy_power_for_unpowered` and the exact colon-bearing target port ID.
+- Added the private `resolveUnpoweredInput()` seam in `recommendations.js`.
+  Both free and purchase builders now use structured `issue.objectIds` to
+  locate the device and an exact full-issue-ID match to resolve its port;
+  neither consumer splits or suffix-guesses opaque IDs.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  72/72; `npm test` 289/289; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `b92d185 fix: preserve opaque IDs in recommendations` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
