@@ -14,6 +14,7 @@ import { analyzeProjectWiring, buildPowerGraph } from '../src/domain/analysis.js
 import { evaluateConnectionLength } from '../src/domain/connections.js';
 import { findModelTemplate } from '../src/domain/catalog.js';
 import { placeCatalogObject } from '../src/domain/placement.js';
+import { isProjectEnvelope } from '../src/domain/project-validation.js';
 
 const room = { length: 5, width: 4, height: 3 };
 const object = (id, overrides = {}) => ({
@@ -1113,6 +1114,64 @@ test('recommendation builders can reuse precomputed wiring issues', () => {
   assert.equal(computed.some(item => item.code === 'auto_power_device'), true);
   assert.equal(reusedEmpty.some(item => item.code === 'auto_power_device'), false);
   assert.equal(reusedByFacade.freeImprovements.some(item => item.code === 'auto_power_device'), false);
+});
+
+test('recommendations preserve opaque object and port IDs containing colons', () => {
+  const source = object('source:ac', {
+    type: 'power_source',
+    shape: 'box',
+    position: { x: -1.5, y: 0, z: 0.1 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+    ports: [{ id: 'out:ac', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
+  });
+  const acDevice = object('device:ac', {
+    shape: 'box',
+    position: { x: 0, y: 0, z: 0.1 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+    ports: [{ id: 'in:ac', name: 'AC IN', type: 'ac_input', direction: 'input' }],
+  });
+  const dcDevice = object('device:dc', {
+    shape: 'box',
+    position: { x: 1.5, y: 0, z: 0.1 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+    ports: [{ id: 'in:dc', name: 'DC IN', type: 'dc_input', direction: 'input' }],
+  });
+  const project = { room, objects: [source, acDevice, dcDevice], connections: [] };
+
+  assert.equal(isProjectEnvelope(project), true, 'colon-delimited IDs are valid project data');
+  const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
+  const recommendations = buildRecommendations(project, { wiringIssues });
+
+  assert.deepEqual({
+    unpoweredObjectIds: wiringIssues
+      .filter(issue => issue.code === 'unpowered_input')
+      .map(issue => issue.objectIds[0])
+      .sort(),
+    free: recommendations.freeImprovements.map(item => ({
+      code: item.code,
+      objectIds: item.objectIds,
+      toPortId: item.patch.newConnection?.toPortId,
+    })),
+    purchases: recommendations.purchases.map(item => ({
+      code: item.code,
+      objectIds: item.objectIds,
+      product: item.product,
+    })),
+    total: recommendations.total,
+  }, {
+    unpoweredObjectIds: ['device:ac', 'device:dc'],
+    free: [{
+      code: 'auto_power_device',
+      objectIds: ['source:ac', 'device:ac'],
+      toPortId: 'in:ac',
+    }],
+    purchases: [{
+      code: 'buy_power_for_unpowered',
+      objectIds: ['device:dc'],
+      product: { category: 'power', modelId: 'ups' },
+    }],
+    total: 2,
+  });
 });
 
 test('suggestions come in a stable, deterministic order', () => {

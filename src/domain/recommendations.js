@@ -46,6 +46,18 @@ function getInvalidConnectionIds(wiringIssues) {
   return new Set(wiringIssues.flatMap(issue => issue?.invalidConnectionIds || []));
 }
 
+function resolveUnpoweredInput(issue, objectsById) {
+  const objectId = issue?.objectIds?.[0];
+  if (typeof objectId !== 'string' || objectId.trim() === '') return null;
+  const object = objectsById.get(objectId);
+  if (!object) return null;
+  const port = getPortRecords(object).find(candidate =>
+    typeof candidate.id === 'string'
+      && issue.id === `unpowered:${objectId}:${candidate.id}`
+  );
+  return port ? { object, port } : null;
+}
+
 function isWanPort(port) {
   return String(port.id).toLowerCase() === 'wan'
     || (typeof port.name === 'string' && port.name.toLowerCase().includes('wan'));
@@ -206,9 +218,9 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
 
   for (const issue of wiringIssues) {
     if (issue.code === 'unpowered_input') {
-      const [, objectId, portId] = issue.id.split(':');
-      const object = objectsById.get(objectId);
-      const port = getPortRecords(object).find(p => p.id === portId);
+      const endpoint = resolveUnpoweredInput(issue, objectsById);
+      const object = endpoint?.object;
+      const port = endpoint?.port;
       if (object && port && isPortDirectionConsistent(port)) {
         let bestSource = null;
         let minDistance = Number.MAX_VALUE;
@@ -702,9 +714,9 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
   // 6. 无电源可接时建议加购
   for (const issue of wiringIssues) {
     if (issue.code !== 'unpowered_input') continue;
-    const [, objectId] = issue.id.split(':');
-    const object = objectsById.get(objectId);
-    if (!object) continue;
+    const endpoint = resolveUnpoweredInput(issue, objectsById);
+    if (!endpoint) continue;
+    const { object, port } = endpoint;
 
     // Skip objects that can supply power — their own unpowered input is valid
     // (wall outlets, power strips, UPS, adapters — they need external power too,
@@ -715,8 +727,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
     );
     if (hasOutputPort) continue;
 
-    const port = getPortRecords(object).find(p => issue.id.endsWith(`:${p.id}`));
-    if (!port || !isPortDirectionConsistent(port)) continue;
+    if (!isPortDirectionConsistent(port)) continue;
 
     // Check if there's a nearby power source with a free compatible port
     let hasNearbySource = false;
