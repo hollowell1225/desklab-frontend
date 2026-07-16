@@ -25,17 +25,25 @@ export function toPowerValue(value) {
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
-function parseMaxLoad(value) {
+function parsePowerValue(value) {
   if (typeof value !== 'number' && typeof value !== 'string') return null;
   if (typeof value === 'string' && value.trim() === '') return null;
   const number = Number(value);
   return Number.isFinite(number) && number >= 0 ? number : null;
 }
 
-export function getEffectiveMaxLoad(object) {
-  const override = parseMaxLoad(object?.maxLoad);
+function getEffectiveCatalogPowerValue(object, property) {
+  const override = parsePowerValue(object?.[property]);
   if (override !== null) return override;
-  return parseMaxLoad(findModelTemplate(object)?.maxLoad) ?? 0;
+  return parsePowerValue(findModelTemplate(object)?.[property]) ?? 0;
+}
+
+export function getEffectiveMaxLoad(object) {
+  return getEffectiveCatalogPowerValue(object, 'maxLoad');
+}
+
+export function getEffectiveWattage(object) {
+  return getEffectiveCatalogPowerValue(object, 'wattage');
 }
 
 // Fraction of maxLoad at/above which a power hub is flagged as "approaching limit".
@@ -770,8 +778,7 @@ export function computeDevicePowerLoad(deviceId, objects, connections, existingP
       if (activeObjectIds.has(childId)) continue;
       const childObj = objectById.get(childId);
       if (childObj) {
-        const template = findModelTemplate(childObj);
-        const childSelfWattage = toPowerValue(childObj.wattage ?? template?.wattage);
+        const childSelfWattage = getEffectiveWattage(childObj);
         sum += getLoad(childId) + childSelfWattage;
       }
     }

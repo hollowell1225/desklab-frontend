@@ -1,7 +1,7 @@
 import { useState } from 'react';
 
 import { getLegacyModelInfo, findModelTemplate } from '../domain/catalog.js';
-import { computeDevicePowerLoad, classifyPowerLoad, getEffectiveMaxLoad, toPowerValue } from '../domain/analysis.js';
+import { computeDevicePowerLoad, classifyPowerLoad, getEffectiveMaxLoad, getEffectiveWattage } from '../domain/analysis.js';
 import {
   commitNumericInput,
   formatNumericInputValue,
@@ -83,7 +83,7 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
     || template?.ports?.some(p => p.type === 'ac_output' || p.type === 'dc_output')
     || false;
 
-  const wattage = toPowerValue(obj.wattage ?? template?.wattage);
+  const wattage = getEffectiveWattage(obj);
   const maxLoad = getEffectiveMaxLoad(obj);
 
   const currentLoad = hasPowerOutput ? computeDevicePowerLoad(obj.id, objects, connections) : 0;
