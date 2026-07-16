@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `8a82217 fix: reject stale ambiguous port patches`
+- Feature HEAD: `e7393a4 fix: reject stale ambiguous layout patches`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2159,6 +2159,31 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `8a82217 fix: reject stale ambiguous port patches` (pushed).
+
+### Stale ambiguous-object layout guard (2026-07-16)
+
+- Problem: a valid `move_inside_room` suggestion could become stale after a
+  second object was edited to share the suggested target's ID. Application
+  found the first match but then updated every object with that ID, moving both
+  objects to the same position and returning a new project despite the existing
+  `duplicate_object_id_definition` error.
+- One public behavior test generates a real move suggestion, adds the duplicate
+  object before application, and observes the project through
+  `applyImprovement()` plus wiring analysis. It failed RED 0/1 because both
+  objects moved to `x=2` and the operation was not an identity no-op, then
+  passed GREEN 1/1 with both original positions and the duplicate-ID diagnostic
+  preserved.
+- The layout-patch branch now resolves its current target through the existing
+  `getActionableObjectRecords()` seam. Missing, invalid, or non-unique target
+  IDs therefore return the exact current project, while unique valid layout
+  patches keep their immutable update behavior. Cable and connection patches
+  were deliberately left unchanged.
+- Verification: focused RED 0/1 then GREEN 1/1; adjacent layout tests 2/2;
+  complete recommendations tests 79/79; `npm test` 296/296; `npm run lint`;
+  `npm run build` (known non-fatal large-chunk warning only); local frontend
+  `/` and backend `/api/projects/default` HTTP checks both 200;
+  `git diff --check` passed. No browser or visual QA was performed.
+- Commit: `e7393a4 fix: reject stale ambiguous layout patches` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
