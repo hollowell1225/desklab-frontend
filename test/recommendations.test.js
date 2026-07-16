@@ -1097,6 +1097,77 @@ test('live recommendations ignore invalid port IDs without hiding valid network 
   });
 });
 
+test('live recommendations ignore duplicate port IDs without hiding valid network fixes', () => {
+  const router = object('router', {
+    type: 'router',
+    modelId: 'router',
+    position: { x: -1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'output' }],
+  });
+  const duplicatePortEndpoint = object('duplicate-port-endpoint', {
+    name: 'Duplicate port endpoint',
+    position: { x: 0, y: 0, z: 0.5 },
+    ports: [
+      { id: 'eth-dup', name: 'Ethernet A', type: 'ethernet', direction: 'input' },
+      { id: 'eth-dup', name: 'Ethernet B', type: 'ethernet', direction: 'input' },
+    ],
+  });
+  const validEndpoint = object('valid-endpoint', {
+    name: 'Valid endpoint',
+    position: { x: 1.5, y: 0, z: 0.5 },
+    ports: [{ id: 'eth-in', name: 'Ethernet', type: 'ethernet', direction: 'input' }],
+  });
+  const project = {
+    room,
+    objects: [router, duplicatePortEndpoint, validEndpoint],
+    connections: [],
+  };
+  const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
+
+  const recommendations = buildRecommendations(project, { wiringIssues });
+  const next = applyAllImprovements(project, recommendations.freeImprovements);
+  const nextIssues = analyzeProjectWiring(next.objects, next.connections);
+
+  assert.deepEqual({
+    duplicatePortIssues: wiringIssues
+      .filter(issue => issue.code === 'duplicate_port_id_definition')
+      .map(({ code, severity, objectIds }) => ({ code, severity, objectIds })),
+    free: recommendations.freeImprovements.map(item => ({
+      code: item.code,
+      toObjectId: item.patch.newConnection?.toObjectId,
+      toPortId: item.patch.newConnection?.toPortId,
+    })),
+    purchases: recommendations.purchases.map(item => item.code),
+    total: recommendations.total,
+    connections: next.connections.map(({
+      fromObjectId, fromPortId, toObjectId, toPortId,
+    }) => ({ fromObjectId, fromPortId, toObjectId, toPortId })),
+    introducedAmbiguousConnections: nextIssues
+      .filter(issue => issue.code === 'ambiguous_connection_port')
+      .map(issue => issue.code),
+  }, {
+    duplicatePortIssues: [{
+      code: 'duplicate_port_id_definition',
+      severity: 'error',
+      objectIds: ['duplicate-port-endpoint'],
+    }],
+    free: [{
+      code: 'auto_network_device',
+      toObjectId: 'valid-endpoint',
+      toPortId: 'eth-in',
+    }],
+    purchases: [],
+    total: 1,
+    connections: [{
+      fromObjectId: 'router',
+      fromPortId: 'lan-1',
+      toObjectId: 'valid-endpoint',
+      toPortId: 'eth-in',
+    }],
+    introducedAmbiguousConnections: [],
+  });
+});
+
 test('live recommendations ignore invalid object IDs without hiding valid network fixes', () => {
   const router = object('router', {
     type: 'router',

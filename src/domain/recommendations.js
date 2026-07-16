@@ -59,7 +59,13 @@ function getActionableObjectRecords(objects) {
 }
 
 function getActionablePortRecords(object) {
-  return getPortRecords(object).filter(port => isNonBlankString(port.id));
+  const ports = getPortRecords(object);
+  const idCounts = new Map();
+  for (const port of ports) {
+    if (!isNonBlankString(port.id)) continue;
+    idCounts.set(port.id, (idCounts.get(port.id) || 0) + 1);
+  }
+  return ports.filter(port => idCounts.get(port.id) === 1);
 }
 
 function resolveUnpoweredInput(issue, objectsById) {
