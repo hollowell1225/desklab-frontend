@@ -25,6 +25,19 @@ export function toPowerValue(value) {
   return Number.isFinite(number) && number >= 0 ? number : 0;
 }
 
+function parseMaxLoad(value) {
+  if (typeof value !== 'number' && typeof value !== 'string') return null;
+  if (typeof value === 'string' && value.trim() === '') return null;
+  const number = Number(value);
+  return Number.isFinite(number) && number >= 0 ? number : null;
+}
+
+export function getEffectiveMaxLoad(object) {
+  const override = parseMaxLoad(object?.maxLoad);
+  if (override !== null) return override;
+  return parseMaxLoad(findModelTemplate(object)?.maxLoad) ?? 0;
+}
+
 // Fraction of maxLoad at/above which a power hub is flagged as "approaching limit".
 export const POWER_WARNING_RATIO = 0.9;
 
@@ -698,8 +711,7 @@ export function analyzeProjectWiring(rawObjects, rawConnections) {
   }
 
   for (const object of objects) {
-    const template = findModelTemplate(object);
-    const maxLoad = toPowerValue(object.maxLoad ?? template?.maxLoad);
+    const maxLoad = getEffectiveMaxLoad(object);
     if (maxLoad > 0) {
       const currentLoad = computeDevicePowerLoad(object.id, objects, connections, powerGraph);
       const loadStatus = classifyPowerLoad(currentLoad, maxLoad);

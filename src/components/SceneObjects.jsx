@@ -3,9 +3,9 @@ import { useThree } from '@react-three/fiber';
 import { Edges, Line, Text, useGLTF } from '@react-three/drei';
 
 import { createCameraPoseSynchronizer } from '../domain/camera-snapshot.js';
-import { getModelDefaultScale, findModelTemplate } from '../domain/catalog.js';
+import { getModelDefaultScale } from '../domain/catalog.js';
 import { evaluateConnectionLength, getConnectionEndpoints } from '../domain/connections.js';
-import { buildPowerGraph, computeDevicePowerLoad, classifyPowerLoad, toPowerValue } from '../domain/analysis.js';
+import { buildPowerGraph, computeDevicePowerLoad, classifyPowerLoad, getEffectiveMaxLoad } from '../domain/analysis.js';
 import { toThreePosition, toThreeZRotation } from '../domain/coordinates.js';
 import { getGenericModelAsset } from '../domain/model-assets.js';
 import { getGenericModelLayout } from '../domain/generic-model-layouts.js';
@@ -1139,8 +1139,7 @@ export function PowerStatusOverlay({ objects, connections }) {
         const hasPowerOutput = obj.ports?.some(p => POWER_OUTPUT_TYPES.has(p.type));
         if (!hasPowerOutput) return null;
 
-        const template = findModelTemplate(obj);
-        const maxLoad = toPowerValue(obj.maxLoad ?? template?.maxLoad);
+        const maxLoad = getEffectiveMaxLoad(obj);
         if (maxLoad <= 0) return null;
 
         const currentLoad = computeDevicePowerLoad(obj.id, objects, connections, powerGraph);

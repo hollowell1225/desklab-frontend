@@ -3,7 +3,7 @@ import {
   snapObjectToSupport,
   snapWallOutletToNearestWall,
 } from './layout-analysis.js';
-import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad, toPowerValue, classifyPowerLoad } from './analysis.js';
+import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad, getEffectiveMaxLoad, classifyPowerLoad } from './analysis.js';
 import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
 import { validateAndConstrainObject } from './geometry.js';
 import { findModelTemplate } from './catalog.js';
@@ -679,8 +679,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
 
   // 5. 电源过载购买建议
   for (const object of objects) {
-    const template = findModelTemplate(object);
-    const maxLoad = toPowerValue(object.maxLoad ?? template?.maxLoad);
+    const maxLoad = getEffectiveMaxLoad(object);
     if (maxLoad > 0) {
       const currentLoad = computeDevicePowerLoad(object.id, objects, connections, powerGraph);
       if (classifyPowerLoad(currentLoad, maxLoad) === 'overload') {

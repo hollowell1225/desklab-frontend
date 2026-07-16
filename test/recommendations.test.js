@@ -1536,6 +1536,66 @@ test('suggests purchasing a UPS/power split when a power hub is overloaded', () 
   assert.equal(overloadSuggest.product.modelId, 'ups');
 });
 
+test('App power safety falls back to catalog maxLoad only for unusable live overrides', () => {
+  const cases = [
+    { label: 'missing', includeOverride: false, expected: true },
+    { label: 'null', maxLoad: null, expected: true },
+    { label: 'zero', maxLoad: 0, expected: false },
+    { label: 'negative', maxLoad: -1, expected: true },
+    { label: 'NaN', maxLoad: Number.NaN, expected: true },
+    { label: 'blank string', maxLoad: '   ', expected: true },
+    { label: 'numeric string', maxLoad: '2500', expected: false },
+    { label: 'nonnumeric string', maxLoad: 'oops', expected: true },
+  ];
+
+  const actual = cases.map(({
+    label,
+    includeOverride = true,
+    maxLoad,
+  }) => {
+    const ups = object('catalog-ups', {
+      type: 'ups',
+      modelId: 'ups',
+      ports: [{ id: 'out', name: 'OUT', type: 'ac_output', direction: 'output' }],
+      ...(includeOverride ? { maxLoad } : {}),
+    });
+    const load = object('heavy-load', {
+      wattage: 1200,
+      ports: [{ id: 'in', name: 'IN', type: 'ac_input', direction: 'input' }],
+    });
+    const objects = [ups, load];
+    const connections = [{
+      id: 'power',
+      name: 'Power',
+      cableType: 'power',
+      length: 1,
+      fromObjectId: 'catalog-ups',
+      fromPortId: 'out',
+      toObjectId: 'heavy-load',
+      toPortId: 'in',
+    }];
+    const wiringIssues = analyzeProjectWiring(objects, connections);
+    const recommendations = buildRecommendations(
+      { room, objects, connections },
+      { wiringIssues }
+    );
+
+    return {
+      label,
+      wiringOverload: wiringIssues.some(issue => issue.code === 'power_overload'),
+      purchaseOverload: recommendations.purchases.some(
+        item => item.code === 'buy_ups_overload'
+      ),
+    };
+  });
+
+  assert.deepEqual(actual, cases.map(({ label, expected }) => ({
+    label,
+    wiringOverload: expected,
+    purchaseOverload: expected,
+  })));
+});
+
 test('recommends buying a power source when an unpowered device has no nearby free port', () => {
   // A single unpowered PC with no power source at all → should recommend buying a UPS
   const pc = object('lonely-pc', {
