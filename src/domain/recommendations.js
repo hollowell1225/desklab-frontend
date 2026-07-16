@@ -48,6 +48,10 @@ function getInvalidConnectionIds(wiringIssues) {
 
 const isNonBlankString = value => typeof value === 'string' && value.trim().length > 0;
 
+function getActionableObjectRecords(objects) {
+  return getRecordItems(objects).filter(object => isNonBlankString(object.id));
+}
+
 function getActionablePortRecords(object) {
   return getPortRecords(object).filter(port => isNonBlankString(port.id));
 }
@@ -147,9 +151,10 @@ function getRouterReachableObjectIds(objects, connections, invalidConnectionIds,
  */
 export function buildFreeImprovements(room, rawObjects, rawConnections = [], options = {}) {
   const objects = getRecordItems(rawObjects);
+  const actionableObjects = getActionableObjectRecords(objects);
   const connections = getRecordItems(rawConnections);
   const suggestions = [];
-  const objectsById = new Map(objects.map(object => [object.id, object]));
+  const objectsById = new Map(actionableObjects.map(object => [object.id, object]));
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
@@ -219,7 +224,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       toPorts.add(connection.toPortId);
     }
   }
-  const poweredObjectIds = getPoweredObjectIds(objects, powerGraph);
+  const poweredObjectIds = getPoweredObjectIds(actionableObjects, powerGraph);
 
   for (const issue of wiringIssues) {
     if (issue.code === 'unpowered_input') {
@@ -230,7 +235,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
         let bestSource = null;
         let minDistance = Number.MAX_VALUE;
 
-        for (const candidate of objects) {
+        for (const candidate of actionableObjects) {
           if (candidate.id === object.id) continue;
           if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
           for (const candidatePort of getActionablePortRecords(candidate)) {
@@ -299,8 +304,8 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
   }
 
   // 3. 自动连接网络 (auto_network_device)
-  const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, poweredObjectIds);
-  const unconnectedNetworkEndpointCount = objects.reduce((count, object) => {
+  const routerReachableObjectIds = getRouterReachableObjectIds(actionableObjects, connections, invalidConnectionIds, poweredObjectIds);
+  const unconnectedNetworkEndpointCount = actionableObjects.reduce((count, object) => {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) return count;
     return count + getActionablePortRecords(object).filter(port =>
@@ -310,7 +315,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       && !occupiedPorts.get(object.id)?.has(port.id)
     ).length;
   }, 0);
-  const freeRouterLanPortCount = objects.reduce((count, router) => {
+  const freeRouterLanPortCount = actionableObjects.reduce((count, router) => {
     if (!(router.modelId === 'router' || router.type === 'router') || requiresPowerButIsUnpowered(router, poweredObjectIds)) return count;
     return count + getActionablePortRecords(router).filter(port =>
       port.type === 'ethernet'
@@ -321,7 +326,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
     ).length;
   }, 0);
 
-  for (const switchDevice of objects) {
+  for (const switchDevice of actionableObjects) {
     const isSwitch = switchDevice.modelId === 'switch' || switchDevice.type === 'switch';
     if (freeRouterLanPortCount <= unconnectedNetworkEndpointCount
       || !isSwitch
@@ -329,7 +334,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       || requiresPowerButIsUnpowered(switchDevice, poweredObjectIds)) continue;
 
     let bestUplink = null;
-    for (const router of objects) {
+    for (const router of actionableObjects) {
       const isRouter = router.modelId === 'router' || router.type === 'router';
       if (!isRouter || requiresPowerButIsUnpowered(router, poweredObjectIds)) continue;
       for (const routerPort of getActionablePortRecords(router)) {
@@ -371,7 +376,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
     }
   }
 
-  for (const object of objects) {
+  for (const object of actionableObjects) {
     const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
     if (isDistributor) continue;
 
@@ -386,7 +391,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       let bestDistributor = null;
       let minDistance = Number.MAX_VALUE;
 
-      for (const candidate of objects) {
+      for (const candidate of actionableObjects) {
         if (candidate.id === object.id) continue;
         const candidateIsDistributor = ['router', 'switch'].includes(candidate.type) || ['router', 'switch'].includes(candidate.modelId);
         if (!candidateIsDistributor || !routerReachableObjectIds.has(candidate.id)) continue;
@@ -442,7 +447,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
 
   // 4. 自动连接显示器 (auto_connect_display)
   const DISPLAY_PORT_TYPES = new Set(['hdmi', 'displayport', 'usb_c']);
-  for (const object of objects) {
+  for (const object of actionableObjects) {
     for (const port of getActionablePortRecords(object)) {
       if (!DISPLAY_PORT_TYPES.has(port.type)) continue;
       const isOutput = port.direction === 'output' || port.direction === 'bidirectional';
@@ -455,7 +460,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       let bestDisplay = null;
       let minDistance = Number.MAX_VALUE;
 
-      for (const candidate of objects) {
+      for (const candidate of actionableObjects) {
         if (candidate.id === object.id) continue;
         const modelId = typeof candidate.modelId === 'string' ? candidate.modelId : '';
         const isDisplay = modelId.startsWith('monitor')
@@ -525,10 +530,11 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
  */
 export function buildPurchaseSuggestions(rawObjects, rawConnections = [], options = {}) {
   const objects = getRecordItems(rawObjects);
+  const actionableObjects = getActionableObjectRecords(objects);
   const connections = getRecordItems(rawConnections);
   const suggestions = [];
   const seen = new Set();
-  const objectsById = new Map(objects.map(object => [object.id, object]));
+  const objectsById = new Map(actionableObjects.map(object => [object.id, object]));
   const ups = findModelTemplate({ modelId: 'ups' });
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
@@ -556,7 +562,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       toPorts.add(connection.toPortId);
     }
   }
-  const poweredObjectIds = getPoweredObjectIds(objects, powerGraph);
+  const poweredObjectIds = getPoweredObjectIds(actionableObjects, powerGraph);
 
   // 2. Original cable warning/short check
   for (const issue of wiringIssues) {
@@ -611,7 +617,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       obj.modelId === 'router' || obj.type === 'router'
       || obj.modelId === 'modem' || obj.type === 'modem'
       || obj.modelId === 'switch' || obj.type === 'switch';
-    const unconnectedEthernetDevices = objects.filter(obj => {
+    const unconnectedEthernetDevices = actionableObjects.filter(obj => {
       if (isNetworkDistributor(obj)) return false;
       const ethPorts = getActionablePortRecords(obj).filter(p =>
         p.type === 'ethernet'
@@ -623,7 +629,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       return ethPorts.some(p => !occupied.has(p.id));
     });
 
-    const { availableLanPorts, occupiedLanCount } = objects
+    const { availableLanPorts, occupiedLanCount } = actionableObjects
       .filter(obj => (obj.modelId === 'router' || obj.type === 'router')
         && !requiresPowerButIsUnpowered(obj, poweredObjectIds))
       .reduce((capacity, router) => {
@@ -640,8 +646,8 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
         };
       }, { availableLanPorts: 0, occupiedLanCount: 0 });
     const freeLanPorts = Math.max(0, availableLanPorts - occupiedLanCount);
-    const routerReachableObjectIds = getRouterReachableObjectIds(objects, connections, invalidConnectionIds, poweredObjectIds);
-    const freeSwitchPorts = objects
+    const routerReachableObjectIds = getRouterReachableObjectIds(actionableObjects, connections, invalidConnectionIds, poweredObjectIds);
+    const freeSwitchPorts = actionableObjects
       .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
       .reduce((count, switchDevice) => count + getActionablePortRecords(switchDevice).filter(port =>
         port.type === 'ethernet'
@@ -668,7 +674,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
   }
 
   // 4. New recommendation: buy power strip if an existing power strip is fully occupied
-  for (const object of objects) {
+  for (const object of actionableObjects) {
     const isPowerStrip = object?.modelId === 'power-strip' || object?.type === 'power_strip';
     if (isPowerStrip) {
       const acOutputs = getActionablePortRecords(object).filter(p =>
@@ -696,7 +702,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
   }
 
   // 5. 电源过载购买建议
-  for (const object of objects) {
+  for (const object of actionableObjects) {
     const maxLoad = getEffectiveMaxLoad(object);
     if (maxLoad > 0) {
       const currentLoad = computeDevicePowerLoad(object.id, objects, connections, powerGraph);
@@ -737,7 +743,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
 
     // Check if there's a nearby power source with a free compatible port
     let hasNearbySource = false;
-    for (const candidate of objects) {
+    for (const candidate of actionableObjects) {
       if (candidate.id === object.id) continue;
       if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
       for (const candidatePort of getActionablePortRecords(candidate)) {
