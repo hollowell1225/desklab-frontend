@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-17 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `599ce0b fix: skip ambiguous cable recommendations`
+- Feature HEAD: `9a2be2f fix: allocate unique automatic connection ids`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2259,6 +2259,32 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `599ce0b fix: skip ambiguous cable recommendations` (pushed).
+
+### Automatic connection-ID allocation guard (2026-07-17)
+
+- Problem: automatic connection IDs concatenated object and port IDs with
+  hyphens. Two valid endpoints identified as `a-b/c` and `a/b-c` therefore
+  both received `c-auto-network-a-b-c`. The facade exposed two different
+  network fixes, but batch application accepted only the first because
+  `applyImprovement()` correctly rejects duplicate connection IDs; the second
+  recommendation then remained indefinitely.
+- One public behavior test builds a valid project with two router LAN ports and
+  those two endpoints, applies both `auto_network_device` suggestions, and
+  recomputes recommendations. It failed RED 0/1 with one unique patch ID, one
+  connected target, and one residual suggestion, then passed GREEN 1/1 with two
+  unique connection IDs, both targets connected, and no residual network fix.
+- Added a private deterministic connection-ID allocator seeded from all current
+  record-shaped connections. It reserves each emitted ID immediately and uses
+  `base`, `base-2`, `base-3`, and so on, avoiding both existing-project and
+  same-batch collisions without randomness. All four automatic connection
+  producers (power, switch uplink, network, and display) use the shared seam;
+  suggestion IDs and raw connection analysis/occupancy behavior are unchanged.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  83/83; `npm test` 300/300; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `9a2be2f fix: allocate unique automatic connection ids` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
