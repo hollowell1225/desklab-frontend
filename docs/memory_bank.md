@@ -2062,6 +2062,31 @@ code evidence.
   browser or visual QA was performed.
 - Commit: `1b63d53 fix: ignore invalid port ids in recommendations` (pushed).
 
+### Invalid object-ID recommendation guard (2026-07-16)
+
+- Problem: live wiring analysis correctly reported a numeric object ID through
+  `invalid_object_id_definition`, but recommendation builders still treated the
+  device as addressable. It received an `auto_network_device` patch carrying
+  `toObjectId: 42`, consumed the only router LAN port, hid the valid endpoint's
+  free fix, and created a false `buy_switch` suggestion. Applying that patch
+  introduced a new `invalid_connection_object_id` error.
+- One App-shaped public behavior test drives the complete facade → apply →
+  reanalyze path. It failed RED 0/1 with the invalid patch, false purchase,
+  total 2, and a newly introduced connection error, then passed GREEN 1/1 with
+  only the valid endpoint patch, no purchase, total 1, and no new error.
+- Added the private `getActionableObjectRecords()` seam. Both exported
+  recommendation builders now keep two views: all record objects remain in
+  wiring, power, length, layout, and support geometry calculations, while only
+  objects whose IDs are nonblank strings can become patch targets, topology
+  endpoints, or capacity/demand candidates. A focused harness confirmed an
+  invalid-ID desk still supports a valid device without inventing a drop fix.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  75/75; `npm test` 292/292; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `9e17130 fix: ignore invalid object ids in recommendations` (pushed).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
