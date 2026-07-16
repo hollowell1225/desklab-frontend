@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-16 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `e7393a4 fix: reject stale ambiguous layout patches`
+- Feature HEAD: `99dc1a6 fix: reject stale ambiguous object patches`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2184,6 +2184,31 @@ code evidence.
   `/` and backend `/api/projects/default` HTTP checks both 200;
   `git diff --check` passed. No browser or visual QA was performed.
 - Commit: `e7393a4 fix: reject stale ambiguous layout patches` (pushed).
+
+### Stale ambiguous-object connection guard (2026-07-16)
+
+- Problem: a valid automatic network suggestion could become stale after a
+  second endpoint was edited to share the target object's ID. Because the
+  application index used last-item-wins `Map` semantics, a compatible duplicate
+  still allowed the old patch to append a connection that wiring analysis
+  immediately rejected as `ambiguous_connection_object`.
+- One public behavior test generates a real `auto_network_device` suggestion,
+  adds a same-ID endpoint with the same compatible port, applies the stale
+  suggestion, and reanalyzes the result. It failed RED 0/1 with one appended
+  connection and a newly introduced ambiguity error, then passed GREEN 1/1 as
+  a strict identity no-op with no connection or new error.
+- The new-connection branch now builds its current endpoint index from the
+  existing `getActionableObjectRecords()` seam. Either source or target must
+  have a valid, unique current object ID before port compatibility, cable type,
+  occupancy, and append checks can run. The existing actionable-port guard and
+  all normal unique-endpoint behavior remain unchanged.
+- Verification: focused RED 0/1 then GREEN 1/1; stale object/port endpoint tests
+  2/2; all `applyImprovement` tests 12/12; complete recommendations tests 80/80;
+  `npm test` 297/297; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `99dc1a6 fix: reject stale ambiguous object patches` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
