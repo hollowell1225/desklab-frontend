@@ -96,7 +96,7 @@ npm start
 ## Current Git State (2026-07-17 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `9a2be2f fix: allocate unique automatic connection ids`
+- Feature HEAD: `77bec9d fix: revalidate automatic cable length on apply`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2285,6 +2285,31 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `9a2be2f fix: allocate unique automatic connection ids` (pushed).
+
+### Stale automatic cable-length application guard (2026-07-17)
+
+- Problem: an automatic network suggestion generated for endpoints 1m apart
+  carried a valid 1.4m cable, but the target could be moved to 8m before the
+  suggestion was applied. The current project still had no wiring issue, yet
+  `applyImprovement()` appended the stale cable and immediately introduced
+  `short_cable`.
+- One public behavior test generates the real `auto_network_device` suggestion,
+  moves only its target inside a larger room, proves the cable changed from
+  having recommended slack to being insufficient, and applies the old patch. It
+  failed RED 0/1 with a new connection and `short_cable`, then passed GREEN 1/1
+  as a strict identity no-op with the current clean wiring state preserved.
+- The `newConnection` application seam now reevaluates the proposed cable
+  against the currently resolved unique endpoint objects after compatibility
+  checks and before any append. Missing geometry or a cable without recommended
+  slack is rejected, preventing both immediate `short_cable` and
+  `low_cable_slack` warnings while leaving the existing ID, endpoint, port,
+  cable-type, and occupancy guards intact.
+- Verification: focused RED 0/1 then GREEN 1/1; complete recommendations tests
+  84/84; `npm test` 301/301; `npm run lint`; `npm run build` (known non-fatal
+  large-chunk warning only); local frontend `/` and backend
+  `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
+  browser or visual QA was performed.
+- Commit: `77bec9d fix: revalidate automatic cable length on apply` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
