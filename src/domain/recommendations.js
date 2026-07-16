@@ -68,6 +68,18 @@ function getActionableConnectionRecords(connections) {
   return records.filter(connection => idCounts.get(connection.id) === 1);
 }
 
+function createConnectionIdAllocator(connections) {
+  const reservedIds = new Set(getRecordItems(connections).map(connection => connection.id));
+  return baseId => {
+    let connectionId = baseId;
+    for (let suffix = 2; reservedIds.has(connectionId); suffix += 1) {
+      connectionId = `${baseId}-${suffix}`;
+    }
+    reservedIds.add(connectionId);
+    return connectionId;
+  };
+}
+
 function getActionablePortRecords(object) {
   const ports = getPortRecords(object);
   const idCounts = new Map();
@@ -176,6 +188,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
   const actionableObjects = getActionableObjectRecords(objects);
   const connections = getRecordItems(rawConnections);
   const actionableConnections = getActionableConnectionRecords(connections);
+  const allocateConnectionId = createConnectionIdAllocator(connections);
   const suggestions = [];
   const objectsById = new Map(actionableObjects.map(object => [object.id, object]));
   const wiringIssues = Array.isArray(options.wiringIssues)
@@ -288,7 +301,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
             objectIds: [bestSource.device.id, object.id],
             patch: {
               newConnection: {
-                id: `c-auto-power-${object.id}-${port.id}`,
+                id: allocateConnectionId(`c-auto-power-${object.id}-${port.id}`),
                 name: `${object.name}电源线`,
                 cableType,
                 length,
@@ -386,7 +399,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       description: `使用一根 ${length}m 网线连接路由器空闲 LAN 口和交换机端口，使交换机可以为下游设备提供网络。`,
       objectIds: [bestUplink.router.id, switchDevice.id],
       patch: { newConnection: {
-        id: `c-auto-uplink-${bestUplink.router.id}-${bestUplink.routerPort.id}-${switchDevice.id}-${bestUplink.switchPort.id}`,
+        id: allocateConnectionId(`c-auto-uplink-${bestUplink.router.id}-${bestUplink.routerPort.id}-${switchDevice.id}-${bestUplink.switchPort.id}`),
         name: `${switchDevice.name}上联网线`, cableType: 'ethernet', length,
         fromObjectId: bestUplink.router.id, fromPortId: bestUplink.routerPort.id,
         toObjectId: switchDevice.id, toPortId: bestUplink.switchPort.id,
@@ -446,7 +459,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
           objectIds: [bestDistributor.device.id, object.id],
           patch: {
             newConnection: {
-              id: `c-auto-network-${object.id}-${port.id}`,
+              id: allocateConnectionId(`c-auto-network-${object.id}-${port.id}`),
               name: `${object.name}网线`,
               cableType: 'ethernet',
               length,
@@ -519,7 +532,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
           objectIds: [object.id, bestDisplay.device.id],
           patch: {
             newConnection: {
-              id: `c-auto-display-${object.id}-${port.id}`,
+              id: allocateConnectionId(`c-auto-display-${object.id}-${port.id}`),
               name: `${object.name}${typeLabel}线`,
               cableType,
               length,

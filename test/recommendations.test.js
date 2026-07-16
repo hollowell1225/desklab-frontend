@@ -1841,6 +1841,64 @@ test('suggests networking an unconnected ethernet device and the fix creates a v
   assert.equal(connect2, undefined, 'recommendation should disappear after connection is applied');
 });
 
+test('automatic network fixes remain independently applicable when composite endpoint IDs collide', () => {
+  const router = object('router', {
+    type: 'router',
+    modelId: 'router',
+    shape: 'box',
+    position: { x: -1.5, y: 0, z: 0.1 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+    ports: [
+      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'output' },
+      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'output' },
+    ],
+  });
+  const firstEndpoint = object('a-b', {
+    shape: 'box',
+    position: { x: 0, y: 0, z: 0.1 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+    ports: [{ id: 'c', name: 'Ethernet A', type: 'ethernet', direction: 'input' }],
+  });
+  const secondEndpoint = object('a', {
+    shape: 'box',
+    position: { x: 1.5, y: 0, z: 0.1 },
+    scale: { x: 0.2, y: 0.2, z: 0.2 },
+    ports: [{ id: 'b-c', name: 'Ethernet B', type: 'ethernet', direction: 'input' }],
+  });
+  const project = {
+    room,
+    objects: [router, firstEndpoint, secondEndpoint],
+    connections: [],
+  };
+  assert.equal(isProjectEnvelope(project), true);
+
+  const recommendations = buildRecommendations(project);
+  const networkSuggestions = recommendations.freeImprovements
+    .filter(item => item.code === 'auto_network_device');
+  const next = applyAllImprovements(project, networkSuggestions);
+  const nextRecommendations = buildRecommendations(next);
+
+  assert.deepEqual({
+    suggestedTargets: networkSuggestions
+      .map(item => item.patch.newConnection.toObjectId)
+      .sort(),
+    uniquePatchIds: new Set(networkSuggestions
+      .map(item => item.patch.newConnection.id)).size,
+    connectedTargets: next.connections.map(connection => connection.toObjectId).sort(),
+    uniqueConnectionIds: new Set(next.connections.map(connection => connection.id)).size,
+    remainingTargets: nextRecommendations.freeImprovements
+      .filter(item => item.code === 'auto_network_device')
+      .map(item => item.patch.newConnection.toObjectId)
+      .sort(),
+  }, {
+    suggestedTargets: ['a', 'a-b'],
+    uniquePatchIds: 2,
+    connectedTargets: ['a', 'a-b'],
+    uniqueConnectionIds: 2,
+    remainingTargets: [],
+  });
+});
+
 test('does not use an unpowered router as an automatic network source', () => {
   const adapter = object('adapter', {
     type: 'power-adapter', modelId: 'power-adapter',
