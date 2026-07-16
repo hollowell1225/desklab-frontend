@@ -842,8 +842,10 @@ export function applyImprovement(project, suggestion) {
     const objectsById = new Map((project.objects || []).map(object => [object.id, object]));
     const fromObject = objectsById.get(patch.newConnection.fromObjectId);
     const toObject = objectsById.get(patch.newConnection.toObjectId);
-    const fromPort = getPortRecords(fromObject).find(port => port.id === patch.newConnection.fromPortId);
-    const toPort = getPortRecords(toObject).find(port => port.id === patch.newConnection.toPortId);
+    const fromPort = getActionablePortRecords(fromObject)
+      .find(port => port.id === patch.newConnection.fromPortId);
+    const toPort = getActionablePortRecords(toObject)
+      .find(port => port.id === patch.newConnection.toPortId);
     if (!fromObject
       || !toObject
       || !arePortsCompatible(fromPort, toPort)
