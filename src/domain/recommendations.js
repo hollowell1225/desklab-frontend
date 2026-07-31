@@ -855,6 +855,12 @@ export function applyImprovement(project, suggestion) {
     const targetConnection = getActionableConnectionRecords(connections)
       .find(connection => connection.id === patch.connectionId);
     if (!targetConnection || targetConnection.length === patch.length) return project;
+    const nextConnection = { ...targetConnection, length: patch.length };
+    const lengthStatus = evaluateConnectionLength(
+      nextConnection,
+      getActionableObjectRecords(project.objects || [])
+    );
+    if (!lengthStatus?.hasRecommendedSlack) return project;
     return {
       ...project,
       connections: connections.map(connection =>

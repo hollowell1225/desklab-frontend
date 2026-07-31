@@ -849,6 +849,67 @@ test('applyImprovement applies a cable patch and leaves objects untouched', () =
   assert.equal(project.connections[0].length, 1, 'original project must be untouched');
 });
 
+test('applyImprovement rejects a stale cable-length patch after endpoints move farther apart', () => {
+  const largeRoom = { length: 12, width: 4, height: 3 };
+  const source = object('source', {
+    position: { x: -1, y: 0, z: 0.5 },
+    ports: [{ id: 'out', name: 'OUT', type: 'other', direction: 'output' }],
+  });
+  const target = object('target', {
+    position: { x: 1, y: 0, z: 0.5 },
+    ports: [{ id: 'in', name: 'IN', type: 'other', direction: 'input' }],
+  });
+  const connection = {
+    id: 'cable', name: 'Cable', cableType: 'other', length: 0.5,
+    fromObjectId: 'source', fromPortId: 'out', toObjectId: 'target', toPortId: 'in',
+  };
+  const project = {
+    room: largeRoom,
+    objects: [source, target],
+    connections: [connection],
+  };
+  const suggestion = buildFreeImprovements(largeRoom, project.objects, project.connections)
+    .find(item => item.code === 'extend_cable');
+  assert.ok(suggestion, 'expected a valid cable extension suggestion before the move');
+
+  const staleProject = {
+    ...project,
+    objects: project.objects.map(item => item.id === target.id
+      ? { ...item, position: { x: 4, y: 0, z: 0.5 } }
+      : item),
+  };
+  const proposedConnection = { ...connection, length: suggestion.patch.length };
+  const beforeIssues = analyzeProjectWiring(staleProject.objects, staleProject.connections);
+
+  const next = applyImprovement(staleProject, suggestion);
+  const nextSuggestion = buildFreeImprovements(largeRoom, next.objects, next.connections)
+    .find(item => item.code === 'extend_cable');
+
+  assert.deepEqual({
+    beforeIssueCodes: beforeIssues.map(issue => issue.code),
+    lengthWasValid: evaluateConnectionLength(
+      proposedConnection,
+      project.objects
+    )?.hasRecommendedSlack,
+    lengthIsStillValid: evaluateConnectionLength(
+      proposedConnection,
+      staleProject.objects
+    )?.hasRecommendedSlack,
+    unchanged: next === staleProject,
+    connectionsReused: next.connections === staleProject.connections,
+    length: next.connections[0].length,
+    replacementPatchIsLonger: nextSuggestion.patch.length > suggestion.patch.length,
+  }, {
+    beforeIssueCodes: ['short_cable'],
+    lengthWasValid: true,
+    lengthIsStillValid: false,
+    unchanged: true,
+    connectionsReused: true,
+    length: 0.5,
+    replacementPatchIsLonger: true,
+  });
+});
+
 test('applyImprovement rejects a stale cable patch when its connection ID becomes ambiguous', () => {
   const objects = [
     object('source', {
