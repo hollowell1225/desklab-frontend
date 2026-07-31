@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-07-17, Asia/Shanghai
+Last updated: 2026-08-01, Asia/Singapore
 
 ## Mission
 
@@ -93,10 +93,10 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-07-17 handoff)
+## Current Git State (2026-08-01 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `77bec9d fix: revalidate automatic cable length on apply`
+- Feature HEAD: `38459dd fix: revalidate cable length patches on apply`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2310,6 +2310,29 @@ code evidence.
   `/api/projects/default` HTTP checks both 200; `git diff --check` passed. No
   browser or visual QA was performed.
 - Commit: `77bec9d fix: revalidate automatic cable length on apply` (pushed).
+
+### Stale cable-extension application guard (2026-08-01)
+
+- Problem: a real `extend_cable` patch was generated with a valid 2.21m length
+  while its endpoints were 2m apart. The target could then move so the current
+  recommendation required 5.5m; applying the stale patch still changed the
+  cable from 0.5m to 2.21m, left it short, and immediately produced another
+  extension recommendation.
+- One public behavior test generates the real patch, proves its proposed length
+  originally had recommended slack but no longer does after the move, and then
+  applies it. It failed RED 0/1 by creating a new project value with the stale
+  2.21m length, then passed GREEN 1/1 as a strict identity no-op that retains
+  0.5m while the recomputed recommendation exposes the current 5.5m repair.
+- The cable-length patch application seam now evaluates the candidate updated
+  connection against the current unique actionable endpoint objects and
+  requires recommended slack before writing it. Stale patches that would leave
+  either `short_cable` or `low_cable_slack` are rejected; existing target,
+  numeric-length, idempotency, and current-length guards remain unchanged.
+- Verification: focused RED 0/1 then GREEN 1/1; `npm test` 302/302;
+  `npm run lint`; `npm run build` (known non-fatal large-chunk warning only);
+  local frontend `/` and backend `/api/projects/default` HTTP checks both 200;
+  `git diff --check` passed. No browser or visual QA was performed.
+- Commit: `38459dd fix: revalidate cable length patches on apply` (pushed).
 
 ### External Chrome DOM runtime check (2026-07-14)
 
