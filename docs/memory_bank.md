@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-08-01, Asia/Singapore
+Last updated: 2026-09-09, Asia/Singapore
 
 ## Mission
 
@@ -93,10 +93,10 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-08-01 handoff)
+## Current Git State (2026-09-09 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `38459dd fix: revalidate cable length patches on apply`
+- Feature HEAD: `ba0acd3 feat: make recommendation outcomes clear and test user flows`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2334,6 +2334,41 @@ code evidence.
   `git diff --check` passed. No browser or visual QA was performed.
 - Commit: `38459dd fix: revalidate cable length patches on apply` (pushed).
 
+### Recommendation outcomes and repeatable UI verification (2026-09-09)
+
+- Product objective: improve the user's complete modeling, diagnosis, action,
+  and review flow. Prioritize observable user outcomes over an open-ended
+  sequence of malformed-state hardening slices.
+- Real UI RED: two overlapping furniture objects produced one layout warning,
+  zero free/purchase suggestions, and the misleading "perfect" empty state.
+  One browser behavior test failed on the missing unresolved-problem message,
+  then passed after the panel exposed outstanding checks and direct report links.
+- A second UI RED proved an empty project also claimed perfection instead of
+  explaining how to start. GREEN adds a first-device action that opens the asset
+  library. A checked nonempty project now describes only the current rule results.
+- Renamed the panel to automatic checks and improvement suggestions and explained
+  that suggestions derive from modeled equipment, positions, and connections.
+  It no longer implies an external AI model or guarantees physical perfection.
+- Added Playwright as a development-only dependency, a self-managed isolated Vite
+  server on 127.0.0.1:5174, and five user-flow tests at desktop 1440x900 and
+  mobile-sized 390x844 viewports. The tests intercept all API traffic with valid
+  fixtures and exercise real React/domain behavior: unresolved overlap, empty
+  project entry, apply-all with residual issues plus undo/redo, wiring report
+  navigation, and scoped clean results. No backend is required by the UI suite.
+- Verification: the two focused public UI RED/GREEN cycles above; npm test
+  302/302; npm run test:ui 10/10; lint; build (known large-chunk warning);
+  both required local HTTP endpoints 200; git diff --check passed.
+  Chrome DOM/interaction/console QA was performed; no screenshots, IAB,
+  pixel-level visual QA, or real-project save was performed.
+- Test stability note: one initial first-device navigation check timed out.
+  With runtime-error logging, the unchanged application passed a focused rerun,
+  five consecutive repetitions, and both viewport suites. No runtime error was
+  captured; a root cause for that isolated timeout has not been established.
+- npm audit reported six affected dependency packages (four high, two moderate);
+  one moderate package remained with --omit=dev. Handle compatible fixes in a
+  separate verified slice, without forced major upgrades.
+- Feature commit: ba0acd3 (pushed to origin/master).
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
@@ -2489,7 +2524,8 @@ Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 237 tests
+npm test          # 302 domain tests
+npm run test:ui   # 10 Chrome UI cases; isolated fixtures, no real backend writes
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
