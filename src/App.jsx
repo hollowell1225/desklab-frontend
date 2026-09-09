@@ -1833,7 +1833,7 @@ export default function App() {
             aria-labelledby="recommendations-title"
           >
             <div className="modal-header">
-              <h3 id="recommendations-title" className="modal-title">AI 优化与改进建议</h3>
+              <h3 id="recommendations-title" className="modal-title">自动检查与改进建议</h3>
               <button
                 type="button"
                 onClick={closeRecommendations}
@@ -1845,6 +1845,9 @@ export default function App() {
               </button>
             </div>
             <div className="modal-body">
+              <p className="wiring-issue-description">
+                根据当前设备、位置和连接规则生成建议；实际摆放、走线和设备规格仍需确认。
+              </p>
               <div className="wiring-summary">
                 <span className="wiring-summary-info">免费改进 {recommendations.freeImprovements.length}</span>
                 <span className="wiring-summary-warning">加购建议 {recommendations.purchases.length}</span>
@@ -1867,6 +1870,37 @@ export default function App() {
                 )}
               </div>
 
+              {(actionableLayoutIssueCount + actionableWiringIssueCount) > 0 && (
+                <div className="wiring-issue wiring-issue-warning" role="status">
+                  <div className="wiring-issue-content">
+                    <div className="wiring-issue-title">
+                      还有 {actionableLayoutIssueCount + actionableWiringIssueCount} 项检查问题需要处理
+                    </div>
+                    <div className="wiring-issue-description">
+                      自动建议仅覆盖部分问题。应用后请继续查看检查报告，确认需要手动调整的项目。
+                    </div>
+                    <div className="connection-item-actions">
+                      {actionableLayoutIssueCount > 0 && (
+                        <button type="button" className="ui-button" onClick={() => {
+                          closeRecommendations();
+                          setShowLayoutReport(true);
+                        }}>
+                          查看布局问题 ({actionableLayoutIssueCount})
+                        </button>
+                      )}
+                      {actionableWiringIssueCount > 0 && (
+                        <button type="button" className="ui-button" onClick={() => {
+                          closeRecommendations();
+                          setShowWiringReport(true);
+                        }}>
+                          查看布线问题 ({actionableWiringIssueCount})
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              )}
+
               {purchaseGuidance && (
                 <div className="wiring-issue wiring-issue-info" style={{ marginTop: '16px' }}>
                   <div className="wiring-issue-content">
@@ -1883,7 +1917,21 @@ export default function App() {
 
               {recommendations.total === 0 ? (
                 <div className="empty-state" style={{ marginTop: '24px' }}>
-                  🎉 完美！当前布局与配线无可优化的项目。
+                  {objects.length === 0 ? (
+                    <>
+                      <p>先添加设备，建立你的桌面方案。</p>
+                      <p>从资产库放入桌子和设备，再设置位置与连接，即可查看检查结果和改进建议。</p>
+                      <button type="button" className="ui-button ui-button-primary" disabled={!projectEditable} onClick={() => {
+                        closeRecommendations();
+                        setIsLeftPanelOpen(true);
+                        if (isMobile) setIsPanelOpen(false);
+                      }}>
+                        添加第一件设备
+                      </button>
+                    </>
+                  ) : (actionableLayoutIssueCount + actionableWiringIssueCount) > 0
+                    ? '暂无自动改进或加购建议，请查看上方检查问题并手动处理。'
+                    : '当前检查未发现需要处理的问题，暂无自动改进或加购建议。'}
                 </div>
               ) : (
                 <div className="recommendations-sections" style={{ marginTop: '16px' }}>

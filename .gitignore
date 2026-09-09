@@ -4,3 +4,5 @@ node_modules
 .DS_Store
 .vite-server.log
 .vite-server.err.log
+test-results/
+playwright-report/
