@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-09-09, Asia/Singapore
+Last updated: 2026-10-25, Asia/Singapore
 
 ## Mission
 
@@ -13,6 +13,19 @@ DeskLab is a connected 3D room desktop layout and cabling tool. The long-term pr
   - step-by-step changes after purchase.
 - The product does not cover in-wall electrical work or construction.
 - Generic realistic device categories are enough. Do not spend excessive time chasing exact branded SKU models.
+
+Product decisions from the product owner (2026-10-25):
+
+- Target users are ordinary home users, including gamers. Do not design for
+  NAS/homelab or small-office setups.
+- Keep the device catalog small; more device types make the product harder to
+  use. Home users do not need a UPS, switch, NAS, or modem, and these were
+  removed (see "Home-user catalog reduction" below).
+- The goal is a real public launch, not only a demo.
+- An LLM is intended to be a core selling point. The rule engine stays the
+  source of truth; the LLM is expected to build on it. Provider is undecided.
+- The roadmap is being revised step by step with the product owner. Report to
+  them after each completed feature slice.
 
 The current work mode is autonomous engineering:
 
@@ -93,10 +106,10 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-09-09 handoff)
+## Current Git State (2026-10-25 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `ba0acd3 feat: make recommendation outcomes clear and test user flows`
+- Feature HEAD: `7d2defa feat: move JSON tools and axes toggle into a 更多 menu`
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2369,6 +2382,56 @@ code evidence.
   separate verified slice, without forced major upgrades.
 - Feature commit: ba0acd3 (pushed to origin/master).
 
+### Dependency audit cleanup (2026-10-25)
+
+- `npm audit fix` without `--force`, lockfile only, no major upgrades. Both
+  repositories now report 0 vulnerabilities.
+- Frontend `c71c8c0` (vite 8.3.5, rolldown 1.2.15, zod 4.6.7, brace-expansion,
+  source-map-js, postcss). Backend `2d67538` (express 4.22.3, proxy-addr 2.0.8
+  for a critical advisory, qs, body-parser, side-channel). Both pushed.
+
+### Home-user catalog reduction (2026-10-25)
+
+Product owner direction: remove what ordinary home users do not need. Four
+commits, each verified separately:
+
+- `805049c` Removed the UPS. Power advice rewritten for homes:
+  `fix_power_strip_chain` (rewire the downstream strip to a wall outlet or use
+  one larger strip), `split_overloaded_power` (move heavy devices to another
+  wall outlet, or add a strip), and `buy_power_for_unpowered` now recommends a
+  power strip for AC inputs and a power adapter for DC inputs (laptops,
+  routers). Previously DC devices were told to buy a UPS, which cannot power
+  them. Also fixed mismatched opening quote marks in power suggestion text.
+- `4bfce77` Removed switch, NAS, and modem, the switch uplink and buy-switch
+  rules, purchase guidance for switches, and the ethernet topology panel. The
+  router now has three plain ports (`lan-1..3`, named 网口 1–3) and no WAN port.
+  `auto_network_device` simply connects to the nearest powered router; no
+  networking hardware is ever recommended for purchase. This also removed a
+  bug where a project with no router was told its router had 0 free LAN ports.
+- `c18cbcc` One desk only: `office-desk`, labelled 书桌 (size is adjustable).
+  Removed gaming, standing, and L-shaped desks, mini PC, and all-in-one.
+  Saved objects of removed models still load: stored ports are hydrated with
+  anchors and they render as the fallback box. The real default project still
+  contains a mini PC and an all-in-one; `default-project.json` was not edited.
+- `7d2defa` Import/export/paste/copy JSON and the axes toggle moved into a
+  更多 menu (fixed-position so the toolbar scroll container cannot clip it;
+  Escape returns focus; outside click or an action closes it; the hidden file
+  input stays mounted). Added `e2e/toolbar.spec.mjs` and the shared
+  `e2e/project-fixture.mjs`.
+- Catalog is now 9 models: 书桌, desktop PC, 15-inch laptop, 24/27-inch and
+  ultrawide monitors, router, power strip, wall outlet, power adapter.
+- Verification after the last slice: `npm test` 270/270 (lower than before
+  because switch/UPS/removed-model tests were deleted), `npm run test:ui`
+  12/12, lint, build (known large-chunk warning). Browser checks of the
+  recommendation panel and Playwright screenshots of the menu at 1440x900 and
+  390x844 were performed.
+- Headless note: in Playwright (SwiftShader WebGL) the first menu open can
+  take about 0.8s because it waits behind three.js first-use shader
+  compilation. In a real GPU browser it opens in about 10ms. UI assertions
+  auto-wait, so tests are stable.
+- Known remaining issue, not fixed: the 3D power-load label (`⚡xxW/yyyW`) is
+  not billboarded and reads mirrored from the default camera.
+
 ### External Chrome DOM runtime check (2026-07-14)
 
 - Performed a real local runtime check with external Chrome headless against
@@ -2415,17 +2478,19 @@ c14f5d2 feat: auto-connect USB-C displays
 ```
 
 ### Backend `D:\desklab\backend`
-- HEAD: `9ecbcc9 fix: normalize null model metadata`
+- HEAD: `2d67538 chore: resolve npm audit advisories in lockfile`
 - Tests: `npm test` → 32 passed. Contracts check passed.
 - Untracked (DO NOT touch): `?? .vscode/`
+- The backend does not restrict object `type`/`modelId`, so the catalog
+  reduction needed no backend change.
 
 Last 5 commits:
 ```
+2d67538 chore: resolve npm audit advisories in lockfile
 9ecbcc9 fix: normalize null model metadata
 2aa0943 contract: document power metadata in openapi
 ddf4c1e contract: allow null port anchors
 fd2eb33 fix: preserve null port anchors
-967bfcf contract: add wattage and maxLoad to Object schema
 ```
 
 Always re-check `git status` and recent commits before making changes.
@@ -2438,8 +2503,8 @@ Core modules:
 - `recommendations.js` — **free improvements + purchase suggestions engine** (see below)
 - `analysis.js` — wiring analysis: port validation, power cycle detection, overload/warning, shared `buildPowerGraph()` for load aggregation
 - `layout-analysis.js` — layout analysis: overlap, out-of-bounds, floating, outlet-off-wall
-- `connections.js` — port compatibility, cable type inference, distance/length evaluation, ethernet topology
-- `catalog.js` — device catalog (17 models across 5 categories), hydration, port anchors
+- `connections.js` — port compatibility, cable type inference, distance/length evaluation
+- `catalog.js` — device catalog (9 home-user models across 5 categories), hydration, port anchors
 - `geometry.js` — 3D bounds, overlap detection, footprint rotation
 - `placement.js` — catalog object placement with room constraints
 - `project-validation.js` — `isProjectEnvelope()` shared by draft.js and project-client.js
@@ -2463,20 +2528,20 @@ Test files under `test/` mirror the domain modules.
 | `drop_to_support` | 1 | Drop floating object to support/floor |
 | `snap_outlet_to_wall` | 2 | Snap wall outlet to nearest wall |
 | `auto_power_device` | 3 | Connect unpowered device to nearest power source |
-| `auto_uplink_switch` | 4 | Join an unconnected switch to an available router LAN port |
-| `auto_network_device` | 5 | Connect an unnetworked device to a router-reachable switch/router |
-| `auto_connect_display` | 6 | Connect HDMI/DP/USB-C output to nearest monitor |
-| `extend_cable` | 7 | Extend cable to recommended length |
+| `auto_network_device` | 4 | Connect an unnetworked device to the nearest powered router |
+| `auto_connect_display` | 5 | Connect HDMI/DP/USB-C output to nearest monitor |
+| `extend_cable` | 6 | Extend cable to recommended length |
 
 **Purchase suggestions** (`buildPurchaseSuggestions(objects, connections)`):
 | Code | Trigger |
 |------|---------|
-| `buy_power_source` | Daisy-chained power strips → UPS |
+| `fix_power_strip_chain` | Daisy-chained power strips → rewire to a wall outlet or use one larger strip |
 | `buy_cable` | Short cable / low slack → longer cable |
-| `buy_switch` | Unconnected ethernet devices exceed free router LAN plus router-reachable switch capacity |
 | `buy_power_strip` | Power strip all AC outputs occupied |
-| `buy_ups_overload` | Power hub external load > maxLoad |
-| `buy_power_for_unpowered` | Unpowered device with no nearby free port → strip/UPS |
+| `split_overloaded_power` | Power hub external load > maxLoad → move devices to another outlet / add a strip |
+| `buy_power_for_unpowered` | Unpowered device with no nearby free port → strip (AC) or power adapter (DC) |
+
+No networking hardware is recommended for purchase.
 
 **Patch application**:
 - `applyImprovement(project, suggestion)` — apply single patch (layout/cable/newConnection)
@@ -2524,8 +2589,8 @@ Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 302 domain tests
-npm run test:ui   # 10 Chrome UI cases; isolated fixtures, no real backend writes
+npm test          # 270 domain tests
+npm run test:ui   # 12 Chrome UI cases; isolated fixtures, no real backend writes
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -2542,19 +2607,23 @@ If rendered UI behavior changes, do browser QA against localhost if browser runt
 ## High-Value Next Work
 
 The autonomous hardening backlog and recommendation foundation are complete.
-Generic model-asset and project-history hardening work is complete through the
-currently audited cases and safe to continue in small slices.
-Remaining work:
+Do not resume open-ended malformed-state hardening; it had stopped producing
+user-visible value. The roadmap is being revised with the product owner
+(2026-10-25); step 1, the home-user catalog reduction, is done.
 
-1. **Product-design-dependent** (confirm intent with product owner first):
-   - Richer paid purchase recommendations (which products, when, quantities)
-   - Deeper multi-step changes after purchase beyond the shipped safe
-     add → selected hardware → connection-panel guidance
-   - Browser/visual QA of the new fix buttons
+1. **Waiting on the product owner's next roadmap steps.** Candidates discussed
+   but not yet confirmed:
+   - Lower modeling cost: scene templates, or a "describe your desk" flow where
+     an LLM produces catalog-constrained scene JSON validated by the rule engine.
+   - LLM explanations of each suggestion and grounded Q&A.
+   - Purchase suggestions with specs and quantities, plus a shopping list.
+   - Launch basics: multiple projects/accounts, deployment, LLM cost limits.
+   - LLM provider choice (domestic vs Claude) affects deployment.
 
-2. **If continuing autonomously without product direction**:
-   - Browser/visual QA for rendered UI behavior.
-   - Small focused hardening found from current code evidence.
+2. **Small known fixes that need no product decision**:
+   - Billboard the 3D power-load label so it does not read mirrored.
+   - An unpowered DC device next to an existing but unpowered power adapter is
+     told to buy another adapter; it should be told to power the adapter.
 
 3. **Always start from current evidence**:
 ```bash
