@@ -39,7 +39,6 @@ export const DEVICE_CATALOG = [
     models: [
       { type: 'power_strip', modelId: 'power-strip', displayName: '插排', shape: 'rect', assetUrl: null, defaultScale: { x: 0.8, y: 0.08, z: 0.05 }, color: '#f44336', maxLoad: 2500, ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }, ...Array(6).fill(0).map((_, i) => ({ id: `ac-out-${i + 1}`, name: `插孔 ${i + 1}`, type: 'ac_output', direction: 'output' }))] },
       { type: 'outlet', modelId: 'wall-outlet', displayName: '墙壁插座', shape: 'rect', assetUrl: null, defaultScale: { x: 0.08, y: 0.02, z: 0.08 }, color: '#ffeb3b', maxLoad: 3500, ports: [{ id: 'ac-out-1', name: '插座 1', type: 'ac_output', direction: 'output' }, { id: 'ac-out-2', name: '插座 2', type: 'ac_output', direction: 'output' }] },
-      { type: 'ups', modelId: 'ups', displayName: 'UPS', shape: 'rect', assetUrl: null, defaultScale: { x: 0.15, y: 0.35, z: 0.22 }, color: '#ff9800', wattage: 15, maxLoad: 1000, ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }, ...Array(4).fill(0).map((_, i) => ({ id: `ac-out-${i + 1}`, name: `输出 ${i + 1}`, type: 'ac_output', direction: 'output' }))] },
       { type: 'power-adapter', modelId: 'power-adapter', displayName: '电源适配器', shape: 'rect', assetUrl: null, defaultScale: { x: 0.1, y: 0.05, z: 0.03 }, color: '#263238', wattage: 5, maxLoad: 150, ports: [{ id: 'ac-in', name: 'AC 插头', type: 'ac_input', direction: 'input' }, { id: 'dc-out', name: 'DC 输出', type: 'dc_output', direction: 'output' }] },
     ],
   },
@@ -52,7 +51,6 @@ const LEGACY_MODEL_BY_TYPE = {
   nas: { category: 'network', modelId: 'nas-2bay' },
   router: { category: 'network', modelId: 'router' },
   switch: { category: 'network', modelId: 'switch' },
-  ups: { category: 'power', modelId: 'ups' },
   power_strip: { category: 'power', modelId: 'power-strip' },
   outlet: { category: 'power', modelId: 'wall-outlet' },
 };

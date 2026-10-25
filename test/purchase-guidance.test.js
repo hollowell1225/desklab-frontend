@@ -5,8 +5,8 @@ import { getPurchaseGuidance } from '../src/domain/purchase-guidance.js';
 
 test('provides a safe, actionable next step for recommended hardware', () => {
   const expected = {
-    ups: '先将墙壁插座接到 UPS 输入端，再将关键设备接到 UPS 输出端。',
     'power-strip': '先将现有供电源接到插排输入端，再将需要分流的设备接到插排输出端。',
+    'power-adapter': '先将电源适配器插到插排或墙壁插座，再将适配器的 DC 输出接到设备的电源输入。',
     switch: '先接通交换机电源，再将路由器 LAN 口接到交换机上联口，最后将待联网设备接到交换机。',
   };
 
@@ -21,6 +21,7 @@ test('provides a safe, actionable next step for recommended hardware', () => {
 
 test('does not invent a wiring plan for unknown hardware', () => {
   assert.equal(getPurchaseGuidance('router'), null);
+  assert.equal(getPurchaseGuidance('ups'), null);
   assert.equal(getPurchaseGuidance(null), null);
 });
 

@@ -26,13 +26,6 @@ const GENERIC_SWITCH_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
-const GENERIC_UPS_ASSET = Object.freeze({
-  id: 'generic-ups',
-  category: 'power',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
 const GENERIC_DESKTOP_PC_ASSET = Object.freeze({
   id: 'generic-desktop-pc',
   category: 'computer',
@@ -124,7 +117,6 @@ const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'power-strip': GENERIC_POWER_STRIP_ASSET,
   router: GENERIC_ROUTER_ASSET,
   switch: GENERIC_SWITCH_ASSET,
-  ups: GENERIC_UPS_ASSET,
   'desktop-pc': GENERIC_DESKTOP_PC_ASSET,
   'mini-pc': GENERIC_MINI_PC_ASSET,
   'power-adapter': GENERIC_POWER_ADAPTER_ASSET,

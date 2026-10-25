@@ -6,7 +6,6 @@ import {
 import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad, getEffectiveMaxLoad, classifyPowerLoad } from './analysis.js';
 import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
 import { validateAndConstrainObject } from './geometry.js';
-import { findModelTemplate } from './catalog.js';
 import { getPortRecords } from './port-collections.js';
 import { getRecordItems } from './record-collections.js';
 
@@ -296,8 +295,8 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
           suggestions.push({
             id: `auto-power:${object.id}:${port.id}`,
             code: 'auto_power_device',
-            title: `为”${object.name}”连接电源`,
-            description: `检测到”${object.name}”的电源接口”${port.name}”未连接。可自动使用一根 ${length}m 的电源线连接到附近的”${bestSource.device.name}”的空闲插孔”${bestSource.port.name}”。`,
+            title: `为“${object.name}”连接电源`,
+            description: `检测到“${object.name}”的电源接口“${port.name}”未连接。可自动使用一根 ${length}m 的电源线连接到附近的“${bestSource.device.name}”的空闲插孔“${bestSource.port.name}”。`,
             objectIds: [bestSource.device.id, object.id],
             patch: {
               newConnection: {
@@ -559,8 +558,8 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
 
 /**
  * Derive paid purchase recommendations from hazards that cannot be resolved by
- * rearranging existing items. Currently maps daisy-chained power strips to a
- * suggestion to add a dedicated power source (referenced from the catalog).
+ * rearranging existing items (for example, daisy-chained or overloaded power
+ * strips, or devices with nowhere to plug in).
  * Returns suggestions with a `product` { category, modelId } pointer, deduped
  * per device pair.
  */
@@ -572,7 +571,6 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
   const suggestions = [];
   const seen = new Set();
   const objectsById = new Map(actionableObjects.map(object => [object.id, object]));
-  const ups = findModelTemplate({ modelId: 'ups' });
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
@@ -608,12 +606,12 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       if (seen.has(key)) continue;
       seen.add(key);
       suggestions.push({
-        id: `buy-power-source:${key}`,
-        code: 'buy_power_source',
-        title: `考虑加购 ${ups?.displayName || 'UPS'} 替代插排串联`,
-        description: '插排串联可能导致过载或接触点发热。建议改接墙壁插座，或加购 UPS / 独立电源分担负载。',
+        id: `fix-power-strip-chain:${key}`,
+        code: 'fix_power_strip_chain',
+        title: '插排不要串着接',
+        description: '插排串联可能导致过载或接触点发热。建议把下游插排直接改接到墙壁插座；如果插孔不够，换一个孔位更多的插排。',
         objectIds: [...issue.objectIds],
-        product: { category: 'power', modelId: 'ups' },
+        product: { category: 'power', modelId: 'power-strip' },
       });
     } else if (issue.code === 'short_cable' || issue.code === 'low_cable_slack') {
       const connectionId = issue.connectionIds[0];
@@ -744,16 +742,16 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
     if (maxLoad > 0) {
       const currentLoad = computeDevicePowerLoad(object.id, objects, connections, powerGraph);
       if (classifyPowerLoad(currentLoad, maxLoad) === 'overload') {
-        const key = `buy-ups-overload:${object.id}`;
+        const key = `split-overloaded-power:${object.id}`;
         if (!seen.has(key)) {
           seen.add(key);
           suggestions.push({
             id: key,
-            code: 'buy_ups_overload',
-            title: `为过载的“${object.name}”加购 UPS 或分流`,
-            description: `电源“${object.name}”的外部总负载已达 ${currentLoad}W，超出其安全承载上限 ${maxLoad}W。建议加购一台额定功率更高的 UPS，或加购插排将部分电器改接至其他独立插座。`,
+            code: 'split_overloaded_power',
+            title: `“${object.name}”负载过高，需要分流`,
+            description: `“${object.name}”的总负载已达 ${currentLoad}W，超出其安全上限 ${maxLoad}W。建议把部分大功率设备改接到另一个墙壁插座；如果附近插孔不够，再加购一个插排分流。`,
             objectIds: [object.id],
-            product: { category: 'power', modelId: 'ups' },
+            product: { category: 'power', modelId: 'power-strip' },
           });
         }
       }
@@ -768,7 +766,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
     const { object, port } = endpoint;
 
     // Skip objects that can supply power — their own unpowered input is valid
-    // (wall outlets, power strips, UPS, adapters — they need external power too,
+    // (wall outlets, power strips, adapters — they need external power too,
     // but they are infrastructure, not endpoint devices).
     const hasOutputPort = getPortRecords(object).some(
       p => p.direction === 'output'
@@ -800,13 +798,14 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       const key = `buy-power-unpowered:${object.id}`;
       if (!seen.has(key)) {
         seen.add(key);
-        const modelId = port.type === 'ac_input' ? 'power-strip' : 'ups';
-        const productName = modelId === 'power-strip' ? '插排' : 'UPS';
+        // AC devices plug into a strip; DC devices (laptops, routers) need an adapter.
+        const modelId = port.type === 'ac_input' ? 'power-strip' : 'power-adapter';
+        const productName = modelId === 'power-strip' ? '插排' : '电源适配器';
         suggestions.push({
           id: key,
           code: 'buy_power_for_unpowered',
-          title: `为”${object.name}”加购${productName}`,
-          description: `设备”${object.name}”的电源输入未连接，且附近没有可用的空闲电源端口。建议加购${productName}以扩展供电能力。`,
+          title: `为“${object.name}”加购${productName}`,
+          description: `设备“${object.name}”的电源输入未连接，且附近没有可用的空闲电源端口。建议加购${productName}以扩展供电能力。`,
           objectIds: [object.id],
           product: { category: 'power', modelId },
         });

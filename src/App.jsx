@@ -895,10 +895,6 @@ export default function App() {
     showStatus({ text: `已添加${template.displayName}，请按下一步完成布线`, type: 'success' }, 4000);
   }, [handleAddDevice, projectEditable, showStatus]);
 
-  const handleAddRecommendedPowerSource = useCallback(() => {
-    handleAddRecommendedDevice('ups', 'power');
-  }, [handleAddRecommendedDevice]);
-
   const handleAddRecommendedSwitch = useCallback((recommendation) => {
     handleAddRecommendedDevice('switch', 'network', {
       requiresLanPortMigration: recommendation?.requiresLanPortMigration === true,
@@ -907,6 +903,10 @@ export default function App() {
 
   const handleAddRecommendedPowerStrip = useCallback(() => {
     handleAddRecommendedDevice('power-strip', 'power');
+  }, [handleAddRecommendedDevice]);
+
+  const handleAddRecommendedPowerAdapter = useCallback(() => {
+    handleAddRecommendedDevice('power-adapter', 'power');
   }, [handleAddRecommendedDevice]);
 
   const handleUpdateRoom = () => {
@@ -1673,10 +1673,10 @@ export default function App() {
                         <button
                           type="button"
                           className="ui-button"
-                          onClick={() => { handleAddRecommendedPowerSource(); setShowWiringReport(false); }}
-                          title="向场景中加入一台 UPS，便于将插排改接到独立电源"
+                          onClick={() => { handleAddRecommendedPowerStrip(); setShowWiringReport(false); }}
+                          title="向场景中加入一个孔位更多的插排，替代串联的插排"
                         >
-                          加购 UPS
+                          换孔位更多的插排
                         </button>
                       )}
                       {(issue.code === 'power_overload' || issue.code === 'power_warning') && (
@@ -2040,7 +2040,7 @@ export default function App() {
                       <h4>推荐加购商品</h4>
                       <div className="wiring-issue-list">
                         {recommendations.purchases.map(issue => (
-                          <div key={issue.id} className={`wiring-issue ${issue.code === 'buy_ups_overload' ? 'wiring-issue-error' : 'wiring-issue-warning'}`}>
+                          <div key={issue.id} className={`wiring-issue ${issue.code === 'split_overloaded_power' ? 'wiring-issue-error' : 'wiring-issue-warning'}`}>
                             <div className="wiring-issue-content">
                               <div className="wiring-issue-title">
                                 {issue.title}
@@ -2048,14 +2048,14 @@ export default function App() {
                               <div className="wiring-issue-description">{issue.description}</div>
                             </div>
                             <div className="connection-item-actions">
-                              {issue.code === 'buy_power_source' && (
+                              {issue.code === 'fix_power_strip_chain' && (
                                 <button
                                   type="button"
                                   className="ui-button ui-button-primary"
-                                  onClick={handleAddRecommendedPowerSource}
+                                  onClick={handleAddRecommendedPowerStrip}
                                   disabled={!projectEditable}
                                 >
-                                  加购 UPS
+                                  加购插排
                                 </button>
                               )}
                               {issue.code === 'buy_cable' && (
@@ -2093,30 +2093,22 @@ export default function App() {
                                   type="button"
                                   className="ui-button ui-button-primary"
                                   onClick={() => {
-                                    if (issue.product?.modelId === 'power-strip') {
-                                      handleAddRecommendedPowerStrip();
+                                    if (issue.product?.modelId === 'power-adapter') {
+                                      handleAddRecommendedPowerAdapter();
                                     } else {
-                                      handleAddRecommendedPowerSource();
+                                      handleAddRecommendedPowerStrip();
                                     }
                                   }}
                                   disabled={!projectEditable}
                                 >
-                                  {issue.product?.modelId === 'power-strip' ? '加购插排' : '加购 UPS'}
+                                  {issue.product?.modelId === 'power-adapter' ? '加购电源适配器' : '加购插排'}
                                 </button>
                               )}
-                              {issue.code === 'buy_ups_overload' && (
+                              {issue.code === 'split_overloaded_power' && (
                                 <>
                                   <button
                                     type="button"
                                     className="ui-button ui-button-primary"
-                                    onClick={handleAddRecommendedPowerSource}
-                                    disabled={!projectEditable}
-                                  >
-                                    加购 UPS
-                                  </button>
-                                  <button
-                                    type="button"
-                                    className="ui-button"
                                     onClick={handleAddRecommendedPowerStrip}
                                     disabled={!projectEditable}
                                   >

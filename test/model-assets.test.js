@@ -42,15 +42,6 @@ test('switch resolves to the generic in-house network asset', () => {
   assert.equal(asset.category, 'network');
 });
 
-test('ups resolves to the generic in-house power asset', () => {
-  const asset = getGenericModelAsset('ups');
-
-  assert.equal(asset.id, 'generic-ups');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'power');
-});
-
 test('desktop pc resolves to the generic in-house computer asset', () => {
   const asset = getGenericModelAsset('desktop-pc');
 

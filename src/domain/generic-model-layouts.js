@@ -228,17 +228,6 @@ const GENERIC_SWITCH_LAYOUT = Object.freeze({
   ]),
 });
 
-const GENERIC_UPS_LAYOUT = Object.freeze({
-  bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
-  frontPanels: Object.freeze([Object.freeze({ x: 0, z: 0.46, width: 0.72, depth: 0.08 })]),
-  displays: Object.freeze([Object.freeze({ x: 0, z: 0.47, width: 0.42, depth: 0.06 })]),
-  powerButtons: Object.freeze([Object.freeze({ x: 0, z: 0.44, width: 0.26, depth: 0.12 })]),
-  statusLights: Object.freeze([Object.freeze({ x: 0, z: 0.48, width: 0.08, depth: 0.035 })]),
-  vents: Object.freeze([
-    ...Array.from({ length: 5 }, () => Object.freeze({ x: 0, z: 0.47, width: 0.5, depth: 0.06 })),
-  ]),
-});
-
 const GENERIC_POWER_STRIP_LAYOUT = Object.freeze({
   bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
   topPlates: Object.freeze([Object.freeze({ x: 0, z: 0, width: 0.9, depth: 0.72 })]),
@@ -283,7 +272,6 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   modem: GENERIC_MODEM_LAYOUT,
   router: GENERIC_ROUTER_LAYOUT,
   switch: GENERIC_SWITCH_LAYOUT,
-  ups: GENERIC_UPS_LAYOUT,
   'power-strip': GENERIC_POWER_STRIP_LAYOUT,
   'all-in-one': GENERIC_ALL_IN_ONE_LAYOUT,
   'laptop-15': GENERIC_LAPTOP_LAYOUT,

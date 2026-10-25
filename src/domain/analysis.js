@@ -551,7 +551,7 @@ export function analyzeProjectWiring(rawObjects, rawConnections) {
         code: 'power_strip_chain',
         severity: 'error',
         title: '检测到插排串联',
-        description: `${fromObject.name} 连接到 ${toObject.name}。插排串联可能导致过载或接触点发热，建议直接接墙壁插座或合适的 UPS。`,
+        description: `${fromObject.name} 连接到 ${toObject.name}。插排串联可能导致过载或接触点发热，建议把下游插排直接接到墙壁插座。`,
         connectionIds: [connection.id],
         objectIds: [fromObject.id, toObject.id],
       });

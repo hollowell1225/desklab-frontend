@@ -58,10 +58,6 @@ test('generic switch layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('switch'), true);
 });
 
-test('generic UPS layout remains inside its catalog footprint', () => {
-  assert.equal(isGenericModelLayoutWithinBounds('ups'), true);
-});
-
 test('generic power strip layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('power-strip'), true);
 });

@@ -182,7 +182,7 @@ test('returns no suggestions for a clean project', () => {
   assert.deepEqual(buildFreeImprovements(room, objects, []), []);
 });
 
-test('recommends a power source purchase for daisy-chained strips, deduped per pair', () => {
+test('recommends unchaining daisy-chained strips with a larger strip, deduped per pair', () => {
   const strip = (id, x) => object(id, {
     type: 'power_strip',
     modelId: 'power-strip',
@@ -200,10 +200,12 @@ test('recommends a power source purchase for daisy-chained strips, deduped per p
   ];
 
   const purchases = buildPurchaseSuggestions(objects, connections);
-  const powerSourcePurchases = purchases.filter(item => item.code === 'buy_power_source');
+  const powerSourcePurchases = purchases.filter(item => item.code === 'fix_power_strip_chain');
   assert.equal(powerSourcePurchases.length, 1, 'one deduped purchase suggestion per strip pair');
-  assert.equal(powerSourcePurchases[0].code, 'buy_power_source');
-  assert.deepEqual(powerSourcePurchases[0].product, { category: 'power', modelId: 'ups' });
+  assert.equal(powerSourcePurchases[0].code, 'fix_power_strip_chain');
+  assert.deepEqual(powerSourcePurchases[0].product, { category: 'power', modelId: 'power-strip' });
+  assert.match(powerSourcePurchases[0].description, /墙壁插座/);
+  assert.doesNotMatch(powerSourcePurchases[0].description, /UPS/);
   assert.deepEqual([...powerSourcePurchases[0].objectIds].sort(), ['a', 'b']);
 
   // The referenced product must resolve to a real catalog item, or the UI would
@@ -1282,7 +1284,7 @@ test('buildRecommendations aggregates free and purchase suggestions with a total
 
   const result = buildRecommendations(project);
   assert.ok(result.freeImprovements.some(item => item.code === 'drop_to_support'));
-  assert.ok(result.purchases.some(item => item.code === 'buy_power_source'));
+  assert.ok(result.purchases.some(item => item.code === 'fix_power_strip_chain'));
   assert.equal(result.total, result.freeImprovements.length + result.purchases.length);
 
   assert.deepEqual(buildRecommendations({}), { freeImprovements: [], purchases: [], total: 0 });
@@ -1815,7 +1817,7 @@ test('recommendations preserve opaque object and port IDs containing colons', ()
     purchases: [{
       code: 'buy_power_for_unpowered',
       objectIds: ['device:dc'],
-      product: { category: 'power', modelId: 'ups' },
+      product: { category: 'power', modelId: 'power-adapter' },
     }],
     total: 2,
   });
@@ -2257,10 +2259,10 @@ test('does not suggest networking an ethernet output-only device port', () => {
   assert.equal(suggestions.some(item => item.code === 'auto_network_device'), false);
 });
 
-test('suggests purchasing a UPS/power split when a power hub is overloaded', () => {
-  const ups = object('my-ups', {
-    type: 'ups',
-    modelId: 'ups',
+test('suggests splitting load to another outlet when a power hub is overloaded', () => {
+  const hub = object('my-strip', {
+    type: 'power_strip',
+    modelId: 'power-strip',
     maxLoad: 500,
     ports: [
       { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
@@ -2285,19 +2287,21 @@ test('suggests purchasing a UPS/power split when a power hub is overloaded', () 
     ]
   });
 
-  const objects = [ups, pc, monitor];
+  const objects = [hub, pc, monitor];
 
   const connections = [
-    { id: 'c1', name: 'c1', cableType: 'power', length: 1, fromObjectId: 'my-ups', fromPortId: 'ac-out-1', toObjectId: 'my-pc', toPortId: 'ac-in' },
-    { id: 'c2', name: 'c2', cableType: 'power', length: 1, fromObjectId: 'my-ups', fromPortId: 'ac-out-2', toObjectId: 'my-monitor', toPortId: 'ac-in' }
+    { id: 'c1', name: 'c1', cableType: 'power', length: 1, fromObjectId: 'my-strip', fromPortId: 'ac-out-1', toObjectId: 'my-pc', toPortId: 'ac-in' },
+    { id: 'c2', name: 'c2', cableType: 'power', length: 1, fromObjectId: 'my-strip', fromPortId: 'ac-out-2', toObjectId: 'my-monitor', toPortId: 'ac-in' }
   ];
 
   const suggestions = buildPurchaseSuggestions(objects, connections);
-  const overloadSuggest = suggestions.find(item => item.code === 'buy_ups_overload');
-  assert.ok(overloadSuggest, 'expected a buy_ups_overload purchase suggestion');
-  assert.deepEqual(overloadSuggest.objectIds, ['my-ups']);
+  const overloadSuggest = suggestions.find(item => item.code === 'split_overloaded_power');
+  assert.ok(overloadSuggest, 'expected a split_overloaded_power purchase suggestion');
+  assert.deepEqual(overloadSuggest.objectIds, ['my-strip']);
   assert.equal(overloadSuggest.product.category, 'power');
-  assert.equal(overloadSuggest.product.modelId, 'ups');
+  assert.equal(overloadSuggest.product.modelId, 'power-strip');
+  assert.match(overloadSuggest.description, /另一个墙壁插座/);
+  assert.doesNotMatch(overloadSuggest.description, /UPS/);
 });
 
 test('App power safety falls back to catalog maxLoad only for unusable live overrides', () => {
@@ -2308,7 +2312,7 @@ test('App power safety falls back to catalog maxLoad only for unusable live over
     { label: 'negative', maxLoad: -1, expected: true },
     { label: 'NaN', maxLoad: Number.NaN, expected: true },
     { label: 'blank string', maxLoad: '   ', expected: true },
-    { label: 'numeric string', maxLoad: '2500', expected: false },
+    { label: 'numeric string', maxLoad: '4000', expected: false },
     { label: 'nonnumeric string', maxLoad: 'oops', expected: true },
   ];
 
@@ -2317,23 +2321,23 @@ test('App power safety falls back to catalog maxLoad only for unusable live over
     includeOverride = true,
     maxLoad,
   }) => {
-    const ups = object('catalog-ups', {
-      type: 'ups',
-      modelId: 'ups',
+    const strip = object('catalog-strip', {
+      type: 'power_strip',
+      modelId: 'power-strip',
       ports: [{ id: 'out', name: 'OUT', type: 'ac_output', direction: 'output' }],
       ...(includeOverride ? { maxLoad } : {}),
     });
     const load = object('heavy-load', {
-      wattage: 1200,
+      wattage: 3000,
       ports: [{ id: 'in', name: 'IN', type: 'ac_input', direction: 'input' }],
     });
-    const objects = [ups, load];
+    const objects = [strip, load];
     const connections = [{
       id: 'power',
       name: 'Power',
       cableType: 'power',
       length: 1,
-      fromObjectId: 'catalog-ups',
+      fromObjectId: 'catalog-strip',
       fromPortId: 'out',
       toObjectId: 'heavy-load',
       toPortId: 'in',
@@ -2348,7 +2352,7 @@ test('App power safety falls back to catalog maxLoad only for unusable live over
       label,
       wiringOverload: wiringIssues.some(issue => issue.code === 'power_overload'),
       purchaseOverload: recommendations.purchases.some(
-        item => item.code === 'buy_ups_overload'
+        item => item.code === 'split_overloaded_power'
       ),
     };
   });
@@ -2377,9 +2381,9 @@ test('App power safety falls back to catalog wattage only for unusable live over
     includeOverride = true,
     wattage,
   }) => {
-    const ups = object('limited-ups', {
-      type: 'ups',
-      modelId: 'ups',
+    const strip = object('limited-strip', {
+      type: 'power_strip',
+      modelId: 'power-strip',
       maxLoad: 300,
       ports: [{ id: 'out', name: 'OUT', type: 'ac_output', direction: 'output' }],
     });
@@ -2389,13 +2393,13 @@ test('App power safety falls back to catalog wattage only for unusable live over
       ports: [{ id: 'in', name: 'IN', type: 'ac_input', direction: 'input' }],
       ...(includeOverride ? { wattage } : {}),
     });
-    const objects = [ups, load];
+    const objects = [strip, load];
     const connections = [{
       id: 'power',
       name: 'Power',
       cableType: 'power',
       length: 1,
-      fromObjectId: 'limited-ups',
+      fromObjectId: 'limited-strip',
       fromPortId: 'out',
       toObjectId: 'catalog-load',
       toPortId: 'in',
@@ -2410,7 +2414,7 @@ test('App power safety falls back to catalog wattage only for unusable live over
       label,
       wiringOverload: wiringIssues.some(issue => issue.code === 'power_overload'),
       purchaseOverload: recommendations.purchases.some(
-        item => item.code === 'buy_ups_overload'
+        item => item.code === 'split_overloaded_power'
       ),
     };
   });
@@ -2423,7 +2427,7 @@ test('App power safety falls back to catalog wattage only for unusable live over
 });
 
 test('recommends buying a power source when an unpowered device has no nearby free port', () => {
-  // A single unpowered PC with no power source at all → should recommend buying a UPS
+  // A single unpowered AC device with no power source at all → should recommend a power strip
   const pc = object('lonely-pc', {
     modelId: 'desktop-pc',
     wattage: 350,
@@ -2436,7 +2440,26 @@ test('recommends buying a power source when an unpowered device has no nearby fr
   assert.ok(buyPower, 'expected a buy_power_for_unpowered suggestion when no power source exists');
   assert.ok(buyPower.objectIds.includes('lonely-pc'));
   assert.equal(buyPower.product.category, 'power');
-  assert.ok(['ups', 'power-strip'].includes(buyPower.product.modelId));
+  assert.equal(buyPower.product.modelId, 'power-strip');
+});
+
+test('recommends a power adapter, not a strip, for an unpowered DC device', () => {
+  const laptop = object('lonely-laptop', {
+    modelId: 'laptop-15',
+    wattage: 65,
+    ports: [{ id: 'dc-in', name: 'DC IN', type: 'dc_input', direction: 'input' }],
+  });
+
+  const buyPower = buildPurchaseSuggestions([laptop], [])
+    .find(item => item.code === 'buy_power_for_unpowered');
+  assert.ok(buyPower, 'expected a buy_power_for_unpowered suggestion for the DC device');
+  assert.deepEqual(buyPower.product, { category: 'power', modelId: 'power-adapter' });
+  assert.match(buyPower.title, /电源适配器/);
+  assert.ok(findModelTemplate(buyPower.product), 'the recommended adapter must exist in the catalog');
+});
+
+test('the catalog no longer offers a UPS to home users', () => {
+  assert.equal(findModelTemplate({ modelId: 'ups' }), null);
 });
 
 test('recommends buying a power source when nearest source ports are all occupied', () => {
