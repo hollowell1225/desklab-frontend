@@ -106,6 +106,28 @@ test('home catalog leaves out switch, NAS, and modem, and the router has no WAN 
   assert.ok(router.ports.filter(port => port.type === 'ethernet').length >= 3);
 });
 
+test('home catalog offers one adjustable desk and leaves out mini PCs and all-in-ones', () => {
+  const furniture = DEVICE_CATALOG.find(category => category.category === 'furniture');
+  assert.deepEqual(furniture.models.map(model => [model.modelId, model.displayName]), [['office-desk', '书桌']]);
+
+  const modelIds = DEVICE_CATALOG.flatMap(category => category.models.map(model => model.modelId));
+  for (const removed of ['gaming-desk', 'standing-desk', 'l-desk', 'mini-pc', 'all-in-one']) {
+    assert.equal(modelIds.includes(removed), false, `${removed} should not be offered`);
+  }
+});
+
+test('saved objects of removed models still load with their stored ports', () => {
+  const storedPorts = [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }];
+  const [hydrated] = hydrateProjectObjects([
+    { id: 'old-mini', type: 'mini-pc', category: 'computer', modelId: 'mini-pc', ports: storedPorts },
+  ]);
+
+  assert.equal(hydrated.modelId, 'mini-pc');
+  assert.deepEqual(hydrated.ports.map(({ id, type }) => ({ id, type })), [{ id: 'dc-in', type: 'dc_input' }]);
+  assert.ok(hydrated.ports[0].anchor, 'stored ports still receive a default anchor');
+  assert.equal(getModelDefaultScale('computer', 'mini-pc'), null);
+});
+
 test('modelId matching wins over shared legacy type matching', () => {
   const template = findModelTemplate({ modelId: 'monitor-27', type: 'monitor' });
   assert.equal(template.modelId, 'monitor-27');

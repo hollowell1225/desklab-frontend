@@ -4,20 +4,8 @@ import assert from 'node:assert/strict';
 import { DEVICE_CATALOG } from '../src/domain/catalog.js';
 import { isGenericModelLayoutWithinBounds } from '../src/domain/generic-model-layouts.js';
 
-test('generic l-desk layout remains inside its catalog footprint', () => {
-  assert.equal(isGenericModelLayoutWithinBounds('l-desk'), true);
-});
-
-test('generic standing desk layout remains inside its catalog footprint', () => {
-  assert.equal(isGenericModelLayoutWithinBounds('standing-desk'), true);
-});
-
 test('generic office desk layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('office-desk'), true);
-});
-
-test('generic gaming desk layout remains inside its catalog footprint', () => {
-  assert.equal(isGenericModelLayoutWithinBounds('gaming-desk'), true);
 });
 
 test('generic monitor layouts remain inside their catalog footprints', () => {
@@ -28,10 +16,6 @@ test('generic monitor layouts remain inside their catalog footprints', () => {
 
 test('generic desktop PC layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('desktop-pc'), true);
-});
-
-test('generic mini PC layout remains inside its catalog footprint', () => {
-  assert.equal(isGenericModelLayoutWithinBounds('mini-pc'), true);
 });
 
 test('generic power adapter layout remains inside its catalog footprint', () => {
@@ -48,10 +32,6 @@ test('generic router layout remains inside its catalog footprint', () => {
 
 test('generic power strip layout remains inside its catalog footprint', () => {
   assert.equal(isGenericModelLayoutWithinBounds('power-strip'), true);
-});
-
-test('generic all-in-one layout remains inside its catalog footprint', () => {
-  assert.equal(isGenericModelLayoutWithinBounds('all-in-one'), true);
 });
 
 test('generic laptop layout remains inside its catalog footprint', () => {

@@ -26,13 +26,6 @@ const GENERIC_DESKTOP_PC_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
-const GENERIC_MINI_PC_ASSET = Object.freeze({
-  id: 'generic-mini-pc',
-  category: 'computer',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
 const GENERIC_POWER_ADAPTER_ASSET = Object.freeze({
   id: 'generic-power-adapter',
   category: 'power',
@@ -54,36 +47,8 @@ const GENERIC_LAPTOP_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
-const GENERIC_ALL_IN_ONE_ASSET = Object.freeze({
-  id: 'generic-all-in-one',
-  category: 'computer',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
 const GENERIC_OFFICE_DESK_ASSET = Object.freeze({
   id: 'generic-office-desk',
-  category: 'furniture',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
-const GENERIC_GAMING_DESK_ASSET = Object.freeze({
-  id: 'generic-gaming-desk',
-  category: 'furniture',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
-const GENERIC_STANDING_DESK_ASSET = Object.freeze({
-  id: 'generic-standing-desk',
-  category: 'furniture',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
-const GENERIC_L_DESK_ASSET = Object.freeze({
-  id: 'generic-l-desk',
   category: 'furniture',
   source: 'in-house-generated',
   license: 'DeskLab-owned',
@@ -96,15 +61,10 @@ const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'power-strip': GENERIC_POWER_STRIP_ASSET,
   router: GENERIC_ROUTER_ASSET,
   'desktop-pc': GENERIC_DESKTOP_PC_ASSET,
-  'mini-pc': GENERIC_MINI_PC_ASSET,
   'power-adapter': GENERIC_POWER_ADAPTER_ASSET,
   'wall-outlet': GENERIC_WALL_OUTLET_ASSET,
   'laptop-15': GENERIC_LAPTOP_ASSET,
-  'all-in-one': GENERIC_ALL_IN_ONE_ASSET,
   'office-desk': GENERIC_OFFICE_DESK_ASSET,
-  'gaming-desk': GENERIC_GAMING_DESK_ASSET,
-  'standing-desk': GENERIC_STANDING_DESK_ASSET,
-  'l-desk': GENERIC_L_DESK_ASSET,
 });
 
 export function getGenericModelAsset(modelId) {

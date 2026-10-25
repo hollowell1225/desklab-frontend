@@ -42,15 +42,6 @@ test('desktop pc resolves to the generic in-house computer asset', () => {
   assert.equal(asset.category, 'computer');
 });
 
-test('mini pc resolves to the generic in-house computer asset', () => {
-  const asset = getGenericModelAsset('mini-pc');
-
-  assert.equal(asset.id, 'generic-mini-pc');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'computer');
-});
-
 test('power adapter resolves to the generic in-house power asset', () => {
   const asset = getGenericModelAsset('power-adapter');
 
@@ -78,46 +69,10 @@ test('laptop resolves to the generic in-house computer asset', () => {
   assert.equal(asset.category, 'computer');
 });
 
-test('all-in-one resolves to the generic in-house computer asset', () => {
-  const asset = getGenericModelAsset('all-in-one');
-
-  assert.equal(asset.id, 'generic-all-in-one');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'computer');
-});
-
 test('office desk resolves to the generic in-house furniture asset', () => {
   const asset = getGenericModelAsset('office-desk');
 
   assert.equal(asset.id, 'generic-office-desk');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'furniture');
-});
-
-test('gaming desk resolves to the generic in-house furniture asset', () => {
-  const asset = getGenericModelAsset('gaming-desk');
-
-  assert.equal(asset.id, 'generic-gaming-desk');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'furniture');
-});
-
-test('standing desk resolves to the generic in-house furniture asset', () => {
-  const asset = getGenericModelAsset('standing-desk');
-
-  assert.equal(asset.id, 'generic-standing-desk');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'furniture');
-});
-
-test('l-desk resolves to the generic in-house furniture asset', () => {
-  const asset = getGenericModelAsset('l-desk');
-
-  assert.equal(asset.id, 'generic-l-desk');
   assert.equal(asset.source, 'in-house-generated');
   assert.equal(asset.license, 'DeskLab-owned');
   assert.equal(asset.category, 'furniture');

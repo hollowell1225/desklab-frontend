@@ -2,10 +2,7 @@ export const DEVICE_CATALOG = [
   {
     category: 'furniture', categoryName: '家具',
     models: [
-      { type: 'office-desk', modelId: 'office-desk', displayName: '办公桌', shape: 'rect', assetUrl: null, defaultScale: { x: 1.4, y: 0.7, z: 0.75 }, color: '#1e88e5' },
-      { type: 'gaming-desk', modelId: 'gaming-desk', displayName: '电竞桌', shape: 'rect', assetUrl: null, defaultScale: { x: 1.6, y: 0.8, z: 0.75 }, color: '#3949ab' },
-      { type: 'standing-desk', modelId: 'standing-desk', displayName: '升降桌', shape: 'rect', assetUrl: null, defaultScale: { x: 1.2, y: 0.6, z: 0.75 }, color: '#00acc1' },
-      { type: 'l-desk', modelId: 'l-desk', displayName: 'L 型桌', shape: 'rect', assetUrl: null, defaultScale: { x: 1.8, y: 1.2, z: 0.75 }, color: '#43a047' },
+      { type: 'office-desk', modelId: 'office-desk', displayName: '书桌', shape: 'rect', assetUrl: null, defaultScale: { x: 1.4, y: 0.7, z: 0.75 }, color: '#1e88e5' },
     ],
   },
   {
@@ -13,8 +10,6 @@ export const DEVICE_CATALOG = [
     models: [
       { type: 'desktop-pc', modelId: 'desktop-pc', displayName: '台式主机', shape: 'rect', assetUrl: null, defaultScale: { x: 0.25, y: 0.5, z: 0.5 }, color: '#424242', wattage: 350, ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }, { id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' }, { id: 'dp-out', name: 'DP 输出', type: 'displayport', direction: 'output' }, { id: 'eth-1', name: '网口', type: 'ethernet', direction: 'bidirectional' }] },
       { type: 'laptop', modelId: 'laptop-15', displayName: '15 英寸笔记本', shape: 'rect', assetUrl: null, defaultScale: { x: 0.36, y: 0.28, z: 0.22 }, color: '#607d8b', wattage: 65, ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }, { id: 'usb-c', name: 'USB-C', type: 'usb_c', direction: 'bidirectional' }, { id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' }] },
-      { type: 'mini-pc', modelId: 'mini-pc', displayName: '迷你主机', shape: 'rect', assetUrl: null, defaultScale: { x: 0.15, y: 0.15, z: 0.05 }, color: '#37474f', wattage: 45, ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }, { id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' }, { id: 'eth-1', name: '网口', type: 'ethernet', direction: 'bidirectional' }] },
-      { type: 'all-in-one', modelId: 'all-in-one', displayName: '一体机', shape: 'rect', assetUrl: null, defaultScale: { x: 0.55, y: 0.2, z: 0.45 }, color: '#cfd8dc', wattage: 120, ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }, { id: 'eth-1', name: '网口', type: 'ethernet', direction: 'bidirectional' }] },
     ],
   },
   {

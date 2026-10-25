@@ -416,60 +416,6 @@ function GenericDesktopPcModel({ obj, materialProps }) {
   );
 }
 
-function GenericMiniPcModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const layout = getGenericModelLayout(obj.modelId);
-  const [body] = layout.bodies;
-  const [topVent] = layout.topVents;
-  const [powerButton] = layout.powerButtons;
-  const [statusLight] = layout.statusLights;
-  const frontPorts = layout.frontPorts;
-
-  return (
-    <group>
-      <mesh position={[width * body.x, 0, depth * body.z]}>
-        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.58}
-        />
-      </mesh>
-      <mesh
-        position={[width * topVent.x, height * 0.52, depth * topVent.z]}
-        scale={[width * topVent.width / 2, 1, depth * topVent.depth / 2]}
-      >
-        <cylinderGeometry args={[1, 1, height * 0.05, 24]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.75} />
-      </mesh>
-      <mesh
-        position={[width * powerButton.x, 0, depth * powerButton.z]}
-        rotation={[Math.PI / 2, 0, 0]}
-        scale={[width * powerButton.width / 2, depth * powerButton.depth, height * 0.13]}
-      >
-        <cylinderGeometry args={[1, 1, 1, 16]} />
-        <meshStandardMaterial color="#111827" roughness={0.55} />
-      </mesh>
-      <mesh
-        position={[width * statusLight.x, 0, depth * statusLight.z]}
-        scale={[width * statusLight.width / 2, height * 0.035, depth * statusLight.depth / 2]}
-      >
-        <sphereGeometry args={[1, 10, 8]} />
-        <meshStandardMaterial color="#60a5fa" emissive="#60a5fa" emissiveIntensity={0.45} />
-      </mesh>
-      {frontPorts.map((port, index) => (
-        <mesh key={index} position={[width * port.x, 0, depth * port.z]}>
-          <boxGeometry args={[width * port.width, height * 0.18, depth * port.depth]} />
-          <meshStandardMaterial color="#0f172a" roughness={0.65} />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
 function GenericPowerAdapterModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
@@ -607,54 +553,6 @@ function GenericLaptopModel({ obj, materialProps }) {
   );
 }
 
-function GenericAllInOneModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const panelHeight = height * 0.68;
-  const layout = getGenericModelLayout(obj.modelId);
-  const [panel] = layout.panels;
-  const [screen] = layout.screens;
-  const [lowerBezel] = layout.lowerBezels;
-  const [rearHousing] = layout.rearHousings;
-  const [stand] = layout.stands;
-  const [base] = layout.bases;
-
-  return (
-    <group>
-      <mesh position={[width * panel.x, height * 0.1, depth * panel.z]}>
-        <boxGeometry args={[width * panel.width, panelHeight, depth * panel.depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.5}
-        />
-      </mesh>
-      <mesh position={[width * screen.x, height * 0.15, depth * screen.z]}>
-        <boxGeometry args={[width * screen.width, panelHeight * 0.72, depth * screen.depth]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.32} metalness={0.12} />
-      </mesh>
-      <mesh position={[width * lowerBezel.x, -height * 0.13, depth * lowerBezel.z]}>
-        <boxGeometry args={[width * lowerBezel.width, panelHeight * 0.13, depth * lowerBezel.depth]} />
-        <meshStandardMaterial color="#334155" roughness={0.64} />
-      </mesh>
-      <mesh position={[width * rearHousing.x, height * 0.1, depth * rearHousing.z]}>
-        <boxGeometry args={[width * rearHousing.width, panelHeight * 0.56, depth * rearHousing.depth]} />
-        <meshStandardMaterial color="#374151" roughness={0.72} />
-      </mesh>
-      <mesh position={[width * stand.x, -height * 0.27, depth * stand.z]}>
-        <boxGeometry args={[width * stand.width, height * 0.24, depth * stand.depth]} />
-        <meshStandardMaterial color="#475569" roughness={0.64} />
-      </mesh>
-      <mesh position={[width * base.x, -height * 0.43, depth * base.z]}>
-        <boxGeometry args={[width * base.width, height * 0.06, depth * base.depth]} />
-        <meshStandardMaterial color="#27303a" roughness={0.68} />
-      </mesh>
-    </group>
-  );
-}
-
 function GenericOfficeDeskModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
@@ -689,147 +587,6 @@ function GenericOfficeDeskModel({ obj, materialProps }) {
   );
 }
 
-function GenericGamingDeskModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const footprintBase = Math.min(width, depth);
-  const layout = getGenericModelLayout('gaming-desk');
-  const [desktop] = layout.tops;
-  const [rearCrossbar] = layout.crossbars;
-  const [monitorShelf] = layout.shelves;
-
-  return (
-    <group>
-      <mesh position={[desktop.x * width, height * 0.42, desktop.z * depth]}>
-        <boxGeometry args={[desktop.width * width, height * 0.12, desktop.depth * depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.52}
-        />
-      </mesh>
-      {layout.legs.map(leg => (
-        <mesh key={`${leg.x}-${leg.z}`} position={[leg.x * width, -height * 0.03, leg.z * depth]} rotation={[0, 0, leg.rotation]}>
-          <boxGeometry args={[leg.width * footprintBase, height * 0.82, leg.depth * footprintBase]} />
-          <meshStandardMaterial color="#1f2937" metalness={0.25} roughness={0.58} />
-        </mesh>
-      ))}
-      <mesh position={[rearCrossbar.x * width, -height * 0.15, rearCrossbar.z * depth]}>
-        <boxGeometry args={[rearCrossbar.width * width, height * 0.08, rearCrossbar.depth * footprintBase]} />
-        <meshStandardMaterial color="#334155" metalness={0.2} roughness={0.62} />
-      </mesh>
-      <mesh position={[monitorShelf.x * width, height * 0.47, monitorShelf.z * depth]}>
-        <boxGeometry args={[monitorShelf.width * width, height * 0.05, monitorShelf.depth * depth]} />
-        <meshStandardMaterial color="#111827" roughness={0.6} />
-      </mesh>
-    </group>
-  );
-}
-
-function GenericStandingDeskModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const footprintBase = Math.min(width, depth);
-  const layout = getGenericModelLayout('standing-desk');
-  const [desktop] = layout.tops;
-  const [rearCrossbar] = layout.crossbars;
-  const [controlPanel] = layout.controlPanels;
-
-  return (
-    <group>
-      <mesh position={[desktop.x * width, height * 0.43, desktop.z * depth]}>
-        <boxGeometry args={[desktop.width * width, height * 0.1, desktop.depth * depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.54}
-        />
-      </mesh>
-      {layout.columns.map((column, index) => {
-        const sleeve = layout.sleeves[index];
-        const foot = layout.feet[index];
-
-        return (
-          <group key={`${column.x}-${column.z}`} position={[column.x * width, -height * 0.04, column.z * depth]}>
-            <mesh position={[0, height * 0.08, 0]}>
-              <boxGeometry args={[column.width * footprintBase, height * 0.68, column.depth * footprintBase]} />
-              <meshStandardMaterial color="#64748b" metalness={0.22} roughness={0.56} />
-            </mesh>
-            <mesh position={[0, -height * 0.13, 0]}>
-              <boxGeometry args={[sleeve.width * footprintBase, height * 0.34, sleeve.depth * footprintBase]} />
-              <meshStandardMaterial color="#475569" metalness={0.28} roughness={0.54} />
-            </mesh>
-            <mesh position={[0, -height * 0.45, 0]}>
-              <boxGeometry args={[foot.width * width, height * 0.06, foot.depth * depth]} />
-              <meshStandardMaterial color="#334155" metalness={0.24} roughness={0.6} />
-            </mesh>
-          </group>
-        );
-      })}
-      <mesh position={[rearCrossbar.x * width, height * 0.04, rearCrossbar.z * depth]}>
-        <boxGeometry args={[rearCrossbar.width * width, height * 0.06, rearCrossbar.depth * footprintBase]} />
-        <meshStandardMaterial color="#475569" metalness={0.2} roughness={0.64} />
-      </mesh>
-      <mesh position={[controlPanel.x * width, height * 0.35, controlPanel.z * depth]}>
-        <boxGeometry args={[controlPanel.width * width, height * 0.035, controlPanel.depth * depth]} />
-        <meshStandardMaterial color="#111827" roughness={0.5} />
-      </mesh>
-    </group>
-  );
-}
-
-function GenericLDeskModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const topThickness = height * 0.1;
-  const legWidth = Math.min(width, depth) * 0.09;
-  const layout = getGenericModelLayout('l-desk');
-  const [mainTop, returnTop] = layout.tops;
-  const [mainCableTray, returnCableTray] = layout.cableTrays;
-
-  return (
-    <group>
-      <mesh position={[mainTop.x * width, height * 0.43, mainTop.z * depth]}>
-        <boxGeometry args={[mainTop.width * width, topThickness, mainTop.depth * depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.56}
-        />
-      </mesh>
-      <mesh position={[returnTop.x * width, height * 0.43, returnTop.z * depth]}>
-        <boxGeometry args={[returnTop.width * width, topThickness, returnTop.depth * depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.56}
-        />
-      </mesh>
-      {layout.legs.map(leg => (
-        <mesh key={`${leg.x}-${leg.z}`} position={[leg.x * width, -height * 0.02, leg.z * depth]}>
-          <boxGeometry args={[legWidth, height * 0.82, legWidth]} />
-          <meshStandardMaterial color="#475569" metalness={0.16} roughness={0.62} />
-        </mesh>
-      ))}
-      <mesh position={[mainCableTray.x * width, height * 0.28, mainCableTray.z * depth]}>
-        <boxGeometry args={[mainCableTray.width * width, height * 0.08, mainCableTray.depth * depth]} />
-        <meshStandardMaterial color="#334155" roughness={0.7} />
-      </mesh>
-      <mesh position={[returnCableTray.x * width, height * 0.28, returnCableTray.z * depth]}>
-        <boxGeometry args={[returnCableTray.width * width, height * 0.08, returnCableTray.depth * depth]} />
-        <meshStandardMaterial color="#334155" roughness={0.7} />
-      </mesh>
-    </group>
-  );
-}
-
 function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-monitor') {
     return <GenericMonitorModel obj={obj} materialProps={materialProps} />;
@@ -843,9 +600,6 @@ function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-desktop-pc') {
     return <GenericDesktopPcModel obj={obj} materialProps={materialProps} />;
   }
-  if (asset?.id === 'generic-mini-pc') {
-    return <GenericMiniPcModel obj={obj} materialProps={materialProps} />;
-  }
   if (asset?.id === 'generic-power-adapter') {
     return <GenericPowerAdapterModel obj={obj} materialProps={materialProps} />;
   }
@@ -855,20 +609,8 @@ function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-laptop') {
     return <GenericLaptopModel obj={obj} materialProps={materialProps} />;
   }
-  if (asset?.id === 'generic-all-in-one') {
-    return <GenericAllInOneModel obj={obj} materialProps={materialProps} />;
-  }
   if (asset?.id === 'generic-office-desk') {
     return <GenericOfficeDeskModel obj={obj} materialProps={materialProps} />;
-  }
-  if (asset?.id === 'generic-gaming-desk') {
-    return <GenericGamingDeskModel obj={obj} materialProps={materialProps} />;
-  }
-  if (asset?.id === 'generic-standing-desk') {
-    return <GenericStandingDeskModel obj={obj} materialProps={materialProps} />;
-  }
-  if (asset?.id === 'generic-l-desk') {
-    return <GenericLDeskModel obj={obj} materialProps={materialProps} />;
   }
   return <FallbackBox obj={obj} materialProps={materialProps} />;
 }

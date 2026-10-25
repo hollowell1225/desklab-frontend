@@ -28,13 +28,6 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded tower PC used for `desktop-pc`.
 
-## Code-Native Generic Mini PC
-- **Model Name**: Generic low-poly mini PC
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-07-05
-- **Notes**: Generic unbranded compact computer used for `mini-pc`.
-
 ## Code-Native Generic Power Adapter
 - **Model Name**: Generic low-poly power adapter
 - **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
@@ -56,40 +49,12 @@
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded open laptop used for `laptop-15` when no external asset URL is configured.
 
-## Code-Native Generic All-in-One Computer
-- **Model Name**: Generic low-poly all-in-one computer
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-07-05
-- **Notes**: Generic unbranded integrated desktop computer used for `all-in-one`.
-
 ## Code-Native Generic Office Desk
 - **Model Name**: Generic low-poly office desk
 - **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
 - **License**: DeskLab-owned
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded four-leg desk with cable tray used for `office-desk`.
-
-## Code-Native Generic Gaming Desk
-- **Model Name**: Generic low-poly gaming desk
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-07-05
-- **Notes**: Generic unbranded wide desk with angled legs, crossbar, and rear shelf used for `gaming-desk`.
-
-## Code-Native Generic Standing Desk
-- **Model Name**: Generic low-poly standing desk
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-07-13
-- **Notes**: Generic unbranded adjustable-height desk with lift columns, crossbar, feet, and control panel used for `standing-desk`.
-
-## Code-Native Generic L Desk
-- **Model Name**: Generic low-poly L-shaped desk
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-07-13
-- **Notes**: Generic unbranded L-shaped desktop with four legs and rear cable trays used for `l-desk`.
 
 ## Laptop-15
 - **Model Name**: Low Poly Laptop
