@@ -115,6 +115,11 @@ export default function App() {
   const [dragInfo, setDragInfo] = useState(null);
   const [inputRoom, setInputRoom] = useState({ length: 10, width: 10, height: 3 });
   const [showAxes, setShowAxes] = useState(true);
+  // null while closed; otherwise the fixed-position anchor for the "更多" menu,
+  // which must escape the toolbar's scroll container.
+  const [moreMenuPosition, setMoreMenuPosition] = useState(null);
+  const moreButtonRef = useRef(null);
+  const moreMenuRef = useRef(null);
   const [selectedCategory, setSelectedCategory] = useState(DEVICE_CATALOG[0].category);
 
   const [isMobile, setIsMobile] = useState(window.innerWidth < 900);
@@ -1060,6 +1065,46 @@ export default function App() {
     showStatus({ text: '物体已移回房间边界内', type: 'success' });
   };
 
+  const closeMoreMenu = useCallback(({ restoreFocus = false } = {}) => {
+    setMoreMenuPosition(null);
+    if (restoreFocus) moreButtonRef.current?.focus();
+  }, []);
+
+  const handleToggleMoreMenu = () => {
+    if (moreMenuPosition) {
+      closeMoreMenu();
+      return;
+    }
+    const rect = moreButtonRef.current.getBoundingClientRect();
+    const menuWidth = 160;
+    setMoreMenuPosition({
+      top: rect.bottom + 4,
+      left: Math.max(8, Math.min(rect.right - menuWidth, window.innerWidth - menuWidth - 8)),
+    });
+  };
+
+  const runMoreMenuAction = (action) => {
+    closeMoreMenu();
+    action();
+  };
+
+  useEffect(() => {
+    if (!moreMenuPosition) return undefined;
+    const handlePointerDown = (event) => {
+      if (moreMenuRef.current?.contains(event.target) || moreButtonRef.current?.contains(event.target)) return;
+      closeMoreMenu();
+    };
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') closeMoreMenu({ restoreFocus: true });
+    };
+    document.addEventListener('pointerdown', handlePointerDown);
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', handlePointerDown);
+      document.removeEventListener('keydown', handleKeyDown);
+    };
+  }, [closeMoreMenu, moreMenuPosition]);
+
   const handleSnapOutletToWall = (objectId) => {
     if (!projectEditable) return;
     const object = objects.find(candidate => candidate.id === objectId);
@@ -1097,10 +1142,6 @@ export default function App() {
             <button className="ui-button" onClick={handleUndo} disabled={!projectEditable || !historyStatus.canUndo} title="撤销 (Ctrl+Z)">撤销</button>
             <button className="ui-button" onClick={handleRedo} disabled={!projectEditable || !historyStatus.canRedo} title="重做 (Ctrl+Y)">重做</button>
             <button className="ui-button" onClick={handleResetView} disabled={!projectEditable}>重置视角</button>
-            <label className="ui-checkbox-label" htmlFor="showAxes">
-              <input type="checkbox" id="showAxes" checked={showAxes} onChange={e => setShowAxes(e.target.checked)} />
-              显示坐标轴
-            </label>
             <button className="ui-button" onClick={() => setShowGlobalConnections(true)}>所有连接</button>
             <button className="ui-button" onClick={() => setShowLayoutReport(true)}>
               布局检查{actionableLayoutIssueCount > 0 ? ` (${actionableLayoutIssueCount})` : ''}
@@ -1111,10 +1152,41 @@ export default function App() {
             <button className="ui-button ui-button-recommend" onClick={() => setShowRecommendations(true)}>
               改进建议{recommendations.total > 0 ? ` (${recommendations.total})` : ''}
             </button>
-            <button className="ui-button" onClick={() => importInputRef.current?.click()} disabled={!projectEditable}>导入 JSON</button>
-            <button className="ui-button" onClick={handleExportProject} disabled={!projectEditable}>导出 JSON</button>
-            <button className="ui-button" onClick={handlePasteProjectFromClipboard} disabled={!projectEditable} title="从剪贴板粘贴项目数据">粘贴 JSON</button>
-            <button className="ui-button" onClick={handleCopyProjectToClipboard} disabled={!projectEditable} title="复制项目数据到剪贴板">复制 JSON</button>
+            <button
+              ref={moreButtonRef}
+              type="button"
+              className="ui-button"
+              onClick={handleToggleMoreMenu}
+              aria-haspopup="menu"
+              aria-expanded={moreMenuPosition !== null}
+            >
+              更多
+            </button>
+            {moreMenuPosition && (
+              <div
+                ref={moreMenuRef}
+                className="toolbar-menu"
+                role="menu"
+                aria-label="更多"
+                style={{ top: moreMenuPosition.top, left: moreMenuPosition.left }}
+              >
+                <button
+                  type="button"
+                  className="toolbar-menu-item"
+                  role="menuitemcheckbox"
+                  aria-checked={showAxes}
+                  onClick={() => setShowAxes(current => !current)}
+                >
+                  <span className={`toolbar-menu-check${showAxes ? ' is-checked' : ''}`} aria-hidden="true" />
+                  显示坐标轴
+                </button>
+                <div className="toolbar-menu-separator" role="separator" />
+                <button type="button" className="toolbar-menu-item" role="menuitem" onClick={() => runMoreMenuAction(() => importInputRef.current?.click())} disabled={!projectEditable}>导入 JSON</button>
+                <button type="button" className="toolbar-menu-item" role="menuitem" onClick={() => runMoreMenuAction(handleExportProject)} disabled={!projectEditable}>导出 JSON</button>
+                <button type="button" className="toolbar-menu-item" role="menuitem" onClick={() => runMoreMenuAction(handlePasteProjectFromClipboard)} disabled={!projectEditable} title="从剪贴板粘贴项目数据">粘贴 JSON</button>
+                <button type="button" className="toolbar-menu-item" role="menuitem" onClick={() => runMoreMenuAction(handleCopyProjectToClipboard)} disabled={!projectEditable} title="复制项目数据到剪贴板">复制 JSON</button>
+              </div>
+            )}
             <input
               ref={importInputRef}
               type="file"
