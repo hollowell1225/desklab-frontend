@@ -883,23 +883,17 @@ export default function App() {
     return result.object;
   }, [objects, projectEditable, recordHistory, room, showStatus]);
 
-  const handleAddRecommendedDevice = useCallback((modelId, categoryId, guidanceOptions) => {
+  const handleAddRecommendedDevice = useCallback((modelId, categoryId) => {
     if (!projectEditable) return;
     const template = findModelTemplate({ modelId });
     if (!template) return;
     const addedObject = handleAddDevice(template, categoryId);
-    const guidance = getPurchaseGuidance(modelId, guidanceOptions);
+    const guidance = getPurchaseGuidance(modelId);
     if (!addedObject || !guidance) return;
     setPurchaseGuidance({ ...guidance, objectId: addedObject.id });
     setShowRecommendations(true);
     showStatus({ text: `已添加${template.displayName}，请按下一步完成布线`, type: 'success' }, 4000);
   }, [handleAddDevice, projectEditable, showStatus]);
-
-  const handleAddRecommendedSwitch = useCallback((recommendation) => {
-    handleAddRecommendedDevice('switch', 'network', {
-      requiresLanPortMigration: recommendation?.requiresLanPortMigration === true,
-    });
-  }, [handleAddRecommendedDevice]);
 
   const handleAddRecommendedPowerStrip = useCallback(() => {
     handleAddRecommendedDevice('power-strip', 'power');
@@ -2008,16 +2002,6 @@ export default function App() {
                                   连接网络
                                 </button>
                               )}
-                              {issue.code === 'auto_uplink_switch' && (
-                                <button
-                                  type="button"
-                                  className="ui-button ui-button-primary"
-                                  onClick={() => handleAutoConnectNetwork(issue.id)}
-                                  disabled={!projectEditable}
-                                >
-                                  上联交换机
-                                </button>
-                              )}
                               {issue.code === 'auto_connect_display' && (
                                 <button
                                   type="button"
@@ -2066,16 +2050,6 @@ export default function App() {
                                   disabled={!projectEditable}
                                 >
                                   采纳并更新长度
-                                </button>
-                              )}
-                              {issue.code === 'buy_switch' && (
-                                <button
-                                  type="button"
-                                  className="ui-button ui-button-primary"
-                                  onClick={() => handleAddRecommendedSwitch(issue)}
-                                  disabled={!projectEditable}
-                                >
-                                  加购交换机
                                 </button>
                               )}
                               {issue.code === 'buy_power_strip' && (

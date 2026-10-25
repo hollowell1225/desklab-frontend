@@ -13,7 +13,6 @@ import {
   parsePositiveCableLength,
   requiredPowerPortDirection,
   shouldResetConnectionDraftForSelection,
-  buildEthernetTopology,
 } from '../src/domain/connections.js';
 import { toThreePosition, toThreeZRotation } from '../src/domain/coordinates.js';
 
@@ -193,57 +192,4 @@ test('uses port anchors for connection endpoints and cable distance', () => {
     to: { x: 4, y: 0, z: 0 },
   });
   assert.equal(evaluateConnectionLength(connection, objects, indexedEndpoints)?.distance, 3);
-});
-
-test('builds ethernet topology for a selected device', () => {
-  const router = {
-    id: 'router-1',
-    name: '我的主路由器',
-    type: 'router',
-    modelId: 'router',
-    ports: [
-      { id: 'wan', name: 'WAN口', type: 'ethernet' },
-      { id: 'lan-1', name: 'LAN 1', type: 'ethernet' },
-      { id: 'lan-2', name: 'LAN 2', type: 'ethernet' },
-      { id: 'ac-in', name: '电源', type: 'ac_input' }
-    ]
-  };
-  const pc = {
-    id: 'pc-1',
-    name: '台式主机',
-    type: 'desktop-pc',
-    modelId: 'desktop-pc',
-    ports: [
-      { id: 'eth-1', name: '网口', type: 'ethernet' }
-    ]
-  };
-  const objects = [router, pc];
-  const connections = [
-    {
-      id: 'conn-1',
-      fromObjectId: 'router-1',
-      fromPortId: 'lan-1',
-      toObjectId: 'pc-1',
-      toPortId: 'eth-1',
-      cableType: 'ethernet',
-      length: 2
-    }
-  ];
-
-  assert.deepEqual(buildEthernetTopology(null, objects, connections), []);
-  assert.deepEqual(buildEthernetTopology({ id: 'empty' }, objects, connections), []);
-
-  const routerTopo = buildEthernetTopology(router, objects, connections);
-  assert.equal(routerTopo.length, 3);
-
-  const wan = routerTopo.find(t => t.portId === 'wan');
-  assert.equal(wan.status, 'idle');
-  assert.equal(wan.connectedDevice, null);
-
-  const lan1 = routerTopo.find(t => t.portId === 'lan-1');
-  assert.equal(lan1.status, 'connected');
-  assert.equal(lan1.connectedDevice.id, 'pc-1');
-  assert.equal(lan1.connectedDevice.name, '台式主机');
-  assert.equal(lan1.connectedDevice.type, 'desktop-pc');
-  assert.equal(lan1.connectedPort.id, 'eth-1');
 });

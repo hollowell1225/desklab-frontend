@@ -6,7 +6,6 @@ import {
   isPortDirectionConsistent,
   parsePositiveCableLength,
   shouldResetConnectionDraftForSelection,
-  buildEthernetTopology,
 } from '../domain/connections.js';
 import { createEntityId } from '../domain/identifiers.js';
 
@@ -27,7 +26,6 @@ const ConnectionsEditor = ({
   setConnectionDraft 
 }) => {
   const [editingConnection, setEditingConnection] = useState(null);
-  const ethernetTopology = buildEthernetTopology(selectedObj, objects, connections);
   const [prevSelectedObjId, setPrevSelectedObjId] = useState(selectedObj?.id);
   if (selectedObj?.id !== prevSelectedObjId) {
     setPrevSelectedObjId(selectedObj?.id);
@@ -362,67 +360,6 @@ const ConnectionsEditor = ({
         </div>
       )}
       </div>
-
-      {ethernetTopology.length > 0 && (
-        <div className="panel-section">
-          <div className="panel-section-title">以太网端口拓扑</div>
-          <div className="ethernet-topology-list">
-            {ethernetTopology.map(item => {
-              const isConnected = item.status === 'connected';
-              const devType = item.connectedDevice?.type;
-              
-              let badgeText = '';
-              let badgeClass = 'topo-badge';
-              if (item.connectedDevice) {
-                if (devType === 'router') {
-                  badgeText = '路由器';
-                  badgeClass += ' topo-badge-router';
-                } else if (devType === 'switch') {
-                  badgeText = '交换机';
-                  badgeClass += ' topo-badge-switch';
-                } else if (devType === 'desktop-pc') {
-                  badgeText = '台式机';
-                  badgeClass += ' topo-badge-pc';
-                } else if (devType === 'nas') {
-                  badgeText = 'NAS';
-                  badgeClass += ' topo-badge-nas';
-                } else if (devType === 'modem') {
-                  badgeText = '光猫';
-                  badgeClass += ' topo-badge-modem';
-                } else {
-                  badgeText = item.connectedDevice.type || '设备';
-                  badgeClass += ' topo-badge-other';
-                }
-              }
-
-              return (
-                <div key={item.portId} className="topo-item">
-                  <div className="topo-port-info">
-                    <span className="topo-port-icon">🔌</span>
-                    <span className="topo-port-name">{item.portName}</span>
-                  </div>
-                  <div className="topo-connection-path">
-                    {isConnected ? (
-                      <>
-                        <span className="topo-line active">──({item.connection.name || '网线'} {item.connection.length}m)──&gt;</span>
-                        <div className="topo-device-card">
-                          <span className="topo-device-name" title={item.connectedDevice?.name}>{item.connectedDevice?.name}</span>
-                          <span className={badgeClass}>{badgeText}</span>
-                        </div>
-                      </>
-                    ) : (
-                      <>
-                        <span className="topo-line idle">───────&gt;</span>
-                        <span className="topo-idle-text">🟢 空闲</span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              );
-            })}
-          </div>
-        </div>
-      )}
 
       <div className="panel-section">
         <div className="panel-section-title">当前设备连接 ({relatedConnections.length})</div>

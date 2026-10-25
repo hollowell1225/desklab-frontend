@@ -163,42 +163,6 @@ const GENERIC_WALL_OUTLET_LAYOUT = Object.freeze({
   ]),
 });
 
-const GENERIC_NAS_LAYOUT = Object.freeze({
-  bodies: Object.freeze([
-    Object.freeze({ x: 0, z: 0, width: 1, depth: 1 }),
-  ]),
-  frontPanels: Object.freeze([
-    Object.freeze({ x: 0, z: 0.47, width: 0.88, depth: 0.06 }),
-  ]),
-  driveBays: Object.freeze([
-    Object.freeze({ x: -0.23, z: 0.445, width: 0.34, depth: 0.05 }),
-    Object.freeze({ x: 0.23, z: 0.445, width: 0.34, depth: 0.05 }),
-  ]),
-  driveHandles: Object.freeze([
-    Object.freeze({ x: -0.23, z: 0.485, width: 0.18, depth: 0.025 }),
-    Object.freeze({ x: 0.23, z: 0.485, width: 0.18, depth: 0.025 }),
-  ]),
-  statusLights: Object.freeze([
-    Object.freeze({ x: -0.27, z: 0.48, width: 0.07, depth: 0.03652173913043478 }),
-    Object.freeze({ x: -0.12, z: 0.48, width: 0.07, depth: 0.03652173913043478 }),
-  ]),
-});
-
-const GENERIC_MODEM_LAYOUT = Object.freeze({
-  bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
-  topPlates: Object.freeze([Object.freeze({ x: 0, z: 0, width: 0.72, depth: 0.5 })]),
-  statusLights: Object.freeze([
-    Object.freeze({ x: -0.3, z: 0.08, width: 0.05, depth: 0.0625 }),
-    Object.freeze({ x: -0.1, z: 0.08, width: 0.05, depth: 0.0625 }),
-    Object.freeze({ x: 0.1, z: 0.08, width: 0.05, depth: 0.0625 }),
-    Object.freeze({ x: 0.3, z: 0.08, width: 0.05, depth: 0.0625 }),
-  ]),
-  frontPorts: Object.freeze([
-    Object.freeze({ x: -0.2, z: 0.47, width: 0.26, depth: 0.06 }),
-    Object.freeze({ x: 0.25, z: 0.47, width: 0.06933333333333333, depth: 0.06 }),
-  ]),
-});
-
 const GENERIC_ROUTER_LAYOUT = Object.freeze({
   bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
   ports: Object.freeze([
@@ -212,20 +176,6 @@ const GENERIC_ROUTER_LAYOUT = Object.freeze({
     Object.freeze({ x: 0.35, z: -0.2, width: 0.11, depth: 0.04, rotation: -0.45 }),
   ]),
   statusLights: Object.freeze([Object.freeze({ x: 0.38, z: 0.2, width: 0.05, depth: 0.07 })]),
-});
-
-const GENERIC_SWITCH_LAYOUT = Object.freeze({
-  bodies: Object.freeze([Object.freeze({ x: 0, z: 0, width: 1, depth: 1 })]),
-  frontPanels: Object.freeze([Object.freeze({ x: 0, z: 0.46, width: 0.88, depth: 0.08 })]),
-  ports: Object.freeze([
-    ...Array.from({ length: 8 }, (_, index) => Object.freeze({
-      x: -0.36 + index * 0.72 / 7, z: 0.46, width: 0.075, depth: 0.08,
-    })),
-  ]),
-  statusLights: Object.freeze([
-    Object.freeze({ x: -0.43, z: 0.18, width: 0.015, depth: 0.036 }),
-    Object.freeze({ x: -0.36, z: 0.18, width: 0.015, depth: 0.036 }),
-  ]),
 });
 
 const GENERIC_POWER_STRIP_LAYOUT = Object.freeze({
@@ -268,10 +218,7 @@ const GENERIC_MODEL_LAYOUT_BY_MODEL_ID = Object.freeze({
   'mini-pc': GENERIC_MINI_PC_LAYOUT,
   'power-adapter': GENERIC_POWER_ADAPTER_LAYOUT,
   'wall-outlet': GENERIC_WALL_OUTLET_LAYOUT,
-  'nas-2bay': GENERIC_NAS_LAYOUT,
-  modem: GENERIC_MODEM_LAYOUT,
   router: GENERIC_ROUTER_LAYOUT,
-  switch: GENERIC_SWITCH_LAYOUT,
   'power-strip': GENERIC_POWER_STRIP_LAYOUT,
   'all-in-one': GENERIC_ALL_IN_ONE_LAYOUT,
   'laptop-15': GENERIC_LAPTOP_LAYOUT,

@@ -19,13 +19,6 @@ const GENERIC_ROUTER_ASSET = Object.freeze({
   license: 'DeskLab-owned',
 });
 
-const GENERIC_SWITCH_ASSET = Object.freeze({
-  id: 'generic-switch',
-  category: 'network',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
 const GENERIC_DESKTOP_PC_ASSET = Object.freeze({
   id: 'generic-desktop-pc',
   category: 'computer',
@@ -57,20 +50,6 @@ const GENERIC_WALL_OUTLET_ASSET = Object.freeze({
 const GENERIC_LAPTOP_ASSET = Object.freeze({
   id: 'generic-laptop',
   category: 'computer',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
-const GENERIC_NAS_2BAY_ASSET = Object.freeze({
-  id: 'generic-nas-2bay',
-  category: 'network',
-  source: 'in-house-generated',
-  license: 'DeskLab-owned',
-});
-
-const GENERIC_MODEM_ASSET = Object.freeze({
-  id: 'generic-modem',
-  category: 'network',
   source: 'in-house-generated',
   license: 'DeskLab-owned',
 });
@@ -116,14 +95,11 @@ const GENERIC_MODEL_ASSET_BY_MODEL_ID = Object.freeze({
   'ultrawide-monitor': GENERIC_MONITOR_ASSET,
   'power-strip': GENERIC_POWER_STRIP_ASSET,
   router: GENERIC_ROUTER_ASSET,
-  switch: GENERIC_SWITCH_ASSET,
   'desktop-pc': GENERIC_DESKTOP_PC_ASSET,
   'mini-pc': GENERIC_MINI_PC_ASSET,
   'power-adapter': GENERIC_POWER_ADAPTER_ASSET,
   'wall-outlet': GENERIC_WALL_OUTLET_ASSET,
   'laptop-15': GENERIC_LAPTOP_ASSET,
-  'nas-2bay': GENERIC_NAS_2BAY_ASSET,
-  modem: GENERIC_MODEM_ASSET,
   'all-in-one': GENERIC_ALL_IN_ONE_ASSET,
   'office-desk': GENERIC_OFFICE_DESK_ASSET,
   'gaming-desk': GENERIC_GAMING_DESK_ASSET,

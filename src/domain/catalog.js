@@ -28,10 +28,7 @@ export const DEVICE_CATALOG = [
   {
     category: 'network', categoryName: '网络',
     models: [
-      { type: 'router', modelId: 'router', displayName: '路由器', shape: 'rect', assetUrl: null, defaultScale: { x: 0.35, y: 0.25, z: 0.08 }, color: '#4caf50', wattage: 12, ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }, { id: 'wan', name: 'WAN 口', type: 'ethernet', direction: 'bidirectional' }, { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }, { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' }, { id: 'lan-3', name: 'LAN 3', type: 'ethernet', direction: 'bidirectional' }] },
-      { type: 'switch', modelId: 'switch', displayName: '交换机', shape: 'rect', assetUrl: null, defaultScale: { x: 0.6, y: 0.25, z: 0.08 }, color: '#00bcd4', wattage: 10, ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }, ...Array(8).fill(0).map((_, i) => ({ id: `eth-${i + 1}`, name: `Port ${i + 1}`, type: 'ethernet', direction: 'bidirectional' }))] },
-      { type: 'nas', modelId: 'nas-2bay', displayName: '双盘位 NAS', shape: 'rect', assetUrl: null, defaultScale: { x: 0.12, y: 0.23, z: 0.17 }, color: '#9c27b0', wattage: 30, ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }, { id: 'eth-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }, { id: 'eth-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' }] },
-      { type: 'modem', modelId: 'modem', displayName: '光猫', shape: 'rect', assetUrl: null, defaultScale: { x: 0.15, y: 0.12, z: 0.04 }, color: '#8d6e63', wattage: 8, ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }, { id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }] },
+      { type: 'router', modelId: 'router', displayName: '路由器', shape: 'rect', assetUrl: null, defaultScale: { x: 0.35, y: 0.25, z: 0.08 }, color: '#4caf50', wattage: 12, ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }, { id: 'lan-1', name: '网口 1', type: 'ethernet', direction: 'bidirectional' }, { id: 'lan-2', name: '网口 2', type: 'ethernet', direction: 'bidirectional' }, { id: 'lan-3', name: '网口 3', type: 'ethernet', direction: 'bidirectional' }] },
     ],
   },
   {
@@ -48,9 +45,7 @@ const LEGACY_MODEL_BY_TYPE = {
   table: { category: 'furniture', modelId: 'office-desk' },
   monitor: { category: 'display', modelId: 'monitor-24' },
   pc: { category: 'computer', modelId: 'desktop-pc' },
-  nas: { category: 'network', modelId: 'nas-2bay' },
   router: { category: 'network', modelId: 'router' },
-  switch: { category: 'network', modelId: 'switch' },
   power_strip: { category: 'power', modelId: 'power-strip' },
   outlet: { category: 'power', modelId: 'wall-outlet' },
 };

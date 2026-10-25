@@ -139,10 +139,10 @@ test('does not throw when a port-bearing object is missing its position', () => 
   });
   const noPositionPowered = { id: 'np', name: 'np', type: 'device', ports: [{ id: 'in', name: 'in', type: 'ac_input', direction: 'input' }] };
   const noPositionNet = { id: 'nn', name: 'nn', type: 'device', ports: [{ id: 'eth', name: 'eth', type: 'ethernet', direction: 'bidirectional' }] };
-  const switchDev = object('sw', {
-    type: 'switch', modelId: 'switch',
+  const routerDev = object('rt', {
+    type: 'router', modelId: 'router',
     position: { x: 1, y: 0, z: 0.1 },
-    ports: [{ id: 'p1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' }],
+    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
   });
   const monitor = object('mon', {
     type: 'monitor', modelId: 'monitor-24',
@@ -150,7 +150,7 @@ test('does not throw when a port-bearing object is missing its position', () => 
     ports: [{ id: 'hdmi-in', name: 'HDMI 输入', type: 'hdmi', direction: 'input' }],
   });
   const noPositionDisplay = { id: 'nd', name: 'nd', type: 'device', ports: [{ id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' }] };
-  const objects = [source, noPositionPowered, switchDev, noPositionNet, monitor, noPositionDisplay];
+  const objects = [source, noPositionPowered, routerDev, noPositionNet, monitor, noPositionDisplay];
 
   assert.doesNotThrow(() => buildFreeImprovements(room, objects, []));
   assert.doesNotThrow(() => buildPurchaseSuggestions(objects, []));
@@ -234,212 +234,6 @@ test('recommends a cable purchase for short cable or low slack', () => {
   assert.equal(buyCable.product.modelId, 'power');
   assert.ok(buyCable.product.length > 1);
   assert.equal(buyCable.connectionIds[0], 'c1');
-});
-
-test('recommends a switch purchase when ethernet endpoints exceed router LAN ports', () => {
-  const router = object('router-1', {
-    modelId: 'router',
-    ports: [
-      { id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-3', name: 'LAN 3', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const pc = (id) => object(id, {
-    modelId: 'desktop-pc',
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  // 4 ethernet endpoint devices (exceeding router's 3 LAN ports)
-  const objects = [router, pc('pc1'), pc('pc2'), pc('pc3'), pc('pc4')];
-
-  const purchases = buildPurchaseSuggestions(objects, []);
-  const buySwitch = purchases.find(item => item.code === 'buy_switch');
-  assert.ok(buySwitch, 'expected a buy_switch purchase suggestion');
-  assert.equal(buySwitch.product.category, 'network');
-  assert.equal(buySwitch.product.modelId, 'switch');
-
-  // A switch with no usable ports cannot satisfy the missing capacity.
-  const objectsWithSwitch = [...objects, object('switch-1', { modelId: 'switch' })];
-  const purchasesWithSwitch = buildPurchaseSuggestions(objectsWithSwitch, []);
-  assert.equal(purchasesWithSwitch.some(item => item.code === 'buy_switch'), true);
-});
-
-test('does not recommend a switch for an output-only ethernet device port', () => {
-  const device = object('uplink-only', {
-    ports: [{ id: 'uplink', name: 'Uplink', type: 'ethernet', direction: 'output' }],
-  });
-
-  const purchases = buildPurchaseSuggestions([device], []);
-  assert.equal(purchases.some(item => item.code === 'buy_switch'), false);
-});
-
-test('recognizes custom router LAN port ids regardless of case', () => {
-  const router = object('router-1', {
-    modelId: 'router',
-    ports: [{ id: 'LAN-1', name: 'LAN 1', type: 'ethernet', direction: 'output' }],
-  });
-  const device = object('pc-1', {
-    ports: [{ id: 'eth-1', name: 'Ethernet', type: 'ethernet', direction: 'input' }],
-  });
-
-  const purchases = buildPurchaseSuggestions([router, device], []);
-  assert.equal(purchases.some(item => item.code === 'buy_switch'), false);
-});
-
-test('does not recommend a switch when all ethernet devices are already connected to the router', () => {
-  const router = object('router-1', {
-    modelId: 'router',
-    ports: [
-      { id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-3', name: 'LAN 3', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const pc = (id) => object(id, {
-    modelId: 'desktop-pc',
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  // 3 PCs, all connected to the router's 3 LAN ports → no switch needed
-  const objects = [router, pc('pc1'), pc('pc2'), pc('pc3')];
-  const connections = [
-    { id: 'c1', name: 'c1', cableType: 'ethernet', length: 1, fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'pc1', toPortId: 'eth-1' },
-    { id: 'c2', name: 'c2', cableType: 'ethernet', length: 1, fromObjectId: 'router-1', fromPortId: 'lan-2', toObjectId: 'pc2', toPortId: 'eth-1' },
-    { id: 'c3', name: 'c3', cableType: 'ethernet', length: 1, fromObjectId: 'router-1', fromPortId: 'lan-3', toObjectId: 'pc3', toPortId: 'eth-1' },
-  ];
-
-  const purchases = buildPurchaseSuggestions(objects, connections);
-  assert.equal(purchases.some(item => item.code === 'buy_switch'), false,
-    'should not recommend a switch when all ethernet devices are already connected');
-});
-
-test('recommends a switch when unconnected ethernet devices exceed available LAN ports', () => {
-  const router = object('router-1', {
-    modelId: 'router',
-    ports: [
-      { id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-3', name: 'LAN 3', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const pc = (id) => object(id, {
-    modelId: 'desktop-pc',
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  // 4 PCs, 2 already connected, 2 unconnected. Free LAN: 1. 2 > 1 → buy switch.
-  const objects = [router, pc('pc1'), pc('pc2'), pc('pc3'), pc('pc4')];
-  const connections = [
-    { id: 'c1', name: 'c1', cableType: 'ethernet', length: 1, fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'pc1', toPortId: 'eth-1' },
-    { id: 'c2', name: 'c2', cableType: 'ethernet', length: 1, fromObjectId: 'router-1', fromPortId: 'lan-2', toObjectId: 'pc2', toPortId: 'eth-1' },
-  ];
-
-  const purchases = buildPurchaseSuggestions(objects, connections);
-  const buySwitch = purchases.find(item => item.code === 'buy_switch');
-  assert.ok(buySwitch, 'should recommend a switch when unconnected devices exceed free LAN ports');
-});
-
-test('does not recommend a switch when another router has free LAN capacity', () => {
-  const router = (id) => object(id, {
-    modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const pc = (id) => object(id, {
-    modelId: 'desktop-pc',
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const firstRouter = router('router-1');
-  const secondRouter = router('router-2');
-  const connected = pc('connected');
-  const unconnected = pc('unconnected');
-  const connections = [{
-    id: 'router-connected', name: 'Router connection', cableType: 'ethernet', length: 1,
-    fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'connected', toPortId: 'eth-1',
-  }];
-
-  const purchases = buildPurchaseSuggestions([firstRouter, secondRouter, connected, unconnected], connections);
-
-  assert.equal(purchases.some(item => item.code === 'buy_switch'), false,
-    'all router LAN capacity should be counted before recommending a switch');
-});
-
-test('recommends a switch when a reachable switch only has a WAN port free', () => {
-  const router = object('router-1', {
-    modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch-1', {
-    modelId: 'switch',
-    ports: [
-      { id: 'uplink', name: 'Uplink', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const unconnected = object('unconnected', {
-    modelId: 'desktop-pc',
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const connections = [{
-    id: 'router-switch', name: 'Router switch uplink', cableType: 'ethernet', length: 1,
-    fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'switch-1', toPortId: 'uplink',
-  }];
-
-  const purchases = buildPurchaseSuggestions([router, switchDevice, unconnected], connections);
-
-  assert.ok(purchases.some(item => item.code === 'buy_switch'),
-    'a WAN port cannot provide the downstream capacity used to suppress a switch purchase');
-});
-
-test('recommends a switch when a reachable switch is unpowered', () => {
-  const router = object('router-1', {
-    modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch-1', {
-    modelId: 'switch',
-    ports: [
-      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
-      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'eth-2', name: 'Port 2', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const unconnected = object('unconnected', {
-    modelId: 'desktop-pc',
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const connections = [{
-    id: 'router-switch', name: 'Router switch uplink', cableType: 'ethernet', length: 1,
-    fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'switch-1', toPortId: 'eth-1',
-  }];
-
-  const purchases = buildPurchaseSuggestions([router, switchDevice, unconnected], connections);
-
-  assert.ok(purchases.some(item => item.code === 'buy_switch'),
-    'an unpowered switch cannot provide the downstream capacity used to suppress a switch purchase');
-});
-
-test('marks a switch purchase as requiring LAN migration when the router is full', () => {
-  const router = object('router-1', {
-    modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const pc = (id) => object(id, {
-    modelId: 'desktop-pc',
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const connected = pc('connected');
-  const unconnected = pc('unconnected');
-  const connections = [{
-    id: 'router-connected', name: 'Router connection', cableType: 'ethernet', length: 1,
-    fromObjectId: 'router-1', fromPortId: 'lan-1', toObjectId: 'connected', toPortId: 'eth-1',
-  }];
-
-  const purchases = buildPurchaseSuggestions([router, connected, unconnected], connections);
-  const buySwitch = purchases.find(item => item.code === 'buy_switch');
-
-  assert.ok(buySwitch, 'a full router with another endpoint still needs a switch');
-  assert.equal(buySwitch.requiresLanPortMigration, true);
 });
 
 test('recommends a power strip purchase when a power strip is fully occupied', () => {
@@ -1344,13 +1138,13 @@ test('live recommendations tolerate non-string port names already diagnosed by w
     position: { x: -1.5, y: 0, z: 0.5 },
     ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
   });
-  const switchDevice = object('switch', {
-    type: 'switch',
-    modelId: 'switch',
+  const pc = object('pc', {
+    type: 'desktop-pc',
+    modelId: 'desktop-pc',
     position: { x: 1.5, y: 0, z: 0.5 },
     ports: [{ id: 'eth-1', name: 42, type: 'ethernet', direction: 'bidirectional' }],
   });
-  const objects = [router, switchDevice];
+  const objects = [router, pc];
   const wiringIssues = analyzeProjectWiring(objects, []);
 
   const recommendations = buildRecommendations(
@@ -1369,9 +1163,9 @@ test('live recommendations tolerate non-string port names already diagnosed by w
     portNameIssues: [{
       code: 'invalid_port_name_definition',
       severity: 'error',
-      objectIds: ['switch'],
+      objectIds: ['pc'],
     }],
-    freeCodes: ['auto_uplink_switch'],
+    freeCodes: ['auto_network_device'],
     purchaseCodes: [],
     total: 1,
   });
@@ -1853,37 +1647,68 @@ test('applyAllImprovements resolves every reported issue at once', () => {
   assert.equal(project.objects[0].position.z, 1.5, 'original project must be untouched');
 });
 
-test('applyAllAvailableImprovements follows newly unlocked switch uplinks', () => {
+test('applyAllAvailableImprovements powers a router before networking a device through it', () => {
   const outlet = object('outlet', {
     type: 'outlet', modelId: 'wall-outlet',
     ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
   });
-  const router = object('router', {
-    type: 'router', modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch',
+  const adapter = object('adapter', {
+    type: 'power-adapter', modelId: 'power-adapter',
     ports: [
       { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
-      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'dc-out', name: 'DC OUT', type: 'dc_output', direction: 'output' },
     ],
   });
-  const project = { room, objects: [outlet, router, switchDevice], connections: [] };
+  const router = object('router', {
+    type: 'router', modelId: 'router',
+    ports: [
+      { id: 'dc-in', name: 'DC IN', type: 'dc_input', direction: 'input' },
+      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const pc = object('pc', {
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const project = { room, objects: [outlet, adapter, router, pc], connections: [] };
 
   assert.equal(buildFreeImprovements(room, project.objects, project.connections)
-    .some(item => item.code === 'auto_uplink_switch'), false,
-  'the initial pass must power the switch before it can suggest an uplink');
+    .some(item => item.code === 'auto_network_device'), false,
+  'the initial pass must power the router before it can network the PC');
 
   const next = applyAllAvailableImprovements(project);
 
-  assert.equal(next.connections.some(connection => connection.cableType === 'power'), true);
+  assert.equal(next.connections.some(connection =>
+    connection.cableType === 'power'
+    && connection.fromObjectId === 'adapter'
+    && connection.toObjectId === 'router'
+  ), true, 'the router should be powered through the adapter');
   assert.equal(next.connections.some(connection =>
     connection.cableType === 'ethernet'
     && connection.fromObjectId === 'router'
-    && connection.toObjectId === 'switch'
-  ), true, 'the follow-up pass should uplink the newly powered switch');
+    && connection.toObjectId === 'pc'
+  ), true, 'the follow-up pass should network the PC through the newly powered router');
   assert.equal(buildFreeImprovements(next.room, next.objects, next.connections).length, 0);
+});
+
+test('never recommends network hardware purchases for home desks', () => {
+  const router = object('router-1', {
+    type: 'router',
+    modelId: 'router',
+    ports: [
+      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
+      { id: 'lan-3', name: 'LAN 3', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const pc = id => object(id, {
+    modelId: 'desktop-pc',
+    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'bidirectional' }],
+  });
+
+  for (const objects of [[router, pc('pc1'), pc('pc2'), pc('pc3'), pc('pc4')], [pc('pc1'), pc('pc2')]]) {
+    const purchases = buildPurchaseSuggestions(objects, []);
+    assert.deepEqual(purchases.filter(item => item.product?.category === 'network'), []);
+  }
 });
 
 test('applyAllAvailableImprovements reapplies a cable fix after an outlet snap changes its length', () => {
@@ -1921,7 +1746,6 @@ test('suggests networking an unconnected ethernet device and the fix creates a v
     modelId: 'router',
     position: { x: 0, y: 0, z: 0.1 },
     ports: [
-      { id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' },
       { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
       { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' }
     ]
@@ -2043,204 +1867,6 @@ test('does not use an unpowered router as an automatic network source', () => {
 
   assert.equal(suggestions.some(item => item.code === 'auto_network_device'), false,
     'a router must have a power path to a root source before it can provide network access');
-});
-
-test('does not connect a device through a switch that lacks a router uplink', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router', position: { x: 5, y: 0, z: 0.2 },
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const disconnectedSwitch = object('switch', {
-    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
-    ports: [{ id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const pc = object('pc', {
-    position: { x: 0.2, y: 0, z: 0.2 },
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
-  });
-
-  const suggestions = buildFreeImprovements(room, [router, disconnectedSwitch, pc], []);
-  const connect = suggestions.find(item => item.code === 'auto_network_device');
-
-  assert.ok(connect, 'the reachable router remains a valid network source');
-  assert.equal(connect.patch.newConnection.fromObjectId, 'router');
-  assert.equal(connect.patch.newConnection.fromPortId, 'lan-1');
-});
-
-test('does not treat an ordinary dual-port device as a switch uplink', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router', position: { x: 5, y: 0, z: 0.2 },
-    ports: [
-      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const dualPortPc = object('dual-port-pc', {
-    position: { x: 3, y: 0, z: 0.2 },
-    ports: [
-      { id: 'eth-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'eth-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
-    ports: [
-      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'eth-2', name: 'Port 2', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const target = object('target', {
-    position: { x: 0.2, y: 0, z: 0.2 },
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
-  });
-  const connections = [
-    { id: 'router-pc', name: 'Router PC link', cableType: 'ethernet', length: 1, fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'dual-port-pc', toPortId: 'eth-1' },
-    { id: 'pc-switch', name: 'PC switch link', cableType: 'ethernet', length: 1, fromObjectId: 'dual-port-pc', fromPortId: 'eth-2', toObjectId: 'switch', toPortId: 'eth-1' },
-  ];
-
-  const suggestions = buildFreeImprovements(room, [router, dualPortPc, switchDevice, target], connections);
-  const connect = suggestions.find(item => item.code === 'auto_network_device' && item.objectIds.includes('target'));
-
-  assert.ok(connect, 'the spare router LAN port remains a valid network source');
-  assert.equal(connect.patch.newConnection.fromObjectId, 'router');
-  assert.equal(connect.patch.newConnection.fromPortId, 'lan-2');
-});
-
-test('uses a switch after it is validly uplinked to a router', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router', position: { x: 5, y: 0, z: 0.2 },
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
-    ports: [
-      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'eth-2', name: 'Port 2', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const target = object('target', {
-    position: { x: 0.2, y: 0, z: 0.2 },
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
-  });
-  const connections = [{
-    id: 'router-switch', name: 'Router switch uplink', cableType: 'ethernet', length: 1,
-    fromObjectId: 'router', fromPortId: 'lan-1', toObjectId: 'switch', toPortId: 'eth-1',
-  }];
-
-  const suggestions = buildFreeImprovements(room, [router, switchDevice, target], connections);
-  const connect = suggestions.find(item => item.code === 'auto_network_device');
-
-  assert.ok(connect, 'the uplinked switch is available to downstream devices');
-  assert.equal(connect.patch.newConnection.fromObjectId, 'switch');
-  assert.equal(connect.patch.newConnection.fromPortId, 'eth-2');
-});
-
-test('suggests uplinking an unconnected switch through a free router LAN port', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router', position: { x: 2, y: 0, z: 0.2 },
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
-    ports: [{ id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-
-  const suggestion = buildFreeImprovements(room, [router, switchDevice], [])
-    .find(item => item.code === 'auto_uplink_switch');
-
-  assert.ok(suggestion);
-  assert.equal(suggestion.patch.newConnection.fromObjectId, 'router');
-  assert.equal(suggestion.patch.newConnection.toObjectId, 'switch');
-});
-
-test('does not uplink a switch through an output-only ethernet port', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch',
-    ports: [{ id: 'eth-out', name: 'Output', type: 'ethernet', direction: 'output' }],
-  });
-
-  assert.equal(
-    buildFreeImprovements(room, [router, switchDevice], []).some(item => item.code === 'auto_uplink_switch'),
-    false
-  );
-});
-
-test('does not uplink a switch through its WAN port', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch',
-    ports: [{ id: 'wan', name: 'WAN', type: 'ethernet', direction: 'bidirectional' }],
-  });
-
-  assert.equal(
-    buildFreeImprovements(room, [router, switchDevice], []).some(item => item.code === 'auto_uplink_switch'),
-    false,
-    'a WAN port cannot provide the downstream network capacity promised by an uplink'
-  );
-});
-
-test('recognizes custom switch WAN port ids regardless of case', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch',
-    ports: [{ id: 'WAN', name: 'Internet', type: 'ethernet', direction: 'bidirectional' }],
-  });
-
-  assert.equal(
-    buildFreeImprovements(room, [router, switchDevice], []).some(item => item.code === 'auto_uplink_switch'),
-    false,
-    'an uppercase WAN id must not be treated as downstream switch capacity'
-  );
-});
-
-test('does not uplink a switch before its power input is connected', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router',
-    ports: [{ id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch',
-    ports: [
-      { id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' },
-      { id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-
-  const suggestions = buildFreeImprovements(room, [router, switchDevice], []);
-
-  assert.equal(suggestions.some(item => item.code === 'auto_uplink_switch'), false,
-    'a switch must be powered before an uplink can deliver network access');
-});
-
-test('keeps a switch uplink suggestion when router capacity also covers an endpoint', () => {
-  const router = object('router', {
-    type: 'router', modelId: 'router', position: { x: 2, y: 0, z: 0.2 },
-    ports: [
-      { id: 'lan-1', name: 'LAN 1', type: 'ethernet', direction: 'bidirectional' },
-      { id: 'lan-2', name: 'LAN 2', type: 'ethernet', direction: 'bidirectional' },
-    ],
-  });
-  const switchDevice = object('switch', {
-    type: 'switch', modelId: 'switch', position: { x: 0, y: 0, z: 0.2 },
-    ports: [{ id: 'eth-1', name: 'Port 1', type: 'ethernet', direction: 'bidirectional' }],
-  });
-  const pc = object('pc', {
-    ports: [{ id: 'eth-1', name: 'LAN', type: 'ethernet', direction: 'input' }],
-  });
-
-  const suggestions = buildFreeImprovements(room, [router, switchDevice, pc], []);
-  assert.ok(suggestions.some(item => item.code === 'auto_uplink_switch'));
-  assert.ok(suggestions.some(item => item.code === 'auto_network_device'));
 });
 
 test('does not suggest networking an ethernet output-only device port', () => {

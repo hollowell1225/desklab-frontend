@@ -93,6 +93,19 @@ test('no two ports on a model share a default anchor position', () => {
   }
 });
 
+test('home catalog leaves out switch, NAS, and modem, and the router has no WAN port', () => {
+  const modelIds = DEVICE_CATALOG.flatMap(category => category.models.map(model => model.modelId));
+  for (const removed of ['switch', 'nas-2bay', 'modem']) {
+    assert.equal(modelIds.includes(removed), false, `${removed} should not be offered`);
+    assert.equal(findModelTemplate({ modelId: removed }), null);
+  }
+
+  const router = findModelTemplate({ modelId: 'router' });
+  assert.ok(router, 'the router stays available for wired desktops');
+  assert.equal(router.ports.some(port => /wan/i.test(port.id) || /wan/i.test(port.name)), false);
+  assert.ok(router.ports.filter(port => port.type === 'ethernet').length >= 3);
+});
+
 test('modelId matching wins over shared legacy type matching', () => {
   const template = findModelTemplate({ modelId: 'monitor-27', type: 'monitor' });
   assert.equal(template.modelId, 'monitor-27');

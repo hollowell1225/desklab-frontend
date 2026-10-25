@@ -29,10 +29,9 @@ const SUGGESTION_ORDER = {
   drop_to_support: 1,
   snap_outlet_to_wall: 2,
   auto_power_device: 3,
-  auto_uplink_switch: 4,
-  auto_network_device: 5,
-  auto_connect_display: 6,
-  extend_cable: 7,
+  auto_network_device: 4,
+  auto_connect_display: 5,
+  extend_cable: 6,
 };
 
 function compareSuggestions(first, second) {
@@ -100,10 +99,6 @@ function resolveUnpoweredInput(issue, objectsById) {
   return port ? { object, port } : null;
 }
 
-function isWanPort(port) {
-  return String(port.id).toLowerCase() === 'wan'
-    || (typeof port.name === 'string' && port.name.toLowerCase().includes('wan'));
-}
 
 function hasPowerInput(object) {
   return getPortRecords(object).some(port =>
@@ -133,43 +128,8 @@ function requiresPowerButIsUnpowered(object, poweredObjectIds) {
   return hasPowerInput(object) && !poweredObjectIds.has(object.id);
 }
 
-function getRouterReachableObjectIds(objects, connections, invalidConnectionIds, poweredObjectIds) {
-  const objectIds = new Set(objects.map(object => object.id));
-  const isNetworkForwarder = object => object.modelId === 'router' || object.type === 'router'
-    || object.modelId === 'switch' || object.type === 'switch';
-  const reachable = new Set(objects
-    .filter(object => (object.modelId === 'router' || object.type === 'router')
-      && !requiresPowerButIsUnpowered(object, poweredObjectIds))
-    .map(object => object.id));
-  const forwarderIds = new Set(objects
-    .filter(object => isNetworkForwarder(object) && !requiresPowerButIsUnpowered(object, poweredObjectIds))
-    .map(object => object.id));
-  const neighbors = new Map();
-
-  for (const connection of connections) {
-    if (connection.cableType !== 'ethernet' || invalidConnectionIds.has(connection.id)) continue;
-    if (!objectIds.has(connection.fromObjectId) || !objectIds.has(connection.toObjectId)) continue;
-    for (const [from, to] of [[connection.fromObjectId, connection.toObjectId], [connection.toObjectId, connection.fromObjectId]]) {
-      let adjacent = neighbors.get(from);
-      if (!adjacent) {
-        adjacent = new Set();
-        neighbors.set(from, adjacent);
-      }
-      adjacent.add(to);
-    }
-  }
-
-  const pending = [...reachable];
-  while (pending.length > 0) {
-    const objectId = pending.pop();
-    for (const neighborId of neighbors.get(objectId) || []) {
-      if (reachable.has(neighborId) || !forwarderIds.has(neighborId)) continue;
-      reachable.add(neighborId);
-      pending.push(neighborId);
-    }
-  }
-
-  return reachable;
+function isRouter(object) {
+  return object.modelId === 'router' || object.type === 'router';
 }
 
 /**
@@ -338,82 +298,9 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
     }
   }
 
-  // 3. 自动连接网络 (auto_network_device)
-  const routerReachableObjectIds = getRouterReachableObjectIds(actionableObjects, connections, invalidConnectionIds, poweredObjectIds);
-  const unconnectedNetworkEndpointCount = actionableObjects.reduce((count, object) => {
-    const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
-    if (isDistributor) return count;
-    return count + getActionablePortRecords(object).filter(port =>
-      port.type === 'ethernet'
-      && (port.direction === 'input' || port.direction === 'bidirectional')
-      && isPortDirectionConsistent(port)
-      && !occupiedPorts.get(object.id)?.has(port.id)
-    ).length;
-  }, 0);
-  const freeRouterLanPortCount = actionableObjects.reduce((count, router) => {
-    if (!(router.modelId === 'router' || router.type === 'router') || requiresPowerButIsUnpowered(router, poweredObjectIds)) return count;
-    return count + getActionablePortRecords(router).filter(port =>
-      port.type === 'ethernet'
-      && String(port.id).toLowerCase().includes('lan')
-      && (port.direction === 'output' || port.direction === 'bidirectional')
-      && isPortDirectionConsistent(port)
-      && !occupiedPorts.get(router.id)?.has(port.id)
-    ).length;
-  }, 0);
-
-  for (const switchDevice of actionableObjects) {
-    const isSwitch = switchDevice.modelId === 'switch' || switchDevice.type === 'switch';
-    if (freeRouterLanPortCount <= unconnectedNetworkEndpointCount
-      || !isSwitch
-      || routerReachableObjectIds.has(switchDevice.id)
-      || requiresPowerButIsUnpowered(switchDevice, poweredObjectIds)) continue;
-
-    let bestUplink = null;
-    for (const router of actionableObjects) {
-      const isRouter = router.modelId === 'router' || router.type === 'router';
-      if (!isRouter || requiresPowerButIsUnpowered(router, poweredObjectIds)) continue;
-      for (const routerPort of getActionablePortRecords(router)) {
-        if (routerPort.type !== 'ethernet' || !String(routerPort.id).toLowerCase().includes('lan')) continue;
-        if (!(routerPort.direction === 'output' || routerPort.direction === 'bidirectional') || !isPortDirectionConsistent(routerPort)) continue;
-        if (occupiedPorts.get(router.id)?.has(routerPort.id)) continue;
-        for (const switchPort of getActionablePortRecords(switchDevice)) {
-          if (switchPort.type !== 'ethernet'
-            || isWanPort(switchPort)
-            || !(switchPort.direction === 'input' || switchPort.direction === 'bidirectional')
-            || !isPortDirectionConsistent(switchPort)) continue;
-          if (occupiedPorts.get(switchDevice.id)?.has(switchPort.id)) continue;
-          const distance = calculatePositionDistance(router.position, switchDevice.position);
-          if (distance === null) continue;
-          if (!bestUplink || distance < bestUplink.distance) bestUplink = { router, routerPort, switchPort, distance };
-        }
-      }
-    }
-
-    if (!bestUplink) continue;
-    const length = ceilLength(Math.max(1.0, bestUplink.distance * 1.1 + 0.3));
-    suggestions.push({
-      id: `auto-uplink:${bestUplink.router.id}:${bestUplink.routerPort.id}:${switchDevice.id}:${bestUplink.switchPort.id}`,
-      code: 'auto_uplink_switch',
-      title: `将“${switchDevice.name}”上联到“${bestUplink.router.name}”`,
-      description: `使用一根 ${length}m 网线连接路由器空闲 LAN 口和交换机端口，使交换机可以为下游设备提供网络。`,
-      objectIds: [bestUplink.router.id, switchDevice.id],
-      patch: { newConnection: {
-        id: allocateConnectionId(`c-auto-uplink-${bestUplink.router.id}-${bestUplink.routerPort.id}-${switchDevice.id}-${bestUplink.switchPort.id}`),
-        name: `${switchDevice.name}上联网线`, cableType: 'ethernet', length,
-        fromObjectId: bestUplink.router.id, fromPortId: bestUplink.routerPort.id,
-        toObjectId: switchDevice.id, toPortId: bestUplink.switchPort.id,
-      } },
-    });
-    for (const [objectId, portId] of [[bestUplink.router.id, bestUplink.routerPort.id], [switchDevice.id, bestUplink.switchPort.id]]) {
-      let ports = occupiedPorts.get(objectId);
-      if (!ports) { ports = new Set(); occupiedPorts.set(objectId, ports); }
-      ports.add(portId);
-    }
-  }
-
+  // 3. 自动连接网络 (auto_network_device)：把有网口的设备接到已通电的路由器
   for (const object of actionableObjects) {
-    const isDistributor = ['router', 'switch', 'modem'].includes(object.type) || ['router', 'switch', 'modem'].includes(object.modelId);
-    if (isDistributor) continue;
+    if (isRouter(object)) continue;
 
     for (const port of getActionablePortRecords(object)) {
       if (port.type !== 'ethernet') continue;
@@ -428,12 +315,10 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
 
       for (const candidate of actionableObjects) {
         if (candidate.id === object.id) continue;
-        const candidateIsDistributor = ['router', 'switch'].includes(candidate.type) || ['router', 'switch'].includes(candidate.modelId);
-        if (!candidateIsDistributor || !routerReachableObjectIds.has(candidate.id)) continue;
+        if (!isRouter(candidate) || requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
 
         for (const candidatePort of getActionablePortRecords(candidate)) {
           if (candidatePort.type !== 'ethernet') continue;
-          if (isWanPort(candidatePort)) continue;
           const canProvideNetwork = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
           if (!canProvideNetwork || !isPortDirectionConsistent(candidatePort)) continue;
 
@@ -646,69 +531,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
     }
   }
 
-  // 3. 加购交换机：比较未联网设备与实际可用于下游设备的网络端口容量
-  {
-    const isNetworkDistributor = (obj) =>
-      obj.modelId === 'router' || obj.type === 'router'
-      || obj.modelId === 'modem' || obj.type === 'modem'
-      || obj.modelId === 'switch' || obj.type === 'switch';
-    const unconnectedEthernetDevices = actionableObjects.filter(obj => {
-      if (isNetworkDistributor(obj)) return false;
-      const ethPorts = getActionablePortRecords(obj).filter(p =>
-        p.type === 'ethernet'
-        && (p.direction === 'input' || p.direction === 'bidirectional')
-        && isPortDirectionConsistent(p)
-      );
-      if (ethPorts.length === 0) return false;
-      const occupied = occupiedPorts.get(obj.id) || new Set();
-      return ethPorts.some(p => !occupied.has(p.id));
-    });
-
-    const { availableLanPorts, occupiedLanCount } = actionableObjects
-      .filter(obj => (obj.modelId === 'router' || obj.type === 'router')
-        && !requiresPowerButIsUnpowered(obj, poweredObjectIds))
-      .reduce((capacity, router) => {
-        const lanPorts = getActionablePortRecords(router).filter(p =>
-          p.type === 'ethernet'
-          && String(p.id).toLowerCase().includes('lan')
-          && (p.direction === 'output' || p.direction === 'bidirectional')
-          && isPortDirectionConsistent(p)
-        );
-        const routerOccupied = occupiedPorts.get(router.id) || new Set();
-        return {
-          availableLanPorts: capacity.availableLanPorts + lanPorts.length,
-          occupiedLanCount: capacity.occupiedLanCount + lanPorts.filter(p => routerOccupied.has(p.id)).length,
-        };
-      }, { availableLanPorts: 0, occupiedLanCount: 0 });
-    const freeLanPorts = Math.max(0, availableLanPorts - occupiedLanCount);
-    const routerReachableObjectIds = getRouterReachableObjectIds(actionableObjects, connections, invalidConnectionIds, poweredObjectIds);
-    const freeSwitchPorts = actionableObjects
-      .filter(obj => (obj.modelId === 'switch' || obj.type === 'switch') && routerReachableObjectIds.has(obj.id))
-      .reduce((count, switchDevice) => count + getActionablePortRecords(switchDevice).filter(port =>
-        port.type === 'ethernet'
-        && !isWanPort(port)
-        && (port.direction === 'output' || port.direction === 'bidirectional')
-        && isPortDirectionConsistent(port)
-        && !occupiedPorts.get(switchDevice.id)?.has(port.id)
-      ).length, 0);
-
-    if (unconnectedEthernetDevices.length > freeLanPorts + freeSwitchPorts) {
-      const key = 'buy-switch';
-      if (!seen.has(key)) {
-        seen.add(key);
-        suggestions.push({
-          id: key,
-          code: 'buy_switch',
-          title: '考虑加购网络交换机',
-          description: `检测到 ${unconnectedEthernetDevices.length} 个未联网的以太网设备，路由器仅剩 ${freeLanPorts} 个空闲 LAN 口。建议加购网络交换机以扩展网络端口。`,
-          product: { category: 'network', modelId: 'switch' },
-          requiresLanPortMigration: freeLanPorts === 0,
-        });
-      }
-    }
-  }
-
-  // 4. New recommendation: buy power strip if an existing power strip is fully occupied
+  // 3. Buy a power strip if an existing power strip is fully occupied
   for (const object of actionableObjects) {
     const isPowerStrip = object?.modelId === 'power-strip' || object?.type === 'power_strip';
     if (isPowerStrip) {
@@ -736,7 +559,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
     }
   }
 
-  // 5. 电源过载购买建议
+  // 4. 电源过载：建议分流
   for (const object of actionableObjects) {
     const maxLoad = getEffectiveMaxLoad(object);
     if (maxLoad > 0) {
@@ -758,7 +581,7 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
     }
   }
 
-  // 6. 无电源可接时建议加购
+  // 5. 无电源可接时建议加购
   for (const issue of wiringIssues) {
     if (issue.code !== 'unpowered_input') continue;
     const endpoint = resolveUnpoweredInput(issue, objectsById);
@@ -926,7 +749,7 @@ function getSuggestionApplicationKey(suggestion) {
 
 /**
  * Repeatedly recompute and apply free improvements until no new suggestion is
- * available. This allows prerequisite fixes (for example, powering a switch)
+ * available. This allows prerequisite fixes (for example, powering a router)
  * to unlock a subsequent safe wiring suggestion in one user action.
  */
 export function applyAllAvailableImprovements(project) {

@@ -21,13 +21,6 @@
 - **Added**: 2026-06-26
 - **Notes**: Generic unbranded router used for `router`.
 
-## Code-Native Generic Switch
-- **Model Name**: Generic low-poly network switch
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-06-26
-- **Notes**: Generic unbranded switch used for `switch`.
-
 ## Code-Native Generic Desktop PC
 - **Model Name**: Generic low-poly desktop PC tower
 - **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
@@ -62,20 +55,6 @@
 - **License**: DeskLab-owned
 - **Added**: 2026-07-05
 - **Notes**: Generic unbranded open laptop used for `laptop-15` when no external asset URL is configured.
-
-## Code-Native Generic Two-Bay NAS
-- **Model Name**: Generic low-poly two-bay NAS
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-07-05
-- **Notes**: Generic unbranded network storage enclosure used for `nas-2bay`.
-
-## Code-Native Generic Modem
-- **Model Name**: Generic low-poly modem/optical network terminal
-- **Source**: In-house generated React/Three.js geometry in `src/components/SceneObjects.jsx`
-- **License**: DeskLab-owned
-- **Added**: 2026-07-05
-- **Notes**: Generic unbranded network terminal used for `modem`.
 
 ## Code-Native Generic All-in-One Computer
 - **Model Name**: Generic low-poly all-in-one computer

@@ -33,15 +33,6 @@ test('router resolves to the generic in-house network asset', () => {
   assert.equal(asset.category, 'network');
 });
 
-test('switch resolves to the generic in-house network asset', () => {
-  const asset = getGenericModelAsset('switch');
-
-  assert.equal(asset.id, 'generic-switch');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'network');
-});
-
 test('desktop pc resolves to the generic in-house computer asset', () => {
   const asset = getGenericModelAsset('desktop-pc');
 
@@ -85,24 +76,6 @@ test('laptop resolves to the generic in-house computer asset', () => {
   assert.equal(asset.source, 'in-house-generated');
   assert.equal(asset.license, 'DeskLab-owned');
   assert.equal(asset.category, 'computer');
-});
-
-test('two-bay nas resolves to the generic in-house network asset', () => {
-  const asset = getGenericModelAsset('nas-2bay');
-
-  assert.equal(asset.id, 'generic-nas-2bay');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'network');
-});
-
-test('modem resolves to the generic in-house network asset', () => {
-  const asset = getGenericModelAsset('modem');
-
-  assert.equal(asset.id, 'generic-modem');
-  assert.equal(asset.source, 'in-house-generated');
-  assert.equal(asset.license, 'DeskLab-owned');
-  assert.equal(asset.category, 'network');
 });
 
 test('all-in-one resolves to the generic in-house computer asset', () => {

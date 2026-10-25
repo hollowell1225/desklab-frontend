@@ -363,47 +363,6 @@ function GenericRouterModel({ obj, materialProps }) {
   );
 }
 
-function GenericSwitchModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const layout = getGenericModelLayout(obj.modelId);
-  const [body] = layout.bodies;
-  const [frontPanel] = layout.frontPanels;
-
-  return (
-    <group>
-      <mesh position={[width * body.x, 0, depth * body.z]}>
-        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.6}
-        />
-      </mesh>
-      <mesh position={[width * frontPanel.x, height * 0.02, depth * frontPanel.z]}>
-        <boxGeometry args={[width * frontPanel.width, height * 0.58, depth * frontPanel.depth]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.65} />
-      </mesh>
-      {layout.ports.map((port, index) => (
-          <mesh key={index} position={[width * port.x, height * 0.08, depth * port.z]}>
-            <boxGeometry args={[width * port.width, height * 0.34, depth * port.depth]} />
-            <meshStandardMaterial color="#111827" roughness={0.7} />
-          </mesh>
-      ))}
-      <mesh position={[width * layout.statusLights[0].x, height * 0.36, depth * layout.statusLights[0].z]}>
-        <sphereGeometry args={[Math.min(width, depth) * 0.018, 10, 8]} />
-        <meshStandardMaterial color="#76ff03" emissive="#76ff03" emissiveIntensity={0.4} />
-      </mesh>
-      <mesh position={[width * layout.statusLights[1].x, height * 0.36, depth * layout.statusLights[1].z]}>
-        <sphereGeometry args={[Math.min(width, depth) * 0.018, 10, 8]} />
-        <meshStandardMaterial color="#ffd54f" emissive="#ffd54f" emissiveIntensity={0.3} />
-      </mesh>
-    </group>
-  );
-}
-
 function GenericDesktopPcModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
@@ -648,107 +607,6 @@ function GenericLaptopModel({ obj, materialProps }) {
   );
 }
 
-function GenericNasModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const layout = getGenericModelLayout(obj.modelId);
-  const [body] = layout.bodies;
-  const [frontPanel] = layout.frontPanels;
-
-  return (
-    <group>
-      <mesh position={[width * body.x, 0, depth * body.z]}>
-        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.64}
-        />
-      </mesh>
-      <mesh position={[width * frontPanel.x, 0, depth * frontPanel.z]}>
-        <boxGeometry args={[width * frontPanel.width, height * 0.84, depth * frontPanel.depth]} />
-        <meshStandardMaterial color="#1f2937" roughness={0.7} />
-      </mesh>
-      {layout.driveBays.map((bay, index) => {
-        const handle = layout.driveHandles[index];
-        return (
-        <group key={index} position={[width * bay.x, -height * 0.04, depth * bay.z]}>
-          <mesh>
-            <boxGeometry args={[width * bay.width, height * 0.62, depth * bay.depth]} />
-            <meshStandardMaterial color="#0f172a" roughness={0.76} />
-          </mesh>
-          <mesh position={[0, -height * 0.22, depth * (handle.z - bay.z)]}>
-            <boxGeometry args={[width * handle.width, height * 0.045, depth * handle.depth]} />
-            <meshStandardMaterial color="#64748b" metalness={0.35} roughness={0.45} />
-          </mesh>
-        </group>
-        );
-      })}
-      {layout.statusLights.map((light, index) => (
-        <mesh
-          key={index}
-          position={[width * light.x, height * 0.38, depth * light.z]}
-          scale={[width * light.width / 2, width * light.width / 2, depth * light.depth / 2]}
-        >
-          <sphereGeometry args={[1, 10, 8]} />
-          <meshStandardMaterial
-            color={index === 0 ? "#4ade80" : "#60a5fa"}
-            emissive={index === 0 ? "#4ade80" : "#60a5fa"}
-            emissiveIntensity={index === 0 ? 0.4 : 0.35}
-          />
-        </mesh>
-      ))}
-    </group>
-  );
-}
-
-function GenericModemModel({ obj, materialProps }) {
-  const width = obj.scale.x;
-  const height = obj.scale.z;
-  const depth = obj.scale.y;
-  const ledColors = ['#4ade80', '#4ade80', '#60a5fa', '#facc15'];
-  const layout = getGenericModelLayout(obj.modelId);
-  const [body] = layout.bodies;
-  const [topPlate] = layout.topPlates;
-
-  return (
-    <group>
-      <mesh position={[width * body.x, 0, depth * body.z]}>
-        <boxGeometry args={[width * body.width, height, depth * body.depth]} />
-        <meshStandardMaterial
-          color={obj.color}
-          emissive={materialProps.emissiveColor}
-          emissiveIntensity={materialProps.emissiveIntensity}
-          roughness={0.62}
-        />
-      </mesh>
-      <mesh position={[width * topPlate.x, height * 0.52, depth * topPlate.z]}>
-        <boxGeometry args={[width * topPlate.width, height * 0.05, depth * topPlate.depth]} />
-        <meshStandardMaterial color="#475569" roughness={0.7} />
-      </mesh>
-      {ledColors.map((color, index) => (
-        <mesh
-          key={color + index}
-          position={[width * layout.statusLights[index].x, height * 0.57, depth * layout.statusLights[index].z]}
-        >
-          <sphereGeometry args={[width * layout.statusLights[index].width / 2, 10, 8]} />
-          <meshStandardMaterial color={color} emissive={color} emissiveIntensity={0.4} />
-        </mesh>
-      ))}
-      <mesh position={[width * layout.frontPorts[0].x, 0, depth * layout.frontPorts[0].z]}>
-        <boxGeometry args={[width * layout.frontPorts[0].width, height * 0.42, depth * layout.frontPorts[0].depth]} />
-        <meshStandardMaterial color="#0f172a" roughness={0.7} />
-      </mesh>
-      <mesh position={[width * layout.frontPorts[1].x, 0, depth * layout.frontPorts[1].z]} rotation={[Math.PI / 2, 0, 0]}>
-        <cylinderGeometry args={[height * 0.13, height * 0.13, depth * layout.frontPorts[1].depth, 12]} />
-        <meshStandardMaterial color="#111827" roughness={0.72} />
-      </mesh>
-    </group>
-  );
-}
-
 function GenericAllInOneModel({ obj, materialProps }) {
   const width = obj.scale.x;
   const height = obj.scale.z;
@@ -982,9 +840,6 @@ function GenericModel({ asset, obj, materialProps }) {
   if (asset?.id === 'generic-router') {
     return <GenericRouterModel obj={obj} materialProps={materialProps} />;
   }
-  if (asset?.id === 'generic-switch') {
-    return <GenericSwitchModel obj={obj} materialProps={materialProps} />;
-  }
   if (asset?.id === 'generic-desktop-pc') {
     return <GenericDesktopPcModel obj={obj} materialProps={materialProps} />;
   }
@@ -999,12 +854,6 @@ function GenericModel({ asset, obj, materialProps }) {
   }
   if (asset?.id === 'generic-laptop') {
     return <GenericLaptopModel obj={obj} materialProps={materialProps} />;
-  }
-  if (asset?.id === 'generic-nas-2bay') {
-    return <GenericNasModel obj={obj} materialProps={materialProps} />;
-  }
-  if (asset?.id === 'generic-modem') {
-    return <GenericModemModel obj={obj} materialProps={materialProps} />;
   }
   if (asset?.id === 'generic-all-in-one') {
     return <GenericAllInOneModel obj={obj} materialProps={materialProps} />;
