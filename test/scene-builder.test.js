@@ -1,7 +1,12 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 
-import { buildDeskScene, STANDARD_CABLE_LENGTHS } from '../src/domain/scene-builder.js';
+import {
+  buildDeskScene,
+  DESK_SCENE_DEVICE_LIMITS,
+  DESK_SIZE_LIMITS,
+  STANDARD_CABLE_LENGTHS,
+} from '../src/domain/scene-builder.js';
 import { DESK_TEMPLATES, buildTemplateScene } from '../src/domain/desk-templates.js';
 import { analyzeProjectLayout } from '../src/domain/layout-analysis.js';
 import { analyzeProjectWiring } from '../src/domain/analysis.js';
@@ -122,6 +127,19 @@ test('a desk that cannot fit every monitor keeps what fits and explains why', ()
   assert.match(scene.notes[0], /桌面宽度/);
 });
 
+test('a monitor with no free video output to feed it is called out', () => {
+  const scene = buildDeskScene({
+    desk: { length: 2.4 },
+    devices: [{ modelId: 'desktop-pc', count: 1 }, { modelId: 'monitor-24', count: 3 }],
+  });
+  assertReadyToUse(scene, 'three monitors');
+  const fed = new Set(scene.connections
+    .filter(connection => ['hdmi', 'displayport'].includes(connection.cableType))
+    .map(connection => connection.toObjectId));
+  assert.equal(fed.size, 2, 'the PC has two video outputs');
+  assert.deepEqual(scene.notes, ['“24 英寸显示器 3”暂时没有可用的视频输出，可能需要显卡上更多的接口。']);
+});
+
 test('unknown or unsupported devices are skipped with a note, and counts are capped', () => {
   const scene = buildDeskScene({
     devices: [
@@ -141,6 +159,26 @@ test('an empty device list still yields a clean desk with power ready', () => {
   const scene = buildDeskScene({ devices: [] });
   assertReadyToUse(scene, 'empty');
   assert.equal(byModel(scene, 'office-desk').length, 1);
+});
+
+test('desk sizes outside a sensible home range are clamped with a note', () => {
+  const tiny = buildDeskScene({ desk: { length: 0.2, depth: 0.1 }, devices: [] });
+  const [tinyDesk] = byModel(tiny, 'office-desk');
+  assert.deepEqual([tinyDesk.scale.x, tinyDesk.scale.y], [DESK_SIZE_LIMITS.length.min, DESK_SIZE_LIMITS.depth.min]);
+  assert.equal(tiny.notes.filter(note => note.includes('书桌')).length, 2);
+
+  const huge = buildDeskScene({ desk: { length: 9, depth: 3 }, devices: [] });
+  const [hugeDesk] = byModel(huge, 'office-desk');
+  assert.deepEqual([hugeDesk.scale.x, hugeDesk.scale.y], [DESK_SIZE_LIMITS.length.max, DESK_SIZE_LIMITS.depth.max]);
+  assertReadyToUse(huge, 'clamped huge desk');
+});
+
+test('the device options exposed for forms match what the builder accepts', () => {
+  for (const [modelId, limit] of Object.entries(DESK_SCENE_DEVICE_LIMITS)) {
+    const scene = buildDeskScene({ desk: { length: DESK_SIZE_LIMITS.length.max }, devices: [{ modelId, count: limit }] });
+    assert.equal(byModel(scene, modelId).length, limit, `${modelId} up to ${limit}`);
+    assert.deepEqual(scene.notes, [], `${modelId}: the limit itself needs no note`);
+  }
 });
 
 test('the room grows to fit a long desk with side devices', () => {

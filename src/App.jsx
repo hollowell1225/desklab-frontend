@@ -44,6 +44,7 @@ import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
 import PropertiesEditor from './components/PropertiesEditor.jsx';
 import ConnectionsEditor from './components/ConnectionsEditor.jsx';
+import DeskBuilderForm from './components/DeskBuilderForm.jsx';
 import {
   CameraSetup,
   ConnectionsRenderer,
@@ -819,9 +820,12 @@ export default function App() {
   };
 
   const handleApplyTemplate = (template) => {
-    if (!projectEditable) return;
     const scene = buildTemplateScene(template.id);
-    if (!scene) return;
+    if (scene) applyGeneratedScene(scene, `已套用模板“${template.name}”`);
+  };
+
+  const applyGeneratedScene = (scene, label) => {
+    if (!projectEditable) return;
     if (savedLayout === null) {
       setSavedLayout(serializeLayout(room, objects, connections));
     }
@@ -841,7 +845,7 @@ export default function App() {
     setConnectionDraft({});
     setHoveredDeviceId(null);
     setShowTemplates(false);
-    showStatus({ text: `已套用模板“${template.name}”，可按实际情况调整，尚未保存`, type: 'success' }, 4000);
+    showStatus({ text: `${label}，可按实际情况调整，尚未保存`, type: 'success' }, 4000);
   };
 
   const handleCopyProjectToClipboard = async () => {
@@ -1628,6 +1632,11 @@ export default function App() {
                   </div>
                 ))}
               </div>
+              <h4 className="template-section-title">按我的设备生成</h4>
+              <DeskBuilderForm
+                disabled={!projectEditable}
+                onGenerate={scene => applyGeneratedScene(scene, '已按你的设备生成桌面')}
+              />
             </div>
           </div>
         </div>

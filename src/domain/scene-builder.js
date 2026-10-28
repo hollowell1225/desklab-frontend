@@ -17,7 +17,7 @@ const MONITOR_GAP = 0.04;
 const MAX_MONITORS = 3;
 
 // Devices a user can ask for, with how many fit one desk.
-const DEVICE_LIMITS = Object.freeze({
+export const DESK_SCENE_DEVICE_LIMITS = Object.freeze({
   'desktop-pc': 1,
   'laptop-15': 1,
   'monitor-24': MAX_MONITORS,
@@ -26,6 +26,12 @@ const DEVICE_LIMITS = Object.freeze({
   router: 1,
 });
 const MONITOR_MODEL_IDS = new Set(['monitor-24', 'monitor-27', 'ultrawide-monitor']);
+
+// Desk sizes a home user plausibly has, in metres.
+export const DESK_SIZE_LIMITS = Object.freeze({
+  length: Object.freeze({ min: 0.8, max: 3 }),
+  depth: Object.freeze({ min: 0.5, max: 1.2 }),
+});
 
 function createObject(modelId, id, name, position, rotationZ = 0, scale = null) {
   const template = findModelTemplate({ modelId });
@@ -61,20 +67,29 @@ function sanitizeDevices(devices, notes) {
     const modelId = entry?.modelId;
     const count = Number.isInteger(entry?.count) ? entry.count : 0;
     if (count <= 0) continue;
-    if (!Object.hasOwn(DEVICE_LIMITS, modelId) || !findModelTemplate({ modelId })) {
+    if (!Object.hasOwn(DESK_SCENE_DEVICE_LIMITS, modelId) || !findModelTemplate({ modelId })) {
       notes.push(`暂不支持的设备“${String(modelId)}”，已跳过。`);
       continue;
     }
     counts.set(modelId, (counts.get(modelId) || 0) + count);
   }
   for (const [modelId, count] of counts) {
-    const limit = DEVICE_LIMITS[modelId];
+    const limit = DESK_SCENE_DEVICE_LIMITS[modelId];
     if (count > limit) {
       notes.push(`${findModelTemplate({ modelId }).displayName}最多放 ${limit} 台，已按 ${limit} 台生成。`);
       counts.set(modelId, limit);
     }
   }
   return counts;
+}
+
+function resolveDeskSize(requested, fallback, limits, label, notes) {
+  if (!Number.isFinite(requested) || requested <= 0) return fallback;
+  const clamped = Math.min(limits.max, Math.max(limits.min, requested));
+  if (clamped !== requested) {
+    notes.push(`书桌${label}按 ${clamped}m 生成（支持 ${limits.min}–${limits.max}m）。`);
+  }
+  return clamped;
 }
 
 function numberedName(displayName, index, total) {
@@ -94,8 +109,8 @@ export function buildDeskScene({ devices = [], desk = {} } = {}) {
   const counts = sanitizeDevices(devices, notes);
   const deskTemplate = findModelTemplate({ modelId: DESK_MODEL_ID });
   const deskScale = {
-    x: Number.isFinite(desk.length) && desk.length > 0 ? desk.length : deskTemplate.defaultScale.x,
-    y: Number.isFinite(desk.depth) && desk.depth > 0 ? desk.depth : deskTemplate.defaultScale.y,
+    x: resolveDeskSize(desk.length, deskTemplate.defaultScale.x, DESK_SIZE_LIMITS.length, '长度', notes),
+    y: resolveDeskSize(desk.depth, deskTemplate.defaultScale.y, DESK_SIZE_LIMITS.depth, '深度', notes),
     z: deskTemplate.defaultScale.z,
   };
 
@@ -257,6 +272,11 @@ export function buildDeskScene({ devices = [], desk = {} } = {}) {
     fedMonitors.add(choice.monitor.id);
     const label = portType === 'displayport' ? 'DP' : 'HDMI';
     connect(source, outputId, choice.monitor, choice.input.id, `${source.name}到${choice.monitor.name}的${label}线`);
+  }
+  if (videoOutputs.length > 0) {
+    for (const monitor of monitorObjects.filter(candidate => !fedMonitors.has(candidate.id))) {
+      notes.push(`“${monitor.name}”暂时没有可用的视频输出，可能需要显卡上更多的接口。`);
+    }
   }
 
   if (router && pc) {

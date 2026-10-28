@@ -708,10 +708,98 @@
   color: #888888;
 }
 
+.template-section-title {
+  margin: 20px 0 8px;
+  font-size: 14px;
+  color: #222222;
+}
+
+.desk-builder {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  border: 1px solid #dddddd;
+  border-radius: 4px;
+  background: #ffffff;
+}
+
+.desk-builder-devices {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px 16px;
+}
+
+.desk-builder-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.desk-builder-name {
+  font-size: 13px;
+  color: #222222;
+}
+
+.desk-builder-stepper {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.desk-builder-stepper .ui-button {
+  width: 28px;
+  padding: 0;
+}
+
+.desk-builder-count {
+  min-width: 16px;
+  text-align: center;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.desk-builder-desk {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+}
+
+.desk-builder-size {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: #555555;
+}
+
+.desk-builder-size .ui-input {
+  width: 72px;
+}
+
+.desk-builder-notes {
+  margin: 0;
+  padding: 8px 12px 8px 28px;
+  border-radius: 4px;
+  background: #fff8e1;
+  color: #6b4f00;
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.desk-builder-submit {
+  align-self: flex-end;
+}
+
 @media (max-width: 700px) {
   .template-card {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .desk-builder-submit {
+    align-self: stretch;
   }
 }
 
