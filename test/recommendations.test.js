@@ -6,6 +6,7 @@ import {
   applyAllImprovements,
   applyImprovement,
   buildFreeImprovements,
+  buildPowerCompletion,
   buildPurchaseSuggestions,
   buildRecommendations,
 } from '../src/domain/recommendations.js';
@@ -236,59 +237,6 @@ test('recommends a cable purchase for short cable or low slack', () => {
   assert.equal(buyCable.connectionIds[0], 'c1');
 });
 
-test('recommends a power strip purchase when a power strip is fully occupied', () => {
-  const strip = object('strip-1', {
-    type: 'power_strip',
-    modelId: 'power-strip',
-    ports: [
-      { id: 'ac-in', name: 'in', type: 'ac_input', direction: 'input' },
-      { id: 'ac-out-1', name: 'out 1', type: 'ac_output', direction: 'output' },
-      { id: 'ac-out-2', name: 'out 2', type: 'ac_output', direction: 'output' },
-    ],
-  });
-  const pc = (id) => object(id, {
-    ports: [{ id: 'ac-in', name: 'in', type: 'ac_input', direction: 'input' }],
-  });
-  const objects = [strip, pc('pc1'), pc('pc2')];
-  // Occupy all ac_output ports of the strip (ac-out-1 and ac-out-2)
-  const connections = [
-    { id: 'c1', name: 'p1', cableType: 'power', length: 1, fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'pc1', toPortId: 'ac-in' },
-    { id: 'c2', name: 'p2', cableType: 'power', length: 1, fromObjectId: 'strip-1', fromPortId: 'ac-out-2', toObjectId: 'pc2', toPortId: 'ac-in' },
-  ];
-
-  const purchases = buildPurchaseSuggestions(objects, connections);
-  const buyStrip = purchases.find(item => item.code === 'buy_power_strip');
-  assert.ok(buyStrip, 'expected a buy_power_strip purchase suggestion');
-  assert.equal(buyStrip.product.category, 'power');
-  assert.equal(buyStrip.product.modelId, 'power-strip');
-  assert.deepEqual(buyStrip.objectIds, ['strip-1']);
-
-  // Verify it doesn't recommend if the strip has vacant ac_output ports
-  const vacantConnections = [
-    { id: 'c1', name: 'p1', cableType: 'power', length: 1, fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'pc1', toPortId: 'ac-in' },
-  ];
-  const purchasesVacant = buildPurchaseSuggestions(objects, vacantConnections);
-  assert.equal(purchasesVacant.some(item => item.code === 'buy_power_strip'), false);
-});
-
-test('does not count directionally invalid AC outputs as occupied strip capacity', () => {
-  const strip = object('strip-1', {
-    type: 'power_strip',
-    modelId: 'power-strip',
-    ports: [{ id: 'ac-out-1', name: 'AC OUT 1', type: 'ac_output', direction: 'input' }],
-  });
-  const device = object('device-1', {
-    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
-  });
-  const connections = [{
-    id: 'invalid-power', name: 'Invalid power', cableType: 'power', length: 1,
-    fromObjectId: 'strip-1', fromPortId: 'ac-out-1', toObjectId: 'device-1', toPortId: 'ac-in',
-  }];
-
-  const purchases = buildPurchaseSuggestions([strip, device], connections);
-  assert.equal(purchases.some(item => item.code === 'buy_power_strip'), false);
-});
-
 test('suggests powering an unpowered device and the fix creates a valid connection', () => {
   // 1. Create a powered power strip with a vacant ac_output
   const strip = object('strip1', {
@@ -392,12 +340,9 @@ test('does not use an unpowered power strip as a supply source', () => {
   });
 
   const free = buildFreeImprovements(room, [strip, pc], []);
-  const purchases = buildPurchaseSuggestions([strip, pc], []);
 
   assert.equal(free.some(item => item.code === 'auto_power_device'), false,
     'a strip without an upstream power connection cannot safely power another device');
-  assert.ok(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('pc')),
-    'an unpowered strip must not suppress the PC power recommendation');
 });
 
 test('does not use a power strip fed only by an unpowered upstream strip', () => {
@@ -424,12 +369,9 @@ test('does not use a power strip fed only by an unpowered upstream strip', () =>
   }];
 
   const free = buildFreeImprovements(room, [upstreamStrip, downstreamStrip, pc], connections);
-  const purchases = buildPurchaseSuggestions([upstreamStrip, downstreamStrip, pc], connections);
 
   assert.equal(free.some(item => item.code === 'auto_power_device'), false,
     'a downstream strip is unavailable until its upstream supply reaches a root source');
-  assert.ok(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('pc')),
-    'a dead power chain must not suppress the PC power recommendation');
 });
 
 test('does not recommend power fixes for a directionally invalid power input', () => {
@@ -445,9 +387,7 @@ test('does not recommend power fixes for a directionally invalid power input', (
   });
 
   const free = buildFreeImprovements(room, [source, device], []);
-  const purchases = buildPurchaseSuggestions([device], []);
   assert.equal(free.some(item => item.code === 'auto_power_device'), false);
-  assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered'), false);
 });
 
 test('does not use a source with an invalidly directed power input', () => {
@@ -465,12 +405,9 @@ test('does not use a source with an invalidly directed power input', () => {
   });
 
   const free = buildFreeImprovements(room, [invalidSource, pc], []);
-  const purchases = buildPurchaseSuggestions([invalidSource, pc], []);
 
   assert.equal(free.some(item => item.code === 'auto_power_device'), false,
     'a malformed power source must not be treated as an independent root');
-  assert.ok(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('pc')),
-    'a malformed source must not suppress the PC power recommendation');
 });
 
 test('ignores invalid connection occupancy when recommending power fixes', () => {
@@ -502,17 +439,12 @@ test('ignores invalid connection occupancy when recommending power fixes', () =>
     },
   ];
 
-  const recommendations = buildRecommendations({ room, objects: [outlet, source, device], connections });
-  const autoPower = recommendations.freeImprovements.find(item => item.code === 'auto_power_device');
+  const autoPower = buildFreeImprovements(room, [outlet, source, device], connections)
+    .find(item => item.code === 'auto_power_device');
 
   assert.ok(autoPower, 'invalid links must not consume the available source port');
   assert.equal(autoPower.patch.newConnection.fromObjectId, 'source');
   assert.equal(autoPower.patch.newConnection.toObjectId, 'device');
-  assert.equal(
-    recommendations.purchases.some(item => item.code === 'buy_power_for_unpowered'),
-    false,
-    'a valid nearby source must prevent a false purchase recommendation'
-  );
 });
 
 test('auto_power_device with real catalog power-adapter and laptop clears unpowered warning', () => {
@@ -578,10 +510,6 @@ test('a DC device uses its existing but unplugged adapter instead of buying anot
   assert.ok(autoPower, 'the laptop should be connected to the adapter that is already there');
   assert.equal(autoPower.patch.newConnection.fromObjectId, 'adapter');
   assert.match(autoPower.description, /插到插座/, 'the user is reminded to plug the adapter in');
-
-  const purchases = buildPurchaseSuggestions(objects, []);
-  assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('laptop')), false,
-    'no second adapter should be recommended');
 
   const next = applyImprovement({ room, objects, connections: [] }, autoPower);
   assert.equal(next.connections.length, 1);
@@ -1623,14 +1551,13 @@ test('recommendations preserve opaque object and port IDs containing colons', ()
       .filter(issue => issue.code === 'unpowered_input')
       .map(issue => issue.objectIds[0])
       .sort(),
-    free: recommendations.freeImprovements.map(item => ({
+    free: buildFreeImprovements(project.room, project.objects, project.connections, { wiringIssues }).map(item => ({
       code: item.code,
       objectIds: item.objectIds,
       toPortId: item.patch.newConnection?.toPortId,
     })),
     purchases: recommendations.purchases.map(item => ({
       code: item.code,
-      objectIds: item.objectIds,
       product: item.product,
     })),
     total: recommendations.total,
@@ -1642,11 +1569,10 @@ test('recommendations preserve opaque object and port IDs containing colons', ()
       toPortId: 'in:ac',
     }],
     purchases: [{
-      code: 'buy_power_for_unpowered',
-      objectIds: ['device:dc'],
-      product: { category: 'power', modelId: 'power-adapter' },
+      code: 'buy_power_strip_for_outlets',
+      product: { category: 'power', modelId: 'power-strip', quantity: 1 },
     }],
-    total: 2,
+    total: 1,
   });
 });
 
@@ -2085,106 +2011,8 @@ test('App power safety falls back to catalog wattage only for unusable live over
   })));
 });
 
-test('recommends buying a power source when an unpowered device has no nearby free port', () => {
-  // A single unpowered AC device with no power source at all → should recommend a power strip
-  const pc = object('lonely-pc', {
-    modelId: 'desktop-pc',
-    wattage: 350,
-    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
-  });
-  const objects = [pc];
-
-  const purchases = buildPurchaseSuggestions(objects, []);
-  const buyPower = purchases.find(item => item.code === 'buy_power_for_unpowered');
-  assert.ok(buyPower, 'expected a buy_power_for_unpowered suggestion when no power source exists');
-  assert.ok(buyPower.objectIds.includes('lonely-pc'));
-  assert.equal(buyPower.product.category, 'power');
-  assert.equal(buyPower.product.modelId, 'power-strip');
-});
-
-test('recommends a power adapter, not a strip, for an unpowered DC device', () => {
-  const laptop = object('lonely-laptop', {
-    modelId: 'laptop-15',
-    wattage: 65,
-    ports: [{ id: 'dc-in', name: 'DC IN', type: 'dc_input', direction: 'input' }],
-  });
-
-  const buyPower = buildPurchaseSuggestions([laptop], [])
-    .find(item => item.code === 'buy_power_for_unpowered');
-  assert.ok(buyPower, 'expected a buy_power_for_unpowered suggestion for the DC device');
-  assert.deepEqual(buyPower.product, { category: 'power', modelId: 'power-adapter' });
-  assert.match(buyPower.title, /电源适配器/);
-  assert.ok(findModelTemplate(buyPower.product), 'the recommended adapter must exist in the catalog');
-});
-
 test('the catalog no longer offers a UPS to home users', () => {
   assert.equal(findModelTemplate({ modelId: 'ups' }), null);
-});
-
-test('recommends buying a power source when nearest source ports are all occupied', () => {
-  // A wall outlet exists but both ports are occupied; an unpowered PC needs power
-  const outlet = object('outlet-1', {
-    type: 'outlet',
-    modelId: 'wall-outlet',
-    ports: [
-      { id: 'ac-out-1', name: 'Out 1', type: 'ac_output', direction: 'output' },
-      { id: 'ac-out-2', name: 'Out 2', type: 'ac_output', direction: 'output' },
-    ],
-  });
-  const pc = object('lonely-pc', {
-    modelId: 'desktop-pc',
-    wattage: 350,
-    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
-  });
-  const load1 = object('load1', {
-    wattage: 100,
-    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
-  });
-  const load2 = object('load2', {
-    wattage: 100,
-    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
-  });
-  const objects = [outlet, pc, load1, load2];
-  // Both outlet ports occupied
-  const connections = [
-    { id: 'c1', name: 'c1', cableType: 'power', length: 1, fromObjectId: 'outlet-1', fromPortId: 'ac-out-1', toObjectId: 'load1', toPortId: 'ac-in' },
-    { id: 'c2', name: 'c2', cableType: 'power', length: 1, fromObjectId: 'outlet-1', fromPortId: 'ac-out-2', toObjectId: 'load2', toPortId: 'ac-in' },
-  ];
-
-  const purchases = buildPurchaseSuggestions(objects, connections);
-  const buyPower = purchases.find(item => item.code === 'buy_power_for_unpowered');
-  assert.ok(buyPower, 'expected a buy_power_for_unpowered suggestion when power ports are all occupied');
-  assert.ok(buyPower.objectIds.includes('lonely-pc'));
-});
-
-test('does not suggest buying power when unpowered device has a nearby free port', () => {
-  // When a free port exists, auto_power_device (free) handles it — no purchase needed
-  const strip = object('strip1', {
-    type: 'power_strip',
-    modelId: 'power-strip',
-    ports: [
-      { id: 'ac-in', name: 'in', type: 'ac_input', direction: 'input' },
-      { id: 'ac-out-1', name: 'out 1', type: 'ac_output', direction: 'output' },
-    ],
-  });
-  const pc = object('pc1', {
-    modelId: 'desktop-pc',
-    wattage: 350,
-    ports: [{ id: 'ac-in', name: 'AC IN', type: 'ac_input', direction: 'input' }],
-  });
-  const outlet = object('outlet', {
-    type: 'outlet', modelId: 'wall-outlet',
-    ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
-  });
-  const objects = [outlet, strip, pc];
-  const connections = [{
-    id: 'outlet-strip', name: 'Outlet strip power', cableType: 'power', length: 1,
-    fromObjectId: 'outlet', fromPortId: 'ac-out', toObjectId: 'strip1', toPortId: 'ac-in',
-  }];
-
-  const purchases = buildPurchaseSuggestions(objects, connections);
-  assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered'), false,
-    'should not recommend buying power when free port is available nearby');
 });
 
 test('suggests connecting an unconnected HDMI output to a nearby monitor', () => {
@@ -2386,4 +2214,91 @@ test('suggests connecting USB-C display output to nearby monitor with USB-C inpu
   const suggestions2 = buildFreeImprovements(room, next.objects, next.connections);
   assert.equal(suggestions2.some(item => item.code === 'auto_connect_display'), false,
     'suggestion should disappear after USB-C display connection is applied');
+});
+
+test('a device without a drawn power line is assumed powered, not a problem', () => {
+  const outlet = object('outlet', {
+    ports: [{ id: 'ac-out-1', name: '插座 1', type: 'ac_output', direction: 'output' }, { id: 'ac-out-2', name: '插座 2', type: 'ac_output', direction: 'output' }],
+  });
+  const pc = object('pc', { ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }] });
+
+  const unpowered = analyzeProjectWiring([outlet, pc], []).filter(issue => issue.code === 'unpowered_input');
+  assert.equal(unpowered.length, 1);
+  assert.equal(unpowered[0].severity, 'info', 'a missing line in the model is only a note');
+  assert.match(unpowered[0].description, /按已通电处理/);
+
+  const recommendations = buildRecommendations({ room, objects: [outlet, pc], connections: [] });
+  assert.deepEqual(recommendations, { freeImprovements: [], purchases: [], total: 0 },
+    'no "connect power" nag and nothing to buy');
+});
+
+const acDevice = id => object(id, { ports: [{ id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' }] });
+const wallOutlet = id => object(id, {
+  type: 'outlet', modelId: 'wall-outlet',
+  ports: [1, 2].map(n => ({ id: `ac-out-${n}`, name: `插座 ${n}`, type: 'ac_output', direction: 'output' })),
+});
+const sixWayStrip = id => object(id, {
+  type: 'power_strip', modelId: 'power-strip',
+  ports: [
+    { id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' },
+    ...[1, 2, 3, 4, 5, 6].map(n => ({ id: `ac-out-${n}`, name: `插孔 ${n}`, type: 'ac_output', direction: 'output' })),
+  ],
+});
+const outletPurchase = objects => buildPurchaseSuggestions(objects, [])
+  .find(item => item.code === 'buy_power_strip_for_outlets');
+
+test('suggests strips only when devices that need a plug outnumber the modeled outlets', () => {
+  const fourDevices = ['a', 'b', 'c', 'd'].map(acDevice);
+  const short = outletPurchase([wallOutlet('wall'), ...fourDevices]);
+  assert.ok(short);
+  assert.deepEqual(short.product, { category: 'power', modelId: 'power-strip', quantity: 1 });
+  assert.match(short.title, /插孔不够/);
+  assert.match(short.description, /4 个设备需要插电，现有插孔 2 个/);
+
+  assert.equal(outletPurchase([wallOutlet('wall'), sixWayStrip('strip'), ...['a', 'b', 'c', 'd', 'e'].map(acDevice)]), undefined,
+    'a modeled strip adds its outlets (it uses one itself)');
+
+  const many = outletPurchase([wallOutlet('wall'), ...Array.from({ length: 13 }, (_, index) => acDevice(`d${index}`))]);
+  assert.equal(many.product.quantity, 3, 'each extra strip adds five usable outlets');
+});
+
+test('a laptop counts as one plug through its charger unless it is wired to a modeled adapter', () => {
+  const laptop = object('laptop', { ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }] });
+  const adapter = object('adapter', {
+    type: 'power-adapter', modelId: 'power-adapter',
+    ports: [
+      { id: 'ac-in', name: 'AC 插头', type: 'ac_input', direction: 'input' },
+      { id: 'dc-out', name: 'DC 输出', type: 'dc_output', direction: 'output' },
+    ],
+  });
+  const outlet = object('outlet', { type: 'outlet', modelId: 'wall-outlet', ports: [{ id: 'ac-out-1', name: '插座', type: 'ac_output', direction: 'output' }] });
+
+  assert.ok(outletPurchase([outlet, acDevice('pc'), laptop]), 'pc + laptop charger need two plugs, one is modeled');
+  const charged = buildPurchaseSuggestions([outlet, acDevice('pc'), laptop, adapter], [{
+    id: 'adapter-laptop', name: '笔记本电源线', cableType: 'power', length: 1.5,
+    fromObjectId: 'adapter', fromPortId: 'dc-out', toObjectId: 'laptop', toPortId: 'dc-in',
+  }]).find(item => item.code === 'buy_power_strip_for_outlets');
+  assert.ok(charged, 'the adapter now takes the plug instead of the laptop, still two plugs for one outlet');
+});
+
+test('no outlet check when the user has not modeled any outlets', () => {
+  assert.equal(outletPurchase(['a', 'b', 'c'].map(acDevice)), undefined);
+});
+
+test('buildPowerCompletion wires a newly added device to the nearest free outlet or strip', () => {
+  const outlet = { ...wallOutlet('wall'), position: { x: -1, y: 0, z: 0.3 } };
+  const strip = { ...sixWayStrip('strip'), position: { x: 1, y: 0, z: 0.05 } };
+  const pc = { ...acDevice('pc'), position: { x: 1.4, y: 0, z: 0.25 } };
+  const connections = [{
+    id: 'wall-strip', name: '插排电源线', cableType: 'power', length: 3,
+    fromObjectId: 'wall', fromPortId: 'ac-out-1', toObjectId: 'strip', toPortId: 'ac-in',
+  }];
+
+  const connection = buildPowerCompletion({ room, objects: [outlet, strip, pc], connections }, 'pc');
+  assert.equal(connection.fromObjectId, 'strip');
+  assert.equal(connection.toObjectId, 'pc');
+  assert.equal(connection.cableType, 'power');
+
+  assert.equal(buildPowerCompletion({ room, objects: [pc], connections: [] }, 'pc'), null, 'nothing to plug into');
+  assert.equal(buildPowerCompletion({ room, objects: [outlet, strip, pc], connections }, 'missing'), null);
 });

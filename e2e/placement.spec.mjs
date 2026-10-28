@@ -22,3 +22,25 @@ test('devices added from the library land in free spots on and around the desk',
   await expect(page.getByRole('button', { name: '布局检查', exact: true })).toBeVisible();
   expect(evidence).toEqual({ errors: [], writes: [] });
 });
+
+test('a newly added device gets its power line drawn automatically', async ({ page }) => {
+  const evidence = await openProject(page, []);
+  const library = page.getByPlaceholder('搜索设备名称、类型、型号...');
+  for (const name of ['书桌', '墙壁插座', '插排', '台式主机']) {
+    const openLibrary = page.getByRole('button', { name: '展开资产库', exact: true });
+    if (await openLibrary.isVisible()) await openLibrary.click();
+    await library.fill(name);
+    await page.getByRole('button', { name: new RegExp(`^${name}`) }).click();
+  }
+
+  await page.getByRole('button', { name: '所有连接', exact: true }).click();
+  const list = page.getByRole('dialog', { name: '全部连接清单', exact: true });
+  await expect(list).toContainText('插排电源线');
+  await expect(list).toContainText('台式主机电源线');
+  await list.getByRole('button', { name: /关闭/ }).click();
+
+  // Nothing about power is reported as a problem or a purchase.
+  await expect(page.getByRole('button', { name: '布线检查', exact: true })).toBeVisible();
+  await expect(page.getByRole('button', { name: '改进建议', exact: true })).toBeVisible();
+  expect(evidence).toEqual({ errors: [], writes: [] });
+});

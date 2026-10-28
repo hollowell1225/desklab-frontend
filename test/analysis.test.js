@@ -41,7 +41,8 @@ test('reports short cables and unconnected power inputs', () => {
   const issues = analyzeProjectWiring(objects, [connection('c1', 'source', 'out', 'target', 'in', 4)]);
   assert.ok(issues.some(issue => issue.code === 'short_cable'));
   assert.ok(issues.some(issue => issue.id === 'unpowered:unpowered:in'));
-  assert.deepEqual(summarizeWiringIssues(issues), { error: 0, warning: 2, info: 0 });
+  // A missing power line is only a note: the real device is plugged in.
+  assert.deepEqual(summarizeWiringIssues(issues), { error: 0, warning: 1, info: 1 });
 });
 
 test('reports cables that can connect but lack recommended service slack', () => {

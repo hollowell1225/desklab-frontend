@@ -41,7 +41,7 @@ import { assertProjectImportSize, getProjectImportByteLength } from './domain/pr
 import { getPurchaseGuidance } from './domain/purchase-guidance.js';
 import { DESK_TEMPLATES, buildTemplateScene } from './domain/desk-templates.js';
 import { buildShoppingList } from './domain/shopping-list.js';
-import { applyAllAvailableImprovements, applyAllImprovements, applyImprovement, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
+import { applyAllAvailableImprovements, applyAllImprovements, applyImprovement, buildFreeImprovements, buildPowerCompletion, buildRecommendations } from './domain/recommendations.js';
 import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
 import PropertiesEditor from './components/PropertiesEditor.jsx';
@@ -918,10 +918,15 @@ export default function App() {
     }
 
     recordHistory();
-    setObjects([...objects, result.object]);
+    const nextObjects = [...objects, result.object];
+    setObjects(nextObjects);
+    // Real devices are plugged in: draw the new device's power line for the
+    // user when there is a free outlet or strip, so load checks keep working.
+    const powerLine = buildPowerCompletion({ room, objects: nextObjects, connections }, result.object.id);
+    if (powerLine) setConnections([...connections, powerLine]);
     setSelectedObjectId(result.object.id);
     return result.object;
-  }, [objects, projectEditable, recordHistory, room, showStatus]);
+  }, [connections, objects, projectEditable, recordHistory, room, showStatus]);
 
   const handleAddRecommendedDevice = useCallback((modelId, categoryId) => {
     if (!projectEditable) return;
@@ -937,10 +942,6 @@ export default function App() {
 
   const handleAddRecommendedPowerStrip = useCallback(() => {
     handleAddRecommendedDevice('power-strip', 'power');
-  }, [handleAddRecommendedDevice]);
-
-  const handleAddRecommendedPowerAdapter = useCallback(() => {
-    handleAddRecommendedDevice('power-adapter', 'power');
   }, [handleAddRecommendedDevice]);
 
   const handleUpdateRoom = () => {
@@ -1047,17 +1048,6 @@ export default function App() {
         ? { ...connection, length: suggestion.patch.length }
         : connection));
     showStatus({ text: `线材已延长到约 ${suggestion.patch.length}m`, type: 'success' });
-  };
-
-  const handleAutoConnectPower = (suggestionId) => {
-    if (!projectEditable) return;
-    const suggestion = buildFreeImprovements(room, objects, connections)
-      .find(item => item.id === suggestionId);
-    if (!suggestion) return;
-    recordHistory();
-    const next = applyImprovement({ room, objects, connections }, suggestion);
-    setConnections(next.connections);
-    showStatus({ text: '已自动连接电源', type: 'success' });
   };
 
   const handleAutoConnectNetwork = (suggestionId) => {
@@ -2177,16 +2167,6 @@ export default function App() {
                                   延长线材
                                 </button>
                               )}
-                              {issue.code === 'auto_power_device' && (
-                                <button
-                                  type="button"
-                                  className="ui-button ui-button-primary"
-                                  onClick={() => handleAutoConnectPower(issue.id)}
-                                  disabled={!projectEditable}
-                                >
-                                  连接电源
-                                </button>
-                              )}
                               {issue.code === 'auto_network_device' && (
                                 <button
                                   type="button"
@@ -2263,7 +2243,7 @@ export default function App() {
                                   采纳并更新长度
                                 </button>
                               )}
-                              {issue.code === 'buy_power_strip' && (
+                              {issue.code === 'buy_power_strip_for_outlets' && (
                                 <button
                                   type="button"
                                   className="ui-button ui-button-primary"
@@ -2271,22 +2251,6 @@ export default function App() {
                                   disabled={!projectEditable}
                                 >
                                   加购插排
-                                </button>
-                              )}
-                              {issue.code === 'buy_power_for_unpowered' && (
-                                <button
-                                  type="button"
-                                  className="ui-button ui-button-primary"
-                                  onClick={() => {
-                                    if (issue.product?.modelId === 'power-adapter') {
-                                      handleAddRecommendedPowerAdapter();
-                                    } else {
-                                      handleAddRecommendedPowerStrip();
-                                    }
-                                  }}
-                                  disabled={!projectEditable}
-                                >
-                                  {issue.product?.modelId === 'power-adapter' ? '加购电源适配器' : '加购插排'}
                                 </button>
                               )}
                               {issue.code === 'split_overloaded_power' && (

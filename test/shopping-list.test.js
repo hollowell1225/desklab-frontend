@@ -31,8 +31,7 @@ test('the shopping list merges duplicates and keeps alternatives optional', () =
     { code: 'buy_cable', product: { category: 'cable', modelId: 'hdmi', length: 3 } },
     { code: 'buy_cable', product: { category: 'cable', modelId: 'hdmi', length: 3 } },
     { code: 'buy_cable', product: { category: 'cable', modelId: 'ethernet', length: 5 } },
-    { code: 'buy_power_for_unpowered', product: { category: 'power', modelId: 'power-adapter' } },
-    { code: 'buy_power_strip', product: { category: 'power', modelId: 'power-strip' } },
+    { code: 'buy_power_strip_for_outlets', product: { category: 'power', modelId: 'power-strip', quantity: 1 } },
     { code: 'split_overloaded_power', product: { category: 'power', modelId: 'power-strip' } },
     { code: 'fix_power_strip_chain', product: { category: 'power', modelId: 'power-strip' } },
   ]);
@@ -40,7 +39,6 @@ test('the shopping list merges duplicates and keeps alternatives optional', () =
   assert.deepEqual(list.items.map(({ name, quantity, optional }) => ({ name, quantity, optional })), [
     { name: '3m HDMI 线', quantity: 2, optional: false },
     { name: '5m 网线', quantity: 1, optional: false },
-    { name: '电源适配器', quantity: 1, optional: false },
     { name: '插排', quantity: 1, optional: false },
     { name: '插排', quantity: 2, optional: true },
   ]);
@@ -48,24 +46,17 @@ test('the shopping list merges duplicates and keeps alternatives optional', () =
     'DeskLab 购物清单',
     '- 3m HDMI 线 ×2',
     '- 5m 网线 ×1',
-    '- 电源适配器 ×1',
     '- 插排 ×1',
     '可选：',
     '- 插排 ×2（插孔不够或需要分流时）',
   ].join('\n'));
 });
 
-test('one strip covers several unpowered devices, adapters stay one per device', () => {
-  const strip = { code: 'buy_power_for_unpowered', product: { category: 'power', modelId: 'power-strip' } };
-  const adapter = { code: 'buy_power_for_unpowered', product: { category: 'power', modelId: 'power-adapter' } };
-  const quantities = purchases => Object.fromEntries(buildShoppingList(purchases).items.map(item => [item.name, item.quantity]));
-
-  assert.deepEqual(quantities([strip, strip, adapter, adapter]), { 插排: 1, 电源适配器: 2 });
-  assert.deepEqual(quantities(Array(7).fill(strip)), { 插排: 2 }, 'a strip has six outlets');
-  assert.deepEqual(quantities([
-    strip, strip,
-    { code: 'buy_power_strip', product: { category: 'power', modelId: 'power-strip' } },
-  ]), { 插排: 1 }, 'the strip bought for a full strip also has room for these devices');
+test('a suggestion that names a quantity is listed with that quantity', () => {
+  const list = buildShoppingList([
+    { code: 'buy_power_strip_for_outlets', product: { category: 'power', modelId: 'power-strip', quantity: 3 } },
+  ]);
+  assert.deepEqual(list.items.map(({ name, quantity }) => ({ name, quantity })), [{ name: '插排', quantity: 3 }]);
 });
 
 test('an empty purchase list gives an empty shopping list', () => {
@@ -74,6 +65,6 @@ test('an empty purchase list gives an empty shopping list', () => {
 });
 
 test('unknown products are ignored rather than shown as raw ids', () => {
-  const list = buildShoppingList([{ code: 'buy_power_strip', product: { category: 'power', modelId: 'ups' } }]);
+  const list = buildShoppingList([{ code: 'buy_power_strip_for_outlets', product: { category: 'power', modelId: 'ups' } }]);
   assert.deepEqual(list.items, []);
 });

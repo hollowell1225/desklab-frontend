@@ -57,18 +57,25 @@ test('applying free fixes keeps manual problems visible and supports undo and re
   expect(evidence).toEqual({ errors: [], writes: [] });
 });
 
+// A computer and a monitor 2m apart joined by a 0.5m HDMI cable: a real wiring
+// problem with a matching purchase (a longer cable).
+const shortHdmiSetup = () => [
+  { ...box('主机', -1), type: 'device', ports: [{ id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' }] },
+  { ...box('显示器', 1), type: 'device', ports: [{ id: 'hdmi-in', name: 'HDMI 输入', type: 'hdmi', direction: 'input' }] },
+];
+const shortHdmiCable = {
+  id: 'short-hdmi', name: '太短的 HDMI 线', cableType: 'hdmi', length: 0.5,
+  fromObjectId: '主机', fromPortId: 'hdmi-out', toObjectId: '显示器', toPortId: 'hdmi-in',
+};
+
 test('wiring problems remain reachable alongside purchase suggestions', async ({ page }) => {
-  const device = {
-    ...box('待供电设备'), type: 'device',
-    ports: [{ id: 'power-in', name: '电源输入', type: 'ac_input', direction: 'input' }],
-  };
-  const evidence = await openProject(page, [device]);
+  const evidence = await openProject(page, shortHdmiSetup(), [shortHdmiCable]);
   await page.getByRole('button', { name: /^改进建议/ }).click();
   const dialog = page.getByRole('dialog');
   await expect(dialog.getByText('加购建议 1', { exact: true })).toBeVisible();
   await dialog.getByRole('button', { name: '查看布线问题 (1)', exact: true }).click();
   await expect(page.getByRole('dialog')).toHaveCount(1);
-  await expect(page.getByRole('dialog', { name: '布线检查', exact: true })).toContainText('待供电设备');
+  await expect(page.getByRole('dialog', { name: '布线检查', exact: true })).toContainText('太短的 HDMI 线');
   await expect(page.getByRole('button', { name: '撤销', exact: true })).toBeDisabled();
   expect(evidence).toEqual({ errors: [], writes: [] });
 });
@@ -85,25 +92,29 @@ test('a checked layout describes the scope of the result without guaranteeing pe
 });
 
 test('purchase suggestions are summarized as a copyable shopping list', async ({ page, context }, info) => {
-  const device = (name, x) => ({
+  // Three plugs for one two-socket wall outlet, plus the too-short HDMI cable.
+  const wallOutlet = {
+    id: '墙插', name: '墙插', type: 'outlet', modelId: 'wall-outlet', shape: 'box',
+    position: { x: 0, y: 4.99, z: 0.3 }, rotation: { x: 0, y: 0, z: 0 }, scale: { x: 0.08, y: 0.02, z: 0.08 },
+    ports: [1, 2].map(n => ({ id: `ac-out-${n}`, name: `插座 ${n}`, type: 'ac_output', direction: 'output' })),
+  };
+  const plugged = (name, x) => ({
     ...box(name, x), type: 'device',
     ports: [{ id: 'power-in', name: '电源输入', type: 'ac_input', direction: 'input' }],
   });
-  const laptop = {
-    ...box('笔记本', 4), type: 'laptop',
-    ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }],
-  };
-  const evidence = await openProject(page, [device('主机', -2), device('显示器', 2), laptop]);
+  const evidence = await openProject(page,
+    [...shortHdmiSetup(), wallOutlet, plugged('音箱', -3), plugged('台灯', 3), plugged('充电座', -5 + 0.5)],
+    [shortHdmiCable]);
   await page.getByRole('button', { name: /^改进建议/ }).click();
   const list = page.getByRole('dialog').getByRole('group', { name: '购物清单' });
-  await expect(list.getByRole('listitem')).toHaveText(['插排×1', '电源适配器×1']);
+  await expect(list.getByRole('listitem')).toHaveText(['3m HDMI 线×1', '插排×1']);
 
   if (info.project.name === 'desktop') {
     await context.grantPermissions(['clipboard-read', 'clipboard-write']);
     await list.getByRole('button', { name: '复制清单', exact: true }).click();
     // The OS clipboard may store line breaks as CRLF.
     await expect.poll(() => page.evaluate(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, '\n')))
-      .toBe('DeskLab 购物清单\n- 插排 ×1\n- 电源适配器 ×1');
+      .toBe('DeskLab 购物清单\n- 3m HDMI 线 ×1\n- 插排 ×1');
   }
   expect(evidence).toEqual({ errors: [], writes: [] });
 });

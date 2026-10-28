@@ -691,12 +691,14 @@ export function analyzeProjectWiring(rawObjects, rawConnections) {
       }
       if (!POWER_INPUT_TYPES.has(port.type)) continue;
       if (getOccupiedPort(occupiedPorts, object.id, port.id)) continue;
+      // In reality the user's devices are plugged in; a missing line only means
+      // the model is incomplete, so this is a note rather than a problem.
       issues.push({
         id: `unpowered:${object.id}:${port.id}`,
         code: 'unpowered_input',
-        severity: 'warning',
-        title: `${object.name} 的电源输入未连接`,
-        description: `端口“${port.name}”当前没有电源连接。若设备无需供电，可忽略此提示。`,
+        severity: 'info',
+        title: `${object.name} 未画电源线`,
+        description: `端口“${port.name}”还没有画电源线，系统按已通电处理。画上电源线后可以计算插排负载。`,
         connectionIds: [],
         objectIds: [object.id],
       });

@@ -6,6 +6,7 @@ import {
 import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad, getEffectiveMaxLoad, classifyPowerLoad } from './analysis.js';
 import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible, arePortTypesCompatible, isPortDirectionConsistent, inferCableType, standardCableLength, CABLE_TYPE_NAMES } from './connections.js';
 import { validateAndConstrainObject } from './geometry.js';
+import { findModelTemplate } from './catalog.js';
 import { getPortRecords } from './port-collections.js';
 import { getRecordItems } from './record-collections.js';
 
@@ -472,7 +473,6 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
   const actionableConnections = getActionableConnectionRecords(connections);
   const suggestions = [];
   const seen = new Set();
-  const objectsById = new Map(actionableObjects.map(object => [object.id, object]));
   const wiringIssues = Array.isArray(options.wiringIssues)
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
@@ -499,7 +499,6 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       toPorts.add(connection.toPortId);
     }
   }
-  const poweredObjectIds = getPoweredObjectIds(actionableObjects, powerGraph);
 
   // 2. Original cable warning/short check
   for (const issue of wiringIssues) {
@@ -541,30 +540,32 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
     }
   }
 
-  // 3. Buy a power strip if an existing power strip is fully occupied
-  for (const object of actionableObjects) {
-    const isPowerStrip = object?.modelId === 'power-strip' || object?.type === 'power_strip';
-    if (isPowerStrip) {
-      const acOutputs = getActionablePortRecords(object).filter(p =>
-        p.type === 'ac_output' && isPortDirectionConsistent(p)
-      );
-      if (acOutputs.length > 0) {
-        const occupied = occupiedPorts.get(object.id) || new Set();
-        const allOccupied = acOutputs.every(p => occupied.has(p.id));
-        if (allOccupied) {
-          const key = `buy-power-strip:${object.id}`;
-          if (!seen.has(key)) {
-            seen.add(key);
-            suggestions.push({
-              id: key,
-              code: 'buy_power_strip',
-              title: `考虑为“${object.name}”加购新插排`,
-              description: `插排“${object.name}”的插孔已被全部占满。建议加购一个新插排以扩展电源接口。`,
-              objectIds: [object.id],
-              product: { category: 'power', modelId: 'power-strip' },
-            });
-          }
-        }
+  // 3. 插孔够不够：每个要插电的设备占一个插孔。没画适配器的笔记本等 DC
+  // 设备按自带充电器算一个插孔；接在已画适配器上的，由适配器占插孔。
+  // 没画任何插座时不做判断，避免凭空猜测用户家里的插座数量。
+  {
+    const outletCount = actionableObjects.reduce((count, object) => count + getActionablePortRecords(object)
+      .filter(port => port.type === 'ac_output' && isPortDirectionConsistent(port)).length, 0);
+    if (outletCount > 0) {
+      const plugsNeeded = actionableObjects.reduce((count, object) => {
+        const ports = getActionablePortRecords(object).filter(port => isPortDirectionConsistent(port));
+        if (ports.some(port => port.type === 'ac_input')) return count + 1;
+        const dcInputs = ports.filter(port => port.type === 'dc_input');
+        const chargedByModeledAdapter = dcInputs.some(port => occupiedPorts.get(object.id)?.has(port.id));
+        return dcInputs.length > 0 && !chargedByModeledAdapter ? count + 1 : count;
+      }, 0);
+      if (plugsNeeded > outletCount) {
+        const stripOutlets = (findModelTemplate({ modelId: 'power-strip' })?.ports || [])
+          .filter(port => port.type === 'ac_output').length || 6;
+        // A new strip takes one outlet itself and adds its own.
+        const quantity = Math.ceil((plugsNeeded - outletCount) / Math.max(1, stripOutlets - 1));
+        suggestions.push({
+          id: 'buy-power-strip-for-outlets',
+          code: 'buy_power_strip_for_outlets',
+          title: `插孔不够，建议加购 ${quantity} 个插排`,
+          description: `桌面上有 ${plugsNeeded} 个设备需要插电，现有插孔 ${outletCount} 个。一个 ${stripOutlets} 孔插排插上后可多出 ${stripOutlets - 1} 个插孔。`,
+          product: { category: 'power', modelId: 'power-strip', quantity },
+        });
       }
     }
   }
@@ -587,62 +588,6 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
             product: { category: 'power', modelId: 'power-strip' },
           });
         }
-      }
-    }
-  }
-
-  // 5. 无电源可接时建议加购
-  for (const issue of wiringIssues) {
-    if (issue.code !== 'unpowered_input') continue;
-    const endpoint = resolveUnpoweredInput(issue, objectsById);
-    if (!endpoint) continue;
-    const { object, port } = endpoint;
-
-    // Skip objects that can supply power — their own unpowered input is valid
-    // (wall outlets, power strips, adapters — they need external power too,
-    // but they are infrastructure, not endpoint devices).
-    const hasOutputPort = getPortRecords(object).some(
-      p => p.direction === 'output'
-        && (p.type === 'ac_output' || p.type === 'dc_output')
-    );
-    if (hasOutputPort) continue;
-
-    if (!isPortDirectionConsistent(port)) continue;
-
-    // Check if there's a nearby power source with a free compatible port. A DC
-    // device's unplugged adapter still counts: it needs plugging in, not a twin.
-    let hasNearbySource = false;
-    for (const candidate of actionableObjects) {
-      if (candidate.id === object.id) continue;
-      if (port.type !== 'dc_input' && requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
-      for (const candidatePort of getActionablePortRecords(candidate)) {
-        const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
-        if (hasFromDir &&
-            isPortDirectionConsistent(candidatePort) &&
-            !(occupiedPorts.get(candidate.id)?.has(candidatePort.id)) &&
-            arePortTypesCompatible(candidatePort.type, port.type)) {
-          hasNearbySource = true;
-          break;
-        }
-      }
-      if (hasNearbySource) break;
-    }
-
-    if (!hasNearbySource) {
-      const key = `buy-power-unpowered:${object.id}`;
-      if (!seen.has(key)) {
-        seen.add(key);
-        // AC devices plug into a strip; DC devices (laptops, routers) need an adapter.
-        const modelId = port.type === 'ac_input' ? 'power-strip' : 'power-adapter';
-        const productName = modelId === 'power-strip' ? '插排' : '电源适配器';
-        suggestions.push({
-          id: key,
-          code: 'buy_power_for_unpowered',
-          title: `为“${object.name}”加购${productName}`,
-          description: `设备“${object.name}”的电源输入未连接，且附近没有可用的空闲电源端口。建议加购${productName}以扩展供电能力。`,
-          objectIds: [object.id],
-          product: { category: 'power', modelId },
-        });
       }
     }
   }
@@ -782,6 +727,20 @@ export function applyAllAvailableImprovements(project) {
 }
 
 /**
+ * The power line to draw for one device, or null: used to complete the model
+ * automatically when a device is added, so load checks keep working without
+ * the user drawing every power cable by hand.
+ */
+export function buildPowerCompletion(project = {}, objectId) {
+  const { room, objects, connections } = project || {};
+  if (!room) return null;
+  const suggestion = buildFreeImprovements(room, objects || [], connections || [])
+    .find(candidate => candidate.code === 'auto_power_device'
+      && candidate.patch.newConnection.toObjectId === objectId);
+  return suggestion ? { ...suggestion.patch.newConnection } : null;
+}
+
+/**
  * Project-shaped facade: derive every recommendation for a project in one call.
  * Returns { freeImprovements, purchases, total } so the UI can render a panel
  * and badge without orchestrating the individual builders.
@@ -794,8 +753,11 @@ export function buildRecommendations(project = {}, options = {}) {
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
   const powerGraph = options.powerGraph || buildPowerGraph(objects, connections);
+  // Drawing power lines only completes the model; a user's real devices are
+  // already plugged in, so it is not offered as an improvement.
   const freeImprovements = room
     ? buildFreeImprovements(room, objects, connections, { wiringIssues, powerGraph })
+      .filter(suggestion => suggestion.code !== 'auto_power_device')
     : [];
   const purchases = buildPurchaseSuggestions(objects, connections, { wiringIssues, powerGraph });
   return {
