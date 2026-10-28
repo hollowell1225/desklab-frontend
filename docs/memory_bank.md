@@ -115,7 +115,7 @@ npm start
 ## Current Git State (2026-10-28 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `ff3d49a fix: treat a missing power line as unmodeled, not as a problem`
+- Feature HEAD: `4a991fc fix: complete video and network lines instead of suggesting them`
 - Commits after `a8d5489` (2026-10-28) are local only until the product owner
   approves a push.
 - Untracked: none expected.
@@ -2507,9 +2507,17 @@ verified (unit, UI, lint, build) and committed separately; nothing pushed.
   outlet check `buy_power_strip_for_outlets` (plugs needed vs modeled outlets;
   a laptop without a modeled adapter counts once; no outlets modeled → no
   check). Verification: `npm test` 298/298, `npm run test:ui` 24/24, lint, build.
-- Open question for the product owner: the same principle probably applies to
-  display and network lines (a user's monitor is connected), which today are
-  still offered as free fixes rather than auto-completed.
+- `4a991fc` Same principle applied to video and network lines (product owner
+  approved): `buildRecommendations` hides `auto_connect_display` and
+  `auto_network_device` too (`MODEL_COMPLETION_CODES`).
+  `buildPowerCompletion` became `buildConnectionCompletion(project, objectId)`,
+  which returns all power/video/network lines for a newly added device over up
+  to 5 passes (a new strip is plugged in first, then powers nearby devices);
+  the new device is ordered first so its own ports get the nearest free
+  sockets. Network completion no longer requires the router's power line to
+  be drawn. Engine robustness tests use a local `engineRecommendations`
+  helper. Verification: `npm test` 301/301, `npm run test:ui` 26/26, lint,
+  build.
 - Test notes: the Windows clipboard returns CRLF, so the shopping-list UI test
   normalizes line endings. Some source files are CRLF in the working tree;
   scripted edits must match the file's line endings.
@@ -2613,8 +2621,8 @@ Test files under `test/` mirror the domain modules.
 | `drop_to_support` | 1 | Drop floating object to support/floor |
 | `snap_outlet_to_wall` | 2 | Snap wall outlet to nearest wall |
 | `auto_power_device` | 3 | Connect unpowered device to nearest power source (engine only; hidden from `buildRecommendations`, used by `buildPowerCompletion` on add) |
-| `auto_network_device` | 4 | Connect an unnetworked device to the nearest powered router |
-| `auto_connect_display` | 5 | Connect HDMI/DP/USB-C output to nearest monitor |
+| `auto_network_device` | 4 | Connect an unnetworked device to the nearest router (engine only, like power) |
+| `auto_connect_display` | 5 | Connect HDMI/DP/USB-C output to nearest monitor, one cable per pair (engine only, like power) |
 | `extend_cable` | 6 | Extend cable to recommended length |
 
 **Purchase suggestions** (`buildPurchaseSuggestions(objects, connections)`):
@@ -2673,8 +2681,8 @@ Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 298 domain tests
-npm run test:ui   # 24 Chrome UI cases; isolated fixtures, no real backend writes
+npm test          # 301 domain tests
+npm run test:ui   # 26 Chrome UI cases; isolated fixtures, no real backend writes
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
