@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-import { getLegacyModelInfo, findModelTemplate } from '../domain/catalog.js';
+import { describeCatalogModel, findModelTemplate, getLegacyModelInfo } from '../domain/catalog.js';
 import { computeDevicePowerLoad, classifyPowerLoad, getEffectiveMaxLoad, getEffectiveWattage } from '../domain/analysis.js';
 import {
   commitNumericInput,
@@ -75,6 +75,8 @@ function PropertyField({
 export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall, objects = [], connections = [] }) {
   const isWallOutlet = obj.modelId === 'wall-outlet' || obj.type === 'outlet';
   const template = findModelTemplate(obj);
+  // Older projects may only carry a legacy type such as 'pc' or 'table'.
+  const displayTemplate = template || findModelTemplate({ modelId: getLegacyModelInfo(obj.type).modelId });
 
   const hasPowerInput = obj.ports?.some(p => p.type === 'ac_input' || p.type === 'dc_input') 
     || template?.ports?.some(p => p.type === 'ac_input' || p.type === 'dc_input')
@@ -97,9 +99,12 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
         <PropertyField type="text" label="名称" value={obj.name} onChange={value => updateObject({ name: value })} />
         <div style={{ paddingLeft: '78px', marginTop: '8px' }}>
           <div className="panel-text-readonly">
-            类别: {obj.category || getLegacyModelInfo(obj.type).category}<br />
-            模型: {obj.modelId || getLegacyModelInfo(obj.type).modelId}<br />
-            类型: {obj.type}
+            {displayTemplate ? (
+              <>
+                设备：{displayTemplate.displayName}<br />
+                {describeCatalogModel(displayTemplate)}
+              </>
+            ) : '自定义设备'}
           </div>
         </div>
       </div>
@@ -107,7 +112,7 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
       {/* 电力与负载配置 */}
       {(hasPowerInput || hasPowerOutput) && (
         <div className="panel-section">
-          <div className="panel-section-title">电力与负载 (Power & Load)</div>
+          <div className="panel-section-title">用电</div>
           {hasPowerInput && (
             <PropertyField 
               label="工作功耗 (W)" 
@@ -121,7 +126,7 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
           {hasPowerOutput && (
             <>
               <PropertyField 
-                label="安全承载 (W)" 
+                label="最大负载 (W)"
                 step={50} 
                 min={0} 
                 decimals={0} 
@@ -131,7 +136,7 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
               {maxLoad > 0 && (
                 <div style={{ paddingLeft: '78px', marginTop: '8px' }}>
                   <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '11px', color: '#888' }}>
-                    <span>外接负载: <strong>{currentLoad}W</strong> / {maxLoad}W</span>
+                    <span>已接负载：<strong>{currentLoad}W</strong> / {maxLoad}W</span>
                     <span style={{ fontWeight: 'bold', color: loadColor }}>
                       {percent}%
                     </span>
@@ -161,10 +166,10 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
       )}
 
       <div className="panel-section">
-        <div className="panel-section-title">位置 (Position)</div>
-        <PropertyField label="X" step={0.1} decimals={3} value={obj.position.x} onChange={value => updateObject({ position: { x: value } })} />
-        <PropertyField label="Y" step={0.1} decimals={3} value={obj.position.y} onChange={value => updateObject({ position: { y: value } })} />
-        <PropertyField label="Z" step={0.1} decimals={3} value={obj.position.z} onChange={value => updateObject({ position: { z: value } })} />
+        <div className="panel-section-title">位置 (m)</div>
+        <PropertyField label="左右 X" step={0.1} decimals={3} value={obj.position.x} onChange={value => updateObject({ position: { x: value } })} />
+        <PropertyField label="前后 Y" step={0.1} decimals={3} value={obj.position.y} onChange={value => updateObject({ position: { y: value } })} />
+        <PropertyField label="上下 Z" step={0.1} decimals={3} value={obj.position.z} onChange={value => updateObject({ position: { z: value } })} />
         {isWallOutlet && (
           <button type="button" className="ui-button" onClick={onSnapToWall} style={{ width: '100%', marginTop: '8px' }}>
             吸附到最近墙面
@@ -173,15 +178,15 @@ export default function PropertiesEditor({ obj, updateObject, room, onSnapToWall
       </div>
 
       <div className="panel-section">
-        <div className="panel-section-title">旋转 (Rotation)</div>
-        <PropertyField label="Z 轴 (°)" step={15} min={0} max={360} decimals={1} value={obj.rotation?.z || 0} onChange={value => updateObject({ rotation: { z: value } })} />
+        <div className="panel-section-title">朝向</div>
+        <PropertyField label="旋转 (°)" step={15} min={0} max={360} decimals={1} value={obj.rotation?.z || 0} onChange={value => updateObject({ rotation: { z: value } })} />
       </div>
 
       <div className="panel-section">
-        <div className="panel-section-title">尺寸 (Scale)</div>
-        <PropertyField label="X" min={0.05} max={room.length} step={0.1} decimals={3} value={obj.scale.x} onChange={value => updateObject({ scale: { x: value } })} />
-        <PropertyField label="Y" min={0.05} max={room.width} step={0.1} decimals={3} value={obj.scale.y} onChange={value => updateObject({ scale: { y: value } })} />
-        <PropertyField label="Z" min={0.05} max={room.height} step={0.1} decimals={3} value={obj.scale.z} onChange={value => updateObject({ scale: { z: value } })} />
+        <div className="panel-section-title">尺寸 (m)</div>
+        <PropertyField label="长 X" min={0.05} max={room.length} step={0.1} decimals={3} value={obj.scale.x} onChange={value => updateObject({ scale: { x: value } })} />
+        <PropertyField label="宽 Y" min={0.05} max={room.width} step={0.1} decimals={3} value={obj.scale.y} onChange={value => updateObject({ scale: { y: value } })} />
+        <PropertyField label="高 Z" min={0.05} max={room.height} step={0.1} decimals={3} value={obj.scale.z} onChange={value => updateObject({ scale: { z: value } })} />
       </div>
     </div>
   );
