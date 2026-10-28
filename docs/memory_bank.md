@@ -26,6 +26,12 @@ Product decisions from the product owner (2026-10-25):
   source of truth; the LLM is expected to build on it. Provider is undecided.
 - The roadmap is being revised step by step with the product owner. Report to
   them after each completed feature slice.
+- Principle (2026-10-28): desk-setup users' real devices already work. A
+  connection missing from the model (for example no power line drawn) means
+  the model is incomplete, not that the user has a problem. Never report it as
+  a warning or recommend buying something because of it; complete the model
+  for the user instead. Only flag what is a real-world concern (too few
+  outlets, overload, daisy-chained strips, cables too short).
 
 The current work mode is autonomous engineering:
 
@@ -109,7 +115,7 @@ npm start
 ## Current Git State (2026-10-28 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `7414a7c feat: place newly added devices in free spots around the desk`
+- Feature HEAD: `ff3d49a fix: treat a missing power line as unmodeled, not as a problem`
 - Commits after `a8d5489` (2026-10-28) are local only until the product owner
   approves a push.
 - Untracked: none expected.
@@ -2493,6 +2499,17 @@ verified (unit, UI, lint, build) and committed separately; nothing pushed.
   22/22, lint, build (known large-chunk warning). Playwright screenshots were
   taken of the templates, picker, form, shopping list, asset library,
   properties panel, and devices added to a template desk.
+- `ff3d49a` (after product-owner feedback, see the principle under Mission):
+  `unpowered_input` is an info note ('未画电源线，系统按已通电处理');
+  `buildRecommendations` no longer offers `auto_power_device`; adding a device
+  draws its power line via `buildPowerCompletion()` when a free outlet or strip
+  exists; `buy_power_for_unpowered` and `buy_power_strip` were replaced by one
+  outlet check `buy_power_strip_for_outlets` (plugs needed vs modeled outlets;
+  a laptop without a modeled adapter counts once; no outlets modeled → no
+  check). Verification: `npm test` 298/298, `npm run test:ui` 24/24, lint, build.
+- Open question for the product owner: the same principle probably applies to
+  display and network lines (a user's monitor is connected), which today are
+  still offered as free fixes rather than auto-completed.
 - Test notes: the Windows clipboard returns CRLF, so the shopping-list UI test
   normalizes line endings. Some source files are CRLF in the working tree;
   scripted edits must match the file's line endings.
@@ -2595,7 +2612,7 @@ Test files under `test/` mirror the domain modules.
 | `move_inside_room` | 0 | Move out-of-bounds object inside room |
 | `drop_to_support` | 1 | Drop floating object to support/floor |
 | `snap_outlet_to_wall` | 2 | Snap wall outlet to nearest wall |
-| `auto_power_device` | 3 | Connect unpowered device to nearest power source |
+| `auto_power_device` | 3 | Connect unpowered device to nearest power source (engine only; hidden from `buildRecommendations`, used by `buildPowerCompletion` on add) |
 | `auto_network_device` | 4 | Connect an unnetworked device to the nearest powered router |
 | `auto_connect_display` | 5 | Connect HDMI/DP/USB-C output to nearest monitor |
 | `extend_cable` | 6 | Extend cable to recommended length |
@@ -2605,9 +2622,8 @@ Test files under `test/` mirror the domain modules.
 |------|---------|
 | `fix_power_strip_chain` | Daisy-chained power strips → rewire to a wall outlet or use one larger strip |
 | `buy_cable` | Short cable / low slack → longer cable |
-| `buy_power_strip` | Power strip all AC outputs occupied |
+| `buy_power_strip_for_outlets` | Devices needing a plug exceed modeled AC outlets → N strips (product.quantity) |
 | `split_overloaded_power` | Power hub external load > maxLoad → move devices to another outlet / add a strip |
-| `buy_power_for_unpowered` | Unpowered device with no nearby free port → strip (AC) or power adapter (DC) |
 
 No networking hardware is recommended for purchase.
 
@@ -2657,8 +2673,8 @@ Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 299 domain tests
-npm run test:ui   # 22 Chrome UI cases; isolated fixtures, no real backend writes
+npm test          # 298 domain tests
+npm run test:ui   # 24 Chrome UI cases; isolated fixtures, no real backend writes
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
