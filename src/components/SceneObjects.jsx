@@ -1,6 +1,6 @@
 import React, { Suspense, useEffect, useMemo, useRef } from 'react';
 import { useThree } from '@react-three/fiber';
-import { Edges, Line, Text, useGLTF } from '@react-three/drei';
+import { Billboard, Edges, Line, Text, useGLTF } from '@react-three/drei';
 
 import { createCameraPoseSynchronizer } from '../domain/camera-snapshot.js';
 import { getModelDefaultScale } from '../domain/catalog.js';
@@ -30,19 +30,25 @@ export function DeskLabAxes({ room }) {
         <cylinderGeometry args={[thickness, thickness, size, 8]} />
         <meshBasicMaterial color="red" />
       </mesh>
-      <Text position={[size + labelOffset, 0, 0]} fontSize={0.3} color="red">X</Text>
+      <Billboard position={[size + labelOffset, 0, 0]}>
+        <Text fontSize={0.3} color="red">X</Text>
+      </Billboard>
 
       <mesh position={[0, 0, size / 2]} rotation={[Math.PI / 2, 0, 0]}>
         <cylinderGeometry args={[thickness, thickness, size, 8]} />
         <meshBasicMaterial color="green" />
       </mesh>
-      <Text position={[0, 0, size + labelOffset]} fontSize={0.3} color="green">Y</Text>
+      <Billboard position={[0, 0, size + labelOffset]}>
+        <Text fontSize={0.3} color="green">Y</Text>
+      </Billboard>
 
       <mesh position={[0, size / 2, 0]}>
         <cylinderGeometry args={[thickness, thickness, size, 8]} />
         <meshBasicMaterial color="blue" />
       </mesh>
-      <Text position={[0, size + labelOffset, 0]} fontSize={0.3} color="blue">Z</Text>
+      <Billboard position={[0, size + labelOffset, 0]}>
+        <Text fontSize={0.3} color="blue">Z</Text>
+      </Billboard>
     </group>
   );
 }
@@ -689,24 +695,28 @@ export function PowerStatusOverlay({ objects, connections }) {
         const color = loadStatus === 'overload' ? '#f44336' : loadStatus === 'warning' ? '#ff9800' : '#4caf50';
         const label = `⚡${currentLoad}W/${maxLoad}W`;
 
+        // Billboard keeps the label facing the camera so it never reads mirrored.
         return (
-          <Text
+          <Billboard
             key={`power-${obj.id}`}
             position={[
               obj.position.x,
               obj.position.z + obj.scale.z + 0.15,
               obj.position.y,
             ]}
-            fontSize={0.08}
-            color={color}
-            anchorX="center"
-            anchorY="bottom"
-            outlineWidth={0.004}
-            outlineColor="#000000"
-            raycast={() => null}
           >
-            {label}
-          </Text>
+            <Text
+              fontSize={0.08}
+              color={color}
+              anchorX="center"
+              anchorY="bottom"
+              outlineWidth={0.004}
+              outlineColor="#000000"
+              raycast={() => null}
+            >
+              {label}
+            </Text>
+          </Billboard>
         );
       })}
     </group>
