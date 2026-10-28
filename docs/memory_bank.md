@@ -1,6 +1,6 @@
 # DeskLab Memory Bank for Claude
 
-Last updated: 2026-10-25, Asia/Singapore
+Last updated: 2026-10-28, Asia/Singapore
 
 ## Mission
 
@@ -106,10 +106,12 @@ npm start
 
 - Never claim browser/visual QA unless actually performed. If browser runtime fails, record the failure instead of pretending.
 
-## Current Git State (2026-10-25 handoff)
+## Current Git State (2026-10-28 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `7d2defa feat: move JSON tools and axes toggle into a 更多 menu`
+- Feature HEAD: `c9a649a feat: plain-language properties panel`
+- Commits after `a8d5489` (2026-10-28) are local only until the product owner
+  approves a push.
 - Untracked: none expected.
 
 Historical commits captured at the 2026-07-14 baseline (most recent first,
@@ -2429,8 +2431,62 @@ commits, each verified separately:
   take about 0.8s because it waits behind three.js first-use shader
   compilation. In a real GPU browser it opens in about 10ms. UI assertions
   auto-wait, so tests are stable.
-- Known remaining issue, not fixed: the 3D power-load label (`⚡xxW/yyyW`) is
-  not billboarded and reads mirrored from the default camera.
+- Follow-up: the mirrored power-load label was fixed on 2026-10-28 (`ea2dbc4`).
+
+### Lower modeling cost: templates, device-list builder, shopping list (2026-10-28)
+
+Product owner asked for autonomous progress while away. Each slice was
+verified (unit, UI, lint, build) and committed separately; nothing pushed.
+
+- `ea2dbc4` Power-load and axis labels use drei `Billboard`, so they no longer
+  read mirrored. Verified with a 4x Playwright screenshot.
+- `987a83a` A DC device next to its unplugged adapter is wired to that adapter
+  (and told to plug it in) instead of being told to buy another. Powered
+  sources still win; AC devices never chain through an unpowered strip.
+- `63bd33c` Display suggestions: one video cable per computer-monitor pair.
+  Previously a PC and one monitor got both DP and HDMI suggestions, and a spare
+  output kept nagging after one link existed.
+- `e4bb0e1` `src/domain/scene-builder.js`: `buildDeskScene({ devices, desk })`
+  returns `{ room, objects, connections, camera, notes }`. Placement: desk
+  against the +y wall (the default camera sits at -y), monitors along the
+  desk's back rotated 180° to face the user, laptop front-right, PC on the
+  floor right of the desk, router on the floor left, strip and adapters in the
+  0.15m gap behind the desk, wall outlet on the wall at 0.3m. Wiring is planned,
+  not greedy: outlet → strip → AC loads, one adapter per DC device, each video
+  output to a different monitor, PC → router. Cable lengths round up to
+  `STANDARD_CABLE_LENGTHS`. Device limits, desk size bounds (0.8 to 3m by 0.5
+  to 1.2m), monitors that do not fit, and monitors left without a video output
+  produce notes. `src/domain/desk-templates.js` defines 家庭办公, 台式机双屏,
+  电竞桌. Tests require every template to have zero layout/wiring warnings and
+  zero suggestions.
+- `58df7ac` 桌面模板 toolbar button and 使用桌面模板 in the empty-project state.
+  Applying replaces the scene like an import (undoable, warns when the scene is
+  not empty) and frames the camera on the desk using the scene's camera pose.
+- `b226d2a` `src/components/DeskBuilderForm.jsx`: 按我的设备生成 form inside
+  the template picker (steppers, desk size, live notes, 生成桌面). This is the
+  structured input a future LLM "describe your desk" flow should produce.
+- `6d43b74` Real bug found by the form's UI test: reading `event.target.value`
+  inside a functional state updater loses the typed value when React defers
+  the update (it restores the controlled input first). Fixed in the form and in
+  six ConnectionsEditor handlers. Always read the value before calling the setter.
+- `034de00` Asset library cards show spec lines from
+  `describeCatalogModel()` (for example `6 孔 · 最大 2500W`) instead of internal
+  ids; search matches them too.
+- `1b51d43` `src/domain/shopping-list.js`: 购物清单 at the top of the purchase
+  section with 复制清单. Duplicates merge into quantities; unchain/split
+  alternatives are listed as optional; strips are counted by outlets (one
+  six-outlet strip covers several unpowered devices). Cable purchases name a
+  standard store length (`加购一根 3m HDMI 线`). `STANDARD_CABLE_LENGTHS`,
+  `standardCableLength()`, and `CABLE_TYPE_NAMES` now live in `connections.js`.
+- `c9a649a` Properties panel uses plain labels (用电, 位置 (m) 左右/前后/上下,
+  朝向, 尺寸 (m) 长/宽/高) and shows the device name and spec line.
+- Verification after the last slice: `npm test` 292/292, `npm run test:ui`
+  20/20, lint, build (known large-chunk warning). Playwright screenshots were
+  taken of the templates, picker, form, shopping list, asset library, and
+  properties panel.
+- Test notes: the Windows clipboard returns CRLF, so the shopping-list UI test
+  normalizes line endings. Some source files are CRLF in the working tree;
+  scripted edits must match the file's line endings.
 
 ### External Chrome DOM runtime check (2026-07-14)
 
@@ -2504,7 +2560,10 @@ Core modules:
 - `analysis.js` — wiring analysis: port validation, power cycle detection, overload/warning, shared `buildPowerGraph()` for load aggregation
 - `layout-analysis.js` — layout analysis: overlap, out-of-bounds, floating, outlet-off-wall
 - `connections.js` — port compatibility, cable type inference, distance/length evaluation
-- `catalog.js` — device catalog (9 home-user models across 5 categories), hydration, port anchors
+- `catalog.js` — device catalog (9 home-user models across 5 categories), hydration, port anchors, `describeCatalogModel()` spec lines
+- `scene-builder.js` — `buildDeskScene()`: device list → placed, wired, camera-framed scene with notes
+- `desk-templates.js` — built-in home-user templates on top of the scene builder
+- `shopping-list.js` — merges purchase suggestions into a copyable shopping list
 - `geometry.js` — 3D bounds, overlap detection, footprint rotation
 - `placement.js` — catalog object placement with room constraints
 - `project-validation.js` — `isProjectEnvelope()` shared by draft.js and project-client.js
@@ -2589,8 +2648,8 @@ Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 270 domain tests
-npm run test:ui   # 12 Chrome UI cases; isolated fixtures, no real backend writes
+npm test          # 292 domain tests
+npm run test:ui   # 20 Chrome UI cases; isolated fixtures, no real backend writes
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
@@ -2608,22 +2667,21 @@ If rendered UI behavior changes, do browser QA against localhost if browser runt
 
 The autonomous hardening backlog and recommendation foundation are complete.
 Do not resume open-ended malformed-state hardening; it had stopped producing
-user-visible value. The roadmap is being revised with the product owner
-(2026-10-25); step 1, the home-user catalog reduction, is done.
+user-visible value. Done so far: home-user catalog reduction (2026-10-25);
+templates, device-list builder, and shopping list (2026-10-28).
 
-1. **Waiting on the product owner's next roadmap steps.** Candidates discussed
-   but not yet confirmed:
-   - Lower modeling cost: scene templates, or a "describe your desk" flow where
-     an LLM produces catalog-constrained scene JSON validated by the rule engine.
+1. **Blocked on a product decision: LLM provider** (domestic vs Claude). Once
+   chosen, the "describe your desk" flow is: backend endpoint (API key server
+   side, rate limited) asks the LLM for the `{ desk, devices }` JSON that
+   `DeskBuilderForm` already produces, then `buildDeskScene()` places and wires
+   it and its notes are shown. The LLM never invents device ids; unsupported
+   ids are dropped with a note by the builder.
+
+2. **Candidates not yet confirmed with the product owner**:
    - LLM explanations of each suggestion and grounded Q&A.
-   - Purchase suggestions with specs and quantities, plus a shopping list.
+   - Simpler manual connection flow (today: pick ports, cable type, length).
    - Launch basics: multiple projects/accounts, deployment, LLM cost limits.
-   - LLM provider choice (domestic vs Claude) affects deployment.
-
-2. **Small known fixes that need no product decision**:
-   - Billboard the 3D power-load label so it does not read mirrored.
-   - An unpowered DC device next to an existing but unpowered power adapter is
-     told to buy another adapter; it should be told to power the adapter.
+   - Code-splitting the 1.46MB bundle.
 
 3. **Always start from current evidence**:
 ```bash
