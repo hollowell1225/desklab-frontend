@@ -1,0 +1,143 @@
+import test from 'node:test';
+import assert from 'node:assert/strict';
+
+import { buildDeskScene, STANDARD_CABLE_LENGTHS } from '../src/domain/scene-builder.js';
+import { DESK_TEMPLATES, buildTemplateScene } from '../src/domain/desk-templates.js';
+import { analyzeProjectLayout } from '../src/domain/layout-analysis.js';
+import { analyzeProjectWiring } from '../src/domain/analysis.js';
+import { buildRecommendations } from '../src/domain/recommendations.js';
+import { isProjectEnvelope } from '../src/domain/project-validation.js';
+
+const actionable = issues => issues.filter(issue => issue.severity === 'error' || issue.severity === 'warning');
+
+function assertReadyToUse(scene, label) {
+  assert.deepEqual(actionable(analyzeProjectLayout(scene.room, scene.objects)).map(issue => issue.title), [],
+    `${label}: layout should be clean`);
+  assert.deepEqual(actionable(analyzeProjectWiring(scene.objects, scene.connections)).map(issue => issue.title), [],
+    `${label}: wiring should be clean`);
+  const recommendations = buildRecommendations(scene);
+  assert.deepEqual([...recommendations.freeImprovements, ...recommendations.purchases].map(item => item.title), [],
+    `${label}: nothing left to suggest`);
+  assert.equal(isProjectEnvelope({ id: 'default', updatedAt: '2026-10-28T00:00:00.000Z', ...scene }, { requireStoredFields: true }), true,
+    `${label}: must be a valid project`);
+}
+
+const byModel = (scene, modelId) => scene.objects.filter(object => object.modelId === modelId);
+const connectionsTo = (scene, objectId) => scene.connections.filter(connection => connection.toObjectId === objectId);
+
+test('every built-in desk template is placed, wired, and clean out of the box', () => {
+  assert.ok(DESK_TEMPLATES.length >= 2);
+  for (const template of DESK_TEMPLATES) {
+    const scene = buildTemplateScene(template.id);
+    assertReadyToUse(scene, template.name);
+    assert.deepEqual(scene.notes, [], `${template.name}: no placement notes expected`);
+  }
+});
+
+test('templates have unique ids and describe their devices', () => {
+  const ids = DESK_TEMPLATES.map(template => template.id);
+  assert.equal(new Set(ids).size, ids.length);
+  for (const template of DESK_TEMPLATES) {
+    assert.ok(template.name && template.description, `${template.id} needs a name and description`);
+    assert.ok(template.devices.length > 0);
+  }
+  assert.equal(buildTemplateScene('missing-template'), null);
+});
+
+test('a desktop with two monitors and a router gets every cable it needs', () => {
+  const scene = buildDeskScene({
+    devices: [
+      { modelId: 'desktop-pc', count: 1 },
+      { modelId: 'monitor-27', count: 2 },
+      { modelId: 'router', count: 1 },
+    ],
+  });
+  assertReadyToUse(scene, 'desktop dual');
+
+  const [pc] = byModel(scene, 'desktop-pc');
+  const monitors = byModel(scene, 'monitor-27');
+  const [router] = byModel(scene, 'router');
+  const [strip] = byModel(scene, 'power-strip');
+  const [outlet] = byModel(scene, 'wall-outlet');
+  assert.ok(pc && router && strip && outlet);
+  assert.equal(monitors.length, 2);
+  assert.deepEqual(monitors.map(monitor => monitor.name), ['27 英寸显示器 1', '27 英寸显示器 2']);
+
+  const displayLinks = scene.connections.filter(connection => ['hdmi', 'displayport'].includes(connection.cableType));
+  assert.equal(displayLinks.length, 2);
+  assert.deepEqual(new Set(displayLinks.map(connection => connection.toObjectId)), new Set(monitors.map(monitor => monitor.id)),
+    'each monitor is fed by a different PC output');
+
+  assert.ok(scene.connections.some(connection => connection.cableType === 'ethernet'
+    && connection.fromObjectId === router.id && connection.toObjectId === pc.id));
+  assert.ok(connectionsTo(scene, strip.id).some(connection => connection.fromObjectId === outlet.id));
+  assert.equal(byModel(scene, 'power-adapter').length, 1, 'the router gets its own adapter');
+});
+
+test('a laptop gets its own adapter and shares a single monitor through HDMI', () => {
+  const scene = buildDeskScene({
+    devices: [{ modelId: 'laptop-15', count: 1 }, { modelId: 'monitor-24', count: 1 }],
+  });
+  assertReadyToUse(scene, 'laptop single');
+
+  const [laptop] = byModel(scene, 'laptop-15');
+  const [adapter] = byModel(scene, 'power-adapter');
+  assert.ok(connectionsTo(scene, laptop.id).some(connection => connection.fromObjectId === adapter.id));
+  assert.ok(scene.connections.some(connection => connection.fromObjectId === laptop.id && connection.cableType === 'hdmi'));
+});
+
+test('monitors face the user and sit on the desk', () => {
+  const scene = buildDeskScene({ devices: [{ modelId: 'monitor-27', count: 1 }, { modelId: 'laptop-15', count: 1 }] });
+  const [desk] = byModel(scene, 'office-desk');
+  const [monitor] = byModel(scene, 'monitor-27');
+  assert.equal(monitor.rotation.z, 180, 'screens face the default camera side');
+  assert.ok(Math.abs(monitor.position.z - monitor.scale.z / 2 - desk.scale.z) < 1e-9, 'monitor rests on the desk top');
+});
+
+test('cable lengths come from standard store lengths', () => {
+  const scene = buildTemplateScene(DESK_TEMPLATES[0].id);
+  for (const connection of scene.connections) {
+    assert.ok(STANDARD_CABLE_LENGTHS.includes(connection.length), `${connection.name}: ${connection.length}m`);
+  }
+});
+
+test('a desk that cannot fit every monitor keeps what fits and explains why', () => {
+  const scene = buildDeskScene({
+    desk: { length: 1.2 },
+    devices: [{ modelId: 'desktop-pc', count: 1 }, { modelId: 'monitor-27', count: 3 }],
+  });
+  assertReadyToUse(scene, 'narrow desk');
+  assert.equal(byModel(scene, 'monitor-27').length, 1);
+  assert.equal(scene.notes.length, 1);
+  assert.match(scene.notes[0], /桌面宽度/);
+});
+
+test('unknown or unsupported devices are skipped with a note, and counts are capped', () => {
+  const scene = buildDeskScene({
+    devices: [
+      { modelId: 'ups', count: 1 },
+      { modelId: 'desktop-pc', count: 3 },
+      { modelId: 'monitor-24', count: 0 },
+    ],
+  });
+  assertReadyToUse(scene, 'sanitized');
+  assert.equal(byModel(scene, 'desktop-pc').length, 1);
+  assert.equal(byModel(scene, 'monitor-24').length, 0);
+  assert.equal(scene.notes.some(note => note.includes('ups')), true);
+  assert.equal(scene.notes.some(note => note.includes('台式主机') && note.includes('1')), true);
+});
+
+test('an empty device list still yields a clean desk with power ready', () => {
+  const scene = buildDeskScene({ devices: [] });
+  assertReadyToUse(scene, 'empty');
+  assert.equal(byModel(scene, 'office-desk').length, 1);
+});
+
+test('the room grows to fit a long desk with side devices', () => {
+  const scene = buildDeskScene({
+    desk: { length: 3 },
+    devices: [{ modelId: 'desktop-pc', count: 1 }, { modelId: 'router', count: 1 }],
+  });
+  assertReadyToUse(scene, 'long desk');
+  assert.ok(scene.room.length >= 3 + 1);
+});
