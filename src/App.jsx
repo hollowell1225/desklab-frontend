@@ -910,6 +910,7 @@ export default function App() {
       modelTemplate,
       categoryId,
       room,
+      objects,
     });
     if (!result.valid) {
       showStatus({ text: `无法添加${modelTemplate.displayName}：${result.reason}`, type: 'error' }, 4000);

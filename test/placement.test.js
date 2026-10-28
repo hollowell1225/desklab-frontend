@@ -4,6 +4,7 @@ import assert from 'node:assert/strict';
 import { placeCatalogObject } from '../src/domain/placement.js';
 import { DEVICE_CATALOG } from '../src/domain/catalog.js';
 import { isPortDirectionConsistent } from '../src/domain/connections.js';
+import { analyzeProjectLayout } from '../src/domain/layout-analysis.js';
 
 const isNonBlankString = (value) => typeof value === 'string' && value.trim().length > 0;
 const VALID_PORT_DIRECTIONS = new Set(['input', 'output', 'bidirectional']);
@@ -96,4 +97,109 @@ test('generates a unique id when callers create objects without supplying one', 
 
   assert.equal(new Set(ids).size, ids.length);
   assert.ok(ids.every(id => id.startsWith('office-desk-')));
+});
+
+const homeRoom = { length: 4, width: 3.5, height: 2.7 };
+const templateFor = modelId => {
+  for (const category of DEVICE_CATALOG) {
+    const model = category.models.find(candidate => candidate.modelId === modelId);
+    if (model) return { model, categoryId: category.category };
+  }
+  throw new Error(`missing ${modelId}`);
+};
+const addInOrder = (modelIds, room = homeRoom) => modelIds.reduce((objects, modelId, index) => {
+  const { model, categoryId } = templateFor(modelId);
+  const result = placeCatalogObject({ modelTemplate: model, categoryId, room, id: `${modelId}-${index}`, objects });
+  assert.equal(result.valid, true, `${modelId} should find a place`);
+  const next = [...objects, result.object];
+  const problems = analyzeProjectLayout(room, next)
+    .filter(issue => issue.severity !== 'info')
+    .map(issue => issue.title);
+  assert.deepEqual(problems, [], `after adding ${modelId}`);
+  return next;
+}, []);
+
+test('devices added to a desk scene land in free, supported spots', () => {
+  const objects = addInOrder([
+    'office-desk', 'monitor-27', 'monitor-24', 'laptop-15',
+    'desktop-pc', 'router', 'power-strip', 'power-adapter', 'wall-outlet',
+  ]);
+  const byId = Object.fromEntries(objects.map(object => [object.modelId, object]));
+  const deskTop = byId['office-desk'].position.z + byId['office-desk'].scale.z / 2;
+
+  for (const modelId of ['monitor-27', 'monitor-24', 'laptop-15']) {
+    const object = byId[modelId];
+    assert.ok(Math.abs(object.position.z - object.scale.z / 2 - deskTop) < 1e-9, `${modelId} sits on the desk`);
+  }
+  for (const modelId of ['desktop-pc', 'router', 'power-strip', 'power-adapter']) {
+    assert.ok(Math.abs(byId[modelId].position.z - byId[modelId].scale.z / 2) < 1e-9, `${modelId} sits on the floor`);
+  }
+});
+
+test('the first device in an empty room still goes to the room center', () => {
+  const [desk] = addInOrder(['office-desk']);
+  assert.deepEqual(desk.position, { x: 0, y: 0, z: 0.375 });
+});
+
+test('desk-top devices fall back to the floor when there is no desk', () => {
+  const [monitor] = addInOrder(['monitor-27']);
+  assert.ok(Math.abs(monitor.position.z - monitor.scale.z / 2) < 1e-9);
+});
+
+test('a second desk does not overlap the first', () => {
+  addInOrder(['office-desk', 'office-desk']);
+});
+
+test('many monitors fill the desk and then spill to the floor without overlapping', () => {
+  addInOrder(['office-desk', 'monitor-27', 'monitor-27', 'monitor-27', 'monitor-27']);
+});
+
+const boundsOf = object => {
+  const half = { x: object.scale.x / 2, y: object.scale.y / 2 };
+  return { minX: object.position.x - half.x, maxX: object.position.x + half.x, minY: object.position.y - half.y, maxY: object.position.y + half.y };
+};
+
+test('a second monitor goes beside the first when it fits, otherwise in front, never hidden behind', () => {
+  const sharesColumn = (first, second) => first.minX < second.maxX - 1e-9 && first.maxX > second.minX + 1e-9;
+
+  const narrowDeskScreens = addInOrder(['office-desk', 'monitor-24', 'monitor-24'], { ...homeRoom, length: 5 })
+    .filter(object => object.category === 'display');
+  // A 1.4m desk cannot fit a 0.54m screen beside a centered one, so widen it.
+  const wideDeskObjects = (() => {
+    const { model, categoryId } = templateFor('office-desk');
+    const wideDesk = { ...model, defaultScale: { ...model.defaultScale, x: 1.8 } };
+    const desk = placeCatalogObject({ modelTemplate: wideDesk, categoryId, room: homeRoom, id: 'wide-desk' }).object;
+    return ['monitor-24', 'monitor-24'].reduce((current, modelId, index) => {
+      const entry = templateFor(modelId);
+      return [...current, placeCatalogObject({ modelTemplate: entry.model, categoryId: entry.categoryId, room: homeRoom, id: `m${index}`, objects: current }).object];
+    }, [desk]);
+  })();
+  const [wideFirst, wideSecond] = wideDeskObjects.slice(1).map(boundsOf);
+  assert.equal(sharesColumn(wideFirst, wideSecond), false, 'side by side on a wide desk');
+
+  const [first, second] = narrowDeskScreens.map(boundsOf);
+  if (sharesColumn(first, second)) {
+    assert.ok(narrowDeskScreens[1].position.y < narrowDeskScreens[0].position.y, 'a screen that cannot fit beside goes in front, not behind');
+  }
+});
+
+test('floor devices stay out of the space in front of the desk', () => {
+  // Desk against the back wall, like the templates build it.
+  const { model, categoryId } = templateFor('office-desk');
+  const desk = {
+    ...placeCatalogObject({ modelTemplate: model, categoryId, room: homeRoom, id: 'desk' }).object,
+    position: { x: 0, y: homeRoom.width / 2 - 0.15 - 0.35, z: 0.375 },
+  };
+  const objects = ['desktop-pc', 'router', 'power-strip', 'power-adapter'].reduce((current, modelId) => {
+    const entry = templateFor(modelId);
+    const result = placeCatalogObject({ modelTemplate: entry.model, categoryId: entry.categoryId, room: homeRoom, id: modelId, objects: current });
+    return [...current, result.object];
+  }, [desk]);
+
+  const deskFront = boundsOf(desk).minY;
+  for (const object of objects.slice(1)) {
+    assert.ok(boundsOf(object).minY >= deskFront - 1e-9, `${object.modelId} should not sit in front of the desk`);
+  }
+  const strip = objects.find(object => object.modelId === 'power-strip');
+  assert.ok(boundsOf(strip).minY >= boundsOf(desk).maxY - 1e-9, 'a small strip tucks in behind the desk');
 });
