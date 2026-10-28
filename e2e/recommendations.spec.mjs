@@ -83,3 +83,27 @@ test('a checked layout describes the scope of the result without guaranteeing pe
   await expect(dialog.getByRole('button', { name: /查看.*问题/ })).toHaveCount(0);
   expect(evidence).toEqual({ errors: [], writes: [] });
 });
+
+test('purchase suggestions are summarized as a copyable shopping list', async ({ page, context }, info) => {
+  const device = (name, x) => ({
+    ...box(name, x), type: 'device',
+    ports: [{ id: 'power-in', name: '电源输入', type: 'ac_input', direction: 'input' }],
+  });
+  const laptop = {
+    ...box('笔记本', 4), type: 'laptop',
+    ports: [{ id: 'dc-in', name: 'DC 输入', type: 'dc_input', direction: 'input' }],
+  };
+  const evidence = await openProject(page, [device('主机', -2), device('显示器', 2), laptop]);
+  await page.getByRole('button', { name: /^改进建议/ }).click();
+  const list = page.getByRole('dialog').getByRole('group', { name: '购物清单' });
+  await expect(list.getByRole('listitem')).toHaveText(['插排×1', '电源适配器×1']);
+
+  if (info.project.name === 'desktop') {
+    await context.grantPermissions(['clipboard-read', 'clipboard-write']);
+    await list.getByRole('button', { name: '复制清单', exact: true }).click();
+    // The OS clipboard may store line breaks as CRLF.
+    await expect.poll(() => page.evaluate(async () => (await navigator.clipboard.readText()).replace(/\r\n/g, '\n')))
+      .toBe('DeskLab 购物清单\n- 插排 ×1\n- 电源适配器 ×1');
+  }
+  expect(evidence).toEqual({ errors: [], writes: [] });
+});

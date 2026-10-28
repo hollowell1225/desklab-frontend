@@ -4,7 +4,7 @@ import {
   snapWallOutletToNearestWall,
 } from './layout-analysis.js';
 import { analyzeProjectWiring, buildPowerGraph, computeDevicePowerLoad, getEffectiveMaxLoad, classifyPowerLoad } from './analysis.js';
-import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible, arePortTypesCompatible, isPortDirectionConsistent, inferCableType } from './connections.js';
+import { calculatePositionDistance, evaluateConnectionLength, arePortsCompatible, arePortTypesCompatible, isPortDirectionConsistent, inferCableType, standardCableLength, CABLE_TYPE_NAMES } from './connections.js';
 import { validateAndConstrainObject } from './geometry.js';
 import { getPortRecords } from './port-collections.js';
 import { getRecordItems } from './record-collections.js';
@@ -527,23 +527,16 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
       if (seen.has(key)) continue;
       seen.add(key);
 
-      const typeMap = {
-        power: '电源线',
-        hdmi: 'HDMI 线',
-        usb_c: 'USB-C 线',
-        ethernet: '网线',
-        displayport: 'DisplayPort 线',
-        other: '连接线',
-      };
-      const typeName = typeMap[connection.cableType] || '连接线';
+      const typeName = CABLE_TYPE_NAMES[connection.cableType] || CABLE_TYPE_NAMES.other;
+      const storeLength = standardCableLength(length);
 
       suggestions.push({
         id: key,
         code: 'buy_cable',
-        title: `加购约 ${length}m 的 ${typeName}`,
-        description: `现有线材“${connection.name}”长度不足，建议加购一根 ${length}m 的新线材替换以防受力拉扯。`,
+        title: `加购一根 ${storeLength}m ${typeName}`,
+        description: `现有线材“${connection.name}”长度不足（至少需要约 ${length}m），建议换一根 ${storeLength}m 的${typeName}，避免受力拉扯。`,
         connectionIds: [connectionId],
-        product: { category: 'cable', modelId: connection.cableType, length },
+        product: { category: 'cable', modelId: connection.cableType, length: storeLength },
       });
     }
   }

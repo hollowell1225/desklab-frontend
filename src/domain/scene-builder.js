@@ -1,5 +1,5 @@
 import { DEVICE_CATALOG, findModelTemplate, withPortAnchors } from './catalog.js';
-import { evaluateConnectionLength, inferCableType } from './connections.js';
+import { evaluateConnectionLength, inferCableType, standardCableLength } from './connections.js';
 
 // Turns a short device list ("a desktop, two 27-inch monitors, a router") into
 // a placed and fully wired desk. Templates use it today; an LLM that turns a
@@ -7,7 +7,7 @@ import { evaluateConnectionLength, inferCableType } from './connections.js';
 // deliberately rather than with the greedy free-improvement engine so that,
 // for example, two monitors are fed by two different PC outputs.
 
-export const STANDARD_CABLE_LENGTHS = Object.freeze([0.5, 1, 1.5, 1.8, 2, 3, 5, 10]);
+export { STANDARD_CABLE_LENGTHS } from './connections.js';
 
 const DEFAULT_ROOM = Object.freeze({ length: 4, width: 3.5, height: 2.7 });
 const DESK_MODEL_ID = 'office-desk';
@@ -54,11 +54,6 @@ function createObject(modelId, id, name, position, rotationZ = 0, scale = null) 
 
 function findCategory(modelId) {
   return DEVICE_CATALOG.find(category => category.models.some(model => model.modelId === modelId))?.category;
-}
-
-function standardCableLength(minimumLength) {
-  return STANDARD_CABLE_LENGTHS.find(length => length >= minimumLength - 1e-9)
-    ?? Math.ceil(minimumLength);
 }
 
 function sanitizeDevices(devices, notes) {

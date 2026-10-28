@@ -2,6 +2,23 @@ import { getPortRecords } from './port-collections.js';
 
 export const CABLE_SERVICE_LOOP_FACTOR = 1.1;
 export const CABLE_TYPE_VALUES = ['power', 'hdmi', 'usb_c', 'ethernet', 'displayport', 'other'];
+export const CABLE_TYPE_NAMES = Object.freeze({
+  power: '电源线',
+  hdmi: 'HDMI 线',
+  usb_c: 'USB-C 线',
+  ethernet: '网线',
+  displayport: 'DP 线',
+  other: '连接线',
+});
+
+// Lengths cables are commonly sold in, in metres.
+export const STANDARD_CABLE_LENGTHS = Object.freeze([0.5, 1, 1.5, 1.8, 2, 3, 5, 10]);
+
+/** Shortest standard store length that covers the required length. */
+export function standardCableLength(minimumLength) {
+  return STANDARD_CABLE_LENGTHS.find(length => length >= minimumLength - 1e-9)
+    ?? Math.ceil(minimumLength);
+}
 
 const POWER_PORT_TYPES = new Set(['ac_input', 'ac_output', 'dc_input', 'dc_output']);
 

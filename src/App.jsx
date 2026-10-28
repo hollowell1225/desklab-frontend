@@ -40,6 +40,7 @@ import { createProjectExport } from './domain/project-export.js';
 import { assertProjectImportSize, getProjectImportByteLength } from './domain/project-import-limits.js';
 import { getPurchaseGuidance } from './domain/purchase-guidance.js';
 import { DESK_TEMPLATES, buildTemplateScene } from './domain/desk-templates.js';
+import { buildShoppingList } from './domain/shopping-list.js';
 import { applyAllAvailableImprovements, applyAllImprovements, applyImprovement, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
 import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
@@ -987,6 +988,19 @@ export default function App() {
     () => buildRecommendations({ room, objects, connections }, { wiringIssues }),
     [room, objects, connections, wiringIssues]
   );
+  const shoppingList = useMemo(
+    () => buildShoppingList(recommendations.purchases),
+    [recommendations.purchases]
+  );
+
+  const handleCopyShoppingList = async () => {
+    try {
+      await navigator.clipboard.writeText(shoppingList.text);
+      showStatus({ text: '购物清单已复制', type: 'success' }, 3000);
+    } catch (error) {
+      showStatus({ text: `复制失败：${error.message}`, type: 'error' }, 4000);
+    }
+  };
 
   const handleCleanupInvalidConnections = () => {
     if (!projectEditable || invalidConnectionCount === 0) return;
@@ -2202,6 +2216,22 @@ export default function App() {
                   {recommendations.purchases.length > 0 && (
                     <div className="recommendation-group" style={{ marginTop: '24px' }}>
                       <h4>推荐加购商品</h4>
+                      {shoppingList.items.length > 0 && (
+                        <div className="shopping-list" role="group" aria-label="购物清单">
+                          <div className="shopping-list-header">
+                            <span className="shopping-list-title">购物清单</span>
+                            <button type="button" className="ui-button" onClick={handleCopyShoppingList}>复制清单</button>
+                          </div>
+                          <ul className="shopping-list-items">
+                            {shoppingList.items.map(item => (
+                              <li key={item.key} className={item.optional ? 'shopping-list-optional' : undefined}>
+                                <span>{item.optional ? `可选：${item.name}` : item.name}</span>
+                                <span className="shopping-list-quantity">×{item.quantity}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
                       <div className="wiring-issue-list">
                         {recommendations.purchases.map(issue => (
                           <div key={issue.id} className={`wiring-issue ${issue.code === 'split_overloaded_power' ? 'wiring-issue-error' : 'wiring-issue-warning'}`}>
