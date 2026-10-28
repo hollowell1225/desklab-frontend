@@ -278,8 +278,9 @@ const ConnectionsEditor = ({
                           style={{ width: '100%' }}
                           value={connectionDraft.toObjectId || ''}
                           onChange={e => {
-                            if (e.target.value) {
-                              setConnectionDraft(prev => ({ ...prev, toObjectId: e.target.value, toPortId: '' }));
+                            const { value } = e.target;
+                            if (value) {
+                              setConnectionDraft(prev => ({ ...prev, toObjectId: value, toPortId: '' }));
                               setConnectionMode(false);
                             }
                           }}
@@ -316,7 +317,7 @@ const ConnectionsEditor = ({
                 {!hasCompatibleToPorts ? (
                   <div style={{ color: '#dc3545', fontSize: '13px' }}>目标设备没有兼容端口</div>
                 ) : (
-                  <select className="ui-select" style={{ width: '100%' }} value={connectionDraft.toPortId || ''} onChange={e => setConnectionDraft(prev => ({ ...prev, toPortId: e.target.value }))}>
+                  <select className="ui-select" style={{ width: '100%' }} value={connectionDraft.toPortId || ''} onChange={e => { const { value } = e.target; setConnectionDraft(prev => ({ ...prev, toPortId: value })); }}>
                     {renderPortOptions(toObj, 'to')}
                   </select>
                 )}
@@ -334,12 +335,12 @@ const ConnectionsEditor = ({
                   </div>
                   <div style={{ flex: 1 }}>
                     <div className="connection-step-label">长度(m)</div>
-                    <input className="ui-input" type="number" step="0.1" min="0.1" value={connectionDraft.length || 1} onChange={e => setConnectionDraft(prev => ({ ...prev, length: e.target.value }))} style={{ width: '100%' }} />
+                    <input className="ui-input" type="number" step="0.1" min="0.1" value={connectionDraft.length || 1} onChange={e => { const { value } = e.target; setConnectionDraft(prev => ({ ...prev, length: value })); }} style={{ width: '100%' }} />
                   </div>
                 </div>
                 <div>
                   <div className="connection-step-label">连接名称 (可选)</div>
-                  <input className="ui-input" type="text" placeholder="留空默认使用线材名" value={connectionDraft.name || ''} onChange={e => setConnectionDraft(prev => ({ ...prev, name: e.target.value }))} style={{ width: '100%' }} />
+                  <input className="ui-input" type="text" placeholder="留空默认使用线材名" value={connectionDraft.name || ''} onChange={e => { const { value } = e.target; setConnectionDraft(prev => ({ ...prev, name: value })); }} style={{ width: '100%' }} />
                 </div>
                 {draftLengthStatus && (
                   <div className={`cable-distance ${draftLengthStatus.hasRecommendedSlack ? 'cable-distance-ok' : 'cable-distance-warning'}`}>
@@ -404,7 +405,7 @@ const ConnectionsEditor = ({
                         className="ui-input"
                         type="text"
                         value={editingConnection.name}
-                        onChange={event => setEditingConnection(prev => ({ ...prev, name: event.target.value }))}
+                        onChange={event => { const { value } = event.target; setEditingConnection(prev => ({ ...prev, name: value })); }}
                       />
                     </label>
                     <label>
@@ -415,7 +416,7 @@ const ConnectionsEditor = ({
                         min="0.1"
                         step="0.1"
                         value={editingConnection.length}
-                        onChange={event => setEditingConnection(prev => ({ ...prev, length: event.target.value }))}
+                        onChange={event => { const { value } = event.target; setEditingConnection(prev => ({ ...prev, length: value })); }}
                       />
                     </label>
                     <button type="button" className="ui-button ui-button-primary" onClick={handleSaveEdit}>保存修改</button>
