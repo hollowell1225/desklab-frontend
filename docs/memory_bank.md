@@ -109,7 +109,7 @@ npm start
 ## Current Git State (2026-10-28 handoff)
 
 ### Frontend `D:\desklab\frontend`
-- Feature HEAD: `c9a649a feat: plain-language properties panel`
+- Feature HEAD: `7414a7c feat: place newly added devices in free spots around the desk`
 - Commits after `a8d5489` (2026-10-28) are local only until the product owner
   approves a push.
 - Untracked: none expected.
@@ -2480,10 +2480,19 @@ verified (unit, UI, lint, build) and committed separately; nothing pushed.
   `standardCableLength()`, and `CABLE_TYPE_NAMES` now live in `connections.js`.
 - `c9a649a` Properties panel uses plain labels (用电, 位置 (m) 左右/前后/上下,
   朝向, 尺寸 (m) 长/宽/高) and shows the device name and spec line.
-- Verification after the last slice: `npm test` 292/292, `npm run test:ui`
-  20/20, lint, build (known large-chunk warning). Playwright screenshots were
-  taken of the templates, picker, form, shopping list, asset library, and
-  properties panel.
+- `7414a7c` `placeCatalogObject({ ..., objects })` finds a free spot instead of
+  the room center: monitors and laptops on a desk top (laptops toward the
+  front; a screen gets its own left-right column, or goes in front of another
+  screen, never hidden behind one), wall outlets on the wall nearest the desk,
+  floor devices behind the desk, then along its sides, then spiralling out
+  while avoiding the space in front of the desk. No objects → room center as
+  before. Known limit: on a 1.4m desk a second screen cannot fit beside a
+  centered first one, so it lands in front of it for the user to drag; the
+  add never moves existing objects.
+- Verification after the last slice: `npm test` 299/299, `npm run test:ui`
+  22/22, lint, build (known large-chunk warning). Playwright screenshots were
+  taken of the templates, picker, form, shopping list, asset library,
+  properties panel, and devices added to a template desk.
 - Test notes: the Windows clipboard returns CRLF, so the shopping-list UI test
   normalizes line endings. Some source files are CRLF in the working tree;
   scripted edits must match the file's line endings.
@@ -2561,11 +2570,11 @@ Core modules:
 - `layout-analysis.js` — layout analysis: overlap, out-of-bounds, floating, outlet-off-wall
 - `connections.js` — port compatibility, cable type inference, distance/length evaluation
 - `catalog.js` — device catalog (9 home-user models across 5 categories), hydration, port anchors, `describeCatalogModel()` spec lines
+- `placement.js` — new-object placement; with existing objects it searches free spots on/around the desk
 - `scene-builder.js` — `buildDeskScene()`: device list → placed, wired, camera-framed scene with notes
 - `desk-templates.js` — built-in home-user templates on top of the scene builder
 - `shopping-list.js` — merges purchase suggestions into a copyable shopping list
 - `geometry.js` — 3D bounds, overlap detection, footprint rotation
-- `placement.js` — catalog object placement with room constraints
 - `project-validation.js` — `isProjectEnvelope()` shared by draft.js and project-client.js
 - `project-client.js` — versioned load/save/validate/recovery HTTP client
 - `project-history.js` — undo/redo with grouping and camera awareness
@@ -2648,8 +2657,8 @@ Contracts: `D:\desklab\backend\contracts\project.schema.json`, `openapi.yaml`
 Frontend:
 ```bash
 cd D:\desklab\frontend
-npm test          # 292 domain tests
-npm run test:ui   # 20 Chrome UI cases; isolated fixtures, no real backend writes
+npm test          # 299 domain tests
+npm run test:ui   # 22 Chrome UI cases; isolated fixtures, no real backend writes
 npm run lint      # eslint .
 npm run build     # vite build (known large chunk warning is OK)
 ```
