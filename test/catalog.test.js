@@ -3,6 +3,7 @@ import assert from 'node:assert/strict';
 
 import {
   DEVICE_CATALOG,
+  describeCatalogModel,
   findModelTemplate,
   getModelDefaultScale,
   hydrateProjectObjects,
@@ -126,6 +127,26 @@ test('saved objects of removed models still load with their stored ports', () =>
   assert.deepEqual(hydrated.ports.map(({ id, type }) => ({ id, type })), [{ id: 'dc-in', type: 'dc_input' }]);
   assert.ok(hydrated.ports[0].anchor, 'stored ports still receive a default anchor');
   assert.equal(getModelDefaultScale('computer', 'mini-pc'), null);
+});
+
+test('catalog models have a short user-facing spec line instead of internal ids', () => {
+  const describe = modelId => describeCatalogModel(findModelTemplate({ modelId }));
+  assert.equal(describe('office-desk'), '1.4 × 0.7 m · 尺寸可调');
+  assert.equal(describe('desktop-pc'), '约 350W · HDMI / DP · 网口');
+  assert.equal(describe('laptop-15'), '约 65W · USB-C / HDMI');
+  assert.equal(describe('monitor-27'), '约 45W · HDMI / DP');
+  assert.equal(describe('router'), '3 个网口');
+  assert.equal(describe('power-strip'), '6 孔 · 最大 2500W');
+  assert.equal(describe('wall-outlet'), '2 孔');
+  assert.equal(describe('power-adapter'), 'DC 输出 · 最大 150W');
+
+  for (const category of DEVICE_CATALOG) {
+    for (const model of category.models) {
+      const line = describeCatalogModel(model);
+      assert.ok(line.length > 0, `${model.modelId} needs a spec line`);
+      assert.equal(line.includes(model.modelId), false, `${model.modelId} spec line should not show internal ids`);
+    }
+  }
 });
 
 test('modelId matching wins over shared legacy type matching', () => {

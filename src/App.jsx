@@ -23,6 +23,7 @@ import { createProjectDraftStorage } from './domain/draft-storage.js';
 import './App.css';
 import {
   DEVICE_CATALOG,
+  describeCatalogModel,
   findModelTemplate,
   hydrateProjectObjects,
 } from './domain/catalog.js';
@@ -1368,7 +1369,8 @@ export default function App() {
                       if (
                         m.displayName.toLowerCase().includes(query) ||
                         m.type.toLowerCase().includes(query) ||
-                        m.modelId.toLowerCase().includes(query)
+                        m.modelId.toLowerCase().includes(query) ||
+                        describeCatalogModel(m).toLowerCase().includes(query)
                       ) {
                         matchedModels.push({ ...m, categoryId: cat.category });
                       }
@@ -1388,7 +1390,7 @@ export default function App() {
                 return matchedModels.map((m, idx) => (
                   <button type="button" key={`${m.modelId}-${idx}`} className="asset-item" onClick={() => handleAddDevice(m, m.categoryId)} disabled={!projectEditable}>
                     <div className="asset-item-title">{m.displayName}</div>
-                    <div className="asset-item-subtitle">{m.type} / {m.modelId}</div>
+                    <div className="asset-item-subtitle">{describeCatalogModel(m)}</div>
                   </button>
                 ));
               })()}

@@ -61,6 +61,33 @@ export function findModelTemplate({ category, modelId, type } = {}) {
     || null;
 }
 
+const VIDEO_PORT_LABELS = Object.freeze({ usb_c: 'USB-C', hdmi: 'HDMI', displayport: 'DP' });
+
+/** One-line, user-facing spec summary for the asset library. */
+export function describeCatalogModel(model) {
+  const ports = model.ports || [];
+  const parts = [];
+  if (model.category === 'furniture' || model.type === 'office-desk') {
+    parts.push(`${model.defaultScale.x} × ${model.defaultScale.y} m`, '尺寸可调');
+  }
+  const acOutputs = ports.filter(port => port.type === 'ac_output').length;
+  const hasDcOutput = ports.some(port => port.type === 'dc_output');
+  const isPluggedPowerGear = (acOutputs > 0 || hasDcOutput)
+    && ports.some(port => port.type === 'ac_input' || port.type === 'dc_input');
+  const videoLabels = [...new Set(ports.map(port => VIDEO_PORT_LABELS[port.type]).filter(Boolean))];
+  if (acOutputs > 0) parts.push(`${acOutputs} 孔`);
+  if (hasDcOutput) parts.push('DC 输出');
+  // A strip or adapter's limit matters when buying one; a wall outlet's does not.
+  if (isPluggedPowerGear && model.maxLoad) parts.push(`最大 ${model.maxLoad}W`);
+  // Power draw is shown for computers and screens, the devices that add load.
+  if (videoLabels.length > 0 && model.wattage) parts.push(`约 ${model.wattage}W`);
+  if (videoLabels.length > 0) parts.push(videoLabels.join(' / '));
+  const ethernetPorts = ports.filter(port => port.type === 'ethernet').length;
+  if (ethernetPorts > 1) parts.push(`${ethernetPorts} 个网口`);
+  else if (ethernetPorts === 1) parts.push('网口');
+  return parts.join(' · ');
+}
+
 export function getModelDefaultScale(category, modelId) {
   return findModelTemplate({ category, modelId })?.defaultScale || null;
 }
