@@ -38,6 +38,7 @@ import {
 import { createProjectExport } from './domain/project-export.js';
 import { assertProjectImportSize, getProjectImportByteLength } from './domain/project-import-limits.js';
 import { getPurchaseGuidance } from './domain/purchase-guidance.js';
+import { DESK_TEMPLATES, buildTemplateScene } from './domain/desk-templates.js';
 import { applyAllAvailableImprovements, applyAllImprovements, applyImprovement, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
 import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
@@ -150,6 +151,7 @@ export default function App() {
   const [showWiringReport, setShowWiringReport] = useState(false);
   const [showLayoutReport, setShowLayoutReport] = useState(false);
   const [showRecommendations, setShowRecommendations] = useState(false);
+  const [showTemplates, setShowTemplates] = useState(false);
   const [purchaseGuidance, setPurchaseGuidance] = useState(null);
   const [hoveredDeviceId, setHoveredDeviceId] = useState(null);
 
@@ -816,6 +818,32 @@ export default function App() {
     }
   };
 
+  const handleApplyTemplate = (template) => {
+    if (!projectEditable) return;
+    const scene = buildTemplateScene(template.id);
+    if (!scene) return;
+    if (savedLayout === null) {
+      setSavedLayout(serializeLayout(room, objects, connections));
+    }
+    recordHistory(null, {
+      includeCamera: true,
+      camera: getCurrentCamera(),
+      cameraDirty,
+    });
+    setRoom(scene.room);
+    setInputRoom(scene.room);
+    setObjects(scene.objects);
+    setConnections(scene.connections);
+    setCameraConfig(scene.camera);
+    setCameraDirty(true);
+    setSelectedObjectId(null);
+    setConnectionMode(false);
+    setConnectionDraft({});
+    setHoveredDeviceId(null);
+    setShowTemplates(false);
+    showStatus({ text: `已套用模板“${template.name}”，可按实际情况调整，尚未保存`, type: 'success' }, 4000);
+  };
+
   const handleCopyProjectToClipboard = async () => {
     if (!projectEditable) return;
     try {
@@ -1135,6 +1163,7 @@ export default function App() {
             <label htmlFor="room-height" style={{ fontSize: '13px' }}>高:</label>
             <input id="room-height" type="number" min="0.1" step="0.1" className="ui-input" value={inputRoom.height} onChange={e => setInputRoom({ ...inputRoom, height: Number(e.target.value) })} style={{ width: '60px' }} disabled={!projectEditable} />
             <button className="ui-button" onClick={handleUpdateRoom} disabled={!projectEditable}>更新房间</button>
+            <button className="ui-button" onClick={() => setShowTemplates(true)} disabled={!projectEditable}>桌面模板</button>
           </div>
 
           {/* 3. 全局操作 */}
@@ -1543,6 +1572,66 @@ export default function App() {
         )}
 
       </div>
+
+      {showTemplates && (
+        <div
+          className="modal-overlay"
+          onClick={(event) => {
+            if (event.target === event.currentTarget) setShowTemplates(false);
+          }}
+        >
+          <div
+            className="modal-container wiring-report"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="templates-title"
+          >
+            <div className="modal-header">
+              <h3 id="templates-title" className="modal-title">桌面模板</h3>
+              <button
+                type="button"
+                onClick={() => setShowTemplates(false)}
+                className="side-panel-close"
+                aria-label="关闭桌面模板"
+                title="关闭"
+              >
+                ×
+              </button>
+            </div>
+            <div className="modal-body">
+              <p className="template-intro">
+                选一个最接近你现状的模板，系统会摆好设备并接好电源、显示和网线，之后可以按实际情况调整。
+                {objects.length > 0 && ' 套用后会替换当前场景，可以用“撤销”恢复。'}
+              </p>
+              <div className="template-list">
+                {DESK_TEMPLATES.map(template => (
+                  <div key={template.id} className="template-card">
+                    <div className="template-card-content">
+                      <div className="template-card-title">{template.name}</div>
+                      <div className="template-card-description">{template.description}</div>
+                      <div className="template-card-devices">
+                        {`书桌 ${template.desk.length}m × ${template.desk.depth}m · `}
+                        {template.devices
+                          .map(device => `${findModelTemplate({ modelId: device.modelId })?.displayName ?? device.modelId} ×${device.count}`)
+                          .join(' · ')}
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      className="ui-button ui-button-primary"
+                      onClick={() => handleApplyTemplate(template)}
+                      disabled={!projectEditable}
+                      aria-label={`使用模板：${template.name}`}
+                    >
+                      使用这个模板
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {showLayoutReport && (
         <div
@@ -1986,14 +2075,22 @@ export default function App() {
                   {objects.length === 0 ? (
                     <>
                       <p>先添加设备，建立你的桌面方案。</p>
-                      <p>从资产库放入桌子和设备，再设置位置与连接，即可查看检查结果和改进建议。</p>
-                      <button type="button" className="ui-button ui-button-primary" disabled={!projectEditable} onClick={() => {
-                        closeRecommendations();
-                        setIsLeftPanelOpen(true);
-                        if (isMobile) setIsPanelOpen(false);
-                      }}>
-                        添加第一件设备
-                      </button>
+                      <p>可以直接套用一个桌面模板再调整，也可以从资产库逐件放入设备并设置连接。</p>
+                      <div className="empty-state-actions">
+                        <button type="button" className="ui-button ui-button-primary" disabled={!projectEditable} onClick={() => {
+                          closeRecommendations();
+                          setShowTemplates(true);
+                        }}>
+                          使用桌面模板
+                        </button>
+                        <button type="button" className="ui-button" disabled={!projectEditable} onClick={() => {
+                          closeRecommendations();
+                          setIsLeftPanelOpen(true);
+                          if (isMobile) setIsPanelOpen(false);
+                        }}>
+                          添加第一件设备
+                        </button>
+                      </div>
                     </>
                   ) : (actionableLayoutIssueCount + actionableWiringIssueCount) > 0
                     ? '暂无自动改进或加购建议，请查看上方检查问题并手动处理。'

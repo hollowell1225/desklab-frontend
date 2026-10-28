@@ -94,6 +94,16 @@ test('monitors face the user and sit on the desk', () => {
   assert.ok(Math.abs(monitor.position.z - monitor.scale.z / 2 - desk.scale.z) < 1e-9, 'monitor rests on the desk top');
 });
 
+test('the scene comes with a camera framed on the desk from the user side', () => {
+  const scene = buildDeskScene({ devices: [{ modelId: 'laptop-15', count: 1 }] });
+  const [desk] = byModel(scene, 'office-desk');
+  // Camera coordinates use the Three.js axes: y is height, z is the room's y axis.
+  assert.deepEqual(scene.camera.target, { x: 0, y: desk.scale.z, z: desk.position.y });
+  assert.ok(scene.camera.position.z < desk.position.y, 'the camera looks at the desk from the front');
+  assert.ok(scene.camera.position.y > desk.scale.z, 'and from above the desk top');
+  assert.ok(Math.abs(scene.camera.position.z) <= scene.room.width / 2 + 1.5, 'close enough to see the devices');
+});
+
 test('cable lengths come from standard store lengths', () => {
   const scene = buildTemplateScene(DESK_TEMPLATES[0].id);
   for (const connection of scene.connections) {

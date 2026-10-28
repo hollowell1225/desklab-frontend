@@ -1,4 +1,4 @@
-import { findModelTemplate, withPortAnchors } from './catalog.js';
+import { DEVICE_CATALOG, findModelTemplate, withPortAnchors } from './catalog.js';
 import { evaluateConnectionLength, inferCableType } from './connections.js';
 
 // Turns a short device list ("a desktop, two 27-inch monitors, a router") into
@@ -47,12 +47,7 @@ function createObject(modelId, id, name, position, rotationZ = 0, scale = null) 
 }
 
 function findCategory(modelId) {
-  // Imported lazily through findModelTemplate's catalog; categories are fixed.
-  if (modelId === DESK_MODEL_ID) return 'furniture';
-  if (MONITOR_MODEL_IDS.has(modelId)) return 'display';
-  if (modelId === 'router') return 'network';
-  if (['power-strip', 'wall-outlet', 'power-adapter'].includes(modelId)) return 'power';
-  return 'computer';
+  return DEVICE_CATALOG.find(category => category.models.some(model => model.modelId === modelId))?.category;
 }
 
 function standardCableLength(minimumLength) {
@@ -268,5 +263,12 @@ export function buildDeskScene({ devices = [], desk = {} } = {}) {
     connect(router, 'lan-1', pc, 'eth-1', `${pc.name}网线`);
   }
 
-  return { room, objects, connections, notes };
+  // Frame the desk from the user's side. Camera poses use Three.js axes
+  // (y is height, z is the room's y axis), matching saved project cameras.
+  const camera = {
+    position: { x: 0, y: deskTop + 1.4, z: deskY - (deskScale.x + 1.4) },
+    target: { x: 0, y: deskTop, z: deskY },
+  };
+
+  return { room, objects, connections, camera, notes };
 }
