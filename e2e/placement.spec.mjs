@@ -44,3 +44,24 @@ test('a newly added device gets its power line drawn automatically', async ({ pa
   await expect(page.getByRole('button', { name: '改进建议', exact: true })).toBeVisible();
   expect(evidence).toEqual({ errors: [], writes: [] });
 });
+
+test('a newly added computer is cabled to the monitor and router already on the desk', async ({ page }) => {
+  const evidence = await openProject(page, []);
+  const library = page.getByPlaceholder('搜索设备名称、类型、型号...');
+  for (const name of ['书桌', '路由器', '27 英寸显示器', '台式主机']) {
+    const openLibrary = page.getByRole('button', { name: '展开资产库', exact: true });
+    if (await openLibrary.isVisible()) await openLibrary.click();
+    await library.fill(name);
+    await page.getByRole('button', { name: new RegExp(`^${name}`) }).click();
+  }
+
+  await page.getByRole('button', { name: '所有连接', exact: true }).click();
+  const list = page.getByRole('dialog', { name: '全部连接清单', exact: true });
+  await expect(list).toContainText(/台式主机(HDMI|DP)线/);
+  await expect(list).toContainText('台式主机网线');
+  await list.getByRole('button', { name: /关闭/ }).click();
+
+  // Nobody is told to plug in their own monitor or network cable.
+  await expect(page.getByRole('button', { name: '改进建议', exact: true })).toBeVisible();
+  expect(evidence).toEqual({ errors: [], writes: [] });
+});

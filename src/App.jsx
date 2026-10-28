@@ -41,7 +41,7 @@ import { assertProjectImportSize, getProjectImportByteLength } from './domain/pr
 import { getPurchaseGuidance } from './domain/purchase-guidance.js';
 import { DESK_TEMPLATES, buildTemplateScene } from './domain/desk-templates.js';
 import { buildShoppingList } from './domain/shopping-list.js';
-import { applyAllAvailableImprovements, applyAllImprovements, applyImprovement, buildFreeImprovements, buildPowerCompletion, buildRecommendations } from './domain/recommendations.js';
+import { applyAllAvailableImprovements, applyAllImprovements, applyImprovement, buildConnectionCompletion, buildFreeImprovements, buildRecommendations } from './domain/recommendations.js';
 import { createProjectHistory } from './domain/project-history.js';
 import { createStatusNotifier } from './domain/status-notifier.js';
 import PropertiesEditor from './components/PropertiesEditor.jsx';
@@ -920,10 +920,10 @@ export default function App() {
     recordHistory();
     const nextObjects = [...objects, result.object];
     setObjects(nextObjects);
-    // Real devices are plugged in: draw the new device's power line for the
-    // user when there is a free outlet or strip, so load checks keep working.
-    const powerLine = buildPowerCompletion({ room, objects: nextObjects, connections }, result.object.id);
-    if (powerLine) setConnections([...connections, powerLine]);
+    // Real devices are already plugged in and cabled: draw the new device's
+    // power, video and network lines for the user where a free port exists.
+    const newLines = buildConnectionCompletion({ room, objects: nextObjects, connections }, result.object.id);
+    if (newLines.length > 0) setConnections([...connections, ...newLines]);
     setSelectedObjectId(result.object.id);
     return result.object;
   }, [connections, objects, projectEditable, recordHistory, room, showStatus]);

@@ -6,7 +6,7 @@ import {
   applyAllImprovements,
   applyImprovement,
   buildFreeImprovements,
-  buildPowerCompletion,
+  buildConnectionCompletion,
   buildPurchaseSuggestions,
   buildRecommendations,
 } from '../src/domain/recommendations.js';
@@ -27,6 +27,14 @@ const object = (id, overrides = {}) => ({
   scale: { x: 1, y: 1, z: 1 },
   ...overrides,
 });
+
+// The engine view: every free fix, including the model-completion lines
+// (power, video, network) that the user-facing buildRecommendations hides.
+const engineRecommendations = (project, options = {}) => {
+  const freeImprovements = buildFreeImprovements(project.room, project.objects, project.connections, options);
+  const purchases = buildPurchaseSuggestions(project.objects, project.connections, options);
+  return { freeImprovements, purchases, total: freeImprovements.length + purchases.length };
+};
 
 const applyObjectPatch = (objects, patch) => objects.map(item =>
   item.id === patch.objectId
@@ -1108,7 +1116,7 @@ test('live recommendations tolerate non-string port names already diagnosed by w
   const objects = [router, pc];
   const wiringIssues = analyzeProjectWiring(objects, []);
 
-  const recommendations = buildRecommendations(
+  const recommendations = engineRecommendations(
     { room, objects, connections: [] },
     { wiringIssues }
   );
@@ -1154,7 +1162,7 @@ test('live recommendations ignore invalid port IDs without hiding valid network 
   };
   const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
 
-  const recommendations = buildRecommendations(project, { wiringIssues });
+  const recommendations = engineRecommendations(project, { wiringIssues });
 
   assert.deepEqual({
     invalidPortIssues: wiringIssues
@@ -1210,7 +1218,7 @@ test('live recommendations ignore duplicate port IDs without hiding valid networ
   };
   const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
 
-  const recommendations = buildRecommendations(project, { wiringIssues });
+  const recommendations = engineRecommendations(project, { wiringIssues });
   const next = applyAllImprovements(project, recommendations.freeImprovements);
   const nextIssues = analyzeProjectWiring(next.objects, next.connections);
 
@@ -1278,7 +1286,7 @@ test('live recommendations ignore invalid object IDs without hiding valid networ
   };
   const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
 
-  const recommendations = buildRecommendations(project, { wiringIssues });
+  const recommendations = engineRecommendations(project, { wiringIssues });
   const next = applyAllImprovements(project, recommendations.freeImprovements);
   const nextIssues = analyzeProjectWiring(next.objects, next.connections);
 
@@ -1342,7 +1350,7 @@ test('live recommendations ignore duplicate object IDs without hiding valid netw
   };
   const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
 
-  const recommendations = buildRecommendations(project, { wiringIssues });
+  const recommendations = engineRecommendations(project, { wiringIssues });
   const next = applyAllImprovements(project, recommendations.freeImprovements);
   const nextIssues = analyzeProjectWiring(next.objects, next.connections);
 
@@ -1606,7 +1614,7 @@ test('applyAllImprovements resolves every reported issue at once', () => {
   assert.equal(project.objects[0].position.z, 1.5, 'original project must be untouched');
 });
 
-test('applyAllAvailableImprovements powers a router before networking a device through it', () => {
+test('applyAllAvailableImprovements wires power and network in one action', () => {
   const outlet = object('outlet', {
     type: 'outlet', modelId: 'wall-outlet',
     ports: [{ id: 'ac-out', name: 'AC OUT', type: 'ac_output', direction: 'output' }],
@@ -1630,10 +1638,6 @@ test('applyAllAvailableImprovements powers a router before networking a device t
   });
   const project = { room, objects: [outlet, adapter, router, pc], connections: [] };
 
-  assert.equal(buildFreeImprovements(room, project.objects, project.connections)
-    .some(item => item.code === 'auto_network_device'), false,
-  'the initial pass must power the router before it can network the PC');
-
   const next = applyAllAvailableImprovements(project);
 
   assert.equal(next.connections.some(connection =>
@@ -1645,7 +1649,7 @@ test('applyAllAvailableImprovements powers a router before networking a device t
     connection.cableType === 'ethernet'
     && connection.fromObjectId === 'router'
     && connection.toObjectId === 'pc'
-  ), true, 'the follow-up pass should network the PC through the newly powered router');
+  ), true, 'the PC is networked through the router');
   assert.equal(buildFreeImprovements(next.room, next.objects, next.connections).length, 0);
 });
 
@@ -1771,11 +1775,11 @@ test('automatic network fixes remain independently applicable when composite end
   };
   assert.equal(isProjectEnvelope(project), true);
 
-  const recommendations = buildRecommendations(project);
+  const recommendations = engineRecommendations(project);
   const networkSuggestions = recommendations.freeImprovements
     .filter(item => item.code === 'auto_network_device');
   const next = applyAllImprovements(project, networkSuggestions);
-  const nextRecommendations = buildRecommendations(next);
+  const nextRecommendations = engineRecommendations(next);
 
   assert.deepEqual({
     suggestedTargets: networkSuggestions
@@ -1798,7 +1802,7 @@ test('automatic network fixes remain independently applicable when composite end
   });
 });
 
-test('does not use an unpowered router as an automatic network source', () => {
+test('network completion does not depend on whether the router power line is drawn', () => {
   const adapter = object('adapter', {
     type: 'power-adapter', modelId: 'power-adapter',
     ports: [
@@ -1824,8 +1828,8 @@ test('does not use an unpowered router as an automatic network source', () => {
 
   const suggestions = buildFreeImprovements(room, [adapter, router, pc], connections);
 
-  assert.equal(suggestions.some(item => item.code === 'auto_network_device'), false,
-    'a router must have a power path to a root source before it can provide network access');
+  assert.equal(suggestions.some(item => item.code === 'auto_network_device'), true,
+    'the real router is plugged in even if its adapter is not drawn to an outlet');
 });
 
 test('does not suggest networking an ethernet output-only device port', () => {
@@ -2063,7 +2067,7 @@ test('live recommendations tolerate non-string model IDs when the display type i
   const project = { room, objects: [source, display], connections: [] };
   const wiringIssues = analyzeProjectWiring(project.objects, project.connections);
 
-  const recommendations = buildRecommendations(project, { wiringIssues });
+  const recommendations = engineRecommendations(project, { wiringIssues });
 
   assert.deepEqual({
     free: recommendations.freeImprovements.map(item => ({
@@ -2285,20 +2289,104 @@ test('no outlet check when the user has not modeled any outlets', () => {
   assert.equal(outletPurchase(['a', 'b', 'c'].map(acDevice)), undefined);
 });
 
-test('buildPowerCompletion wires a newly added device to the nearest free outlet or strip', () => {
-  const outlet = { ...wallOutlet('wall'), position: { x: -1, y: 0, z: 0.3 } };
-  const strip = { ...sixWayStrip('strip'), position: { x: 1, y: 0, z: 0.05 } };
-  const pc = { ...acDevice('pc'), position: { x: 1.4, y: 0, z: 0.25 } };
-  const connections = [{
-    id: 'wall-strip', name: '插排电源线', cableType: 'power', length: 3,
-    fromObjectId: 'wall', fromPortId: 'ac-out-1', toObjectId: 'strip', toPortId: 'ac-in',
-  }];
 
-  const connection = buildPowerCompletion({ room, objects: [outlet, strip, pc], connections }, 'pc');
-  assert.equal(connection.fromObjectId, 'strip');
-  assert.equal(connection.toObjectId, 'pc');
-  assert.equal(connection.cableType, 'power');
+test('unconnected video and network ports are completed, not suggested as fixes', () => {
+  const pc = object('pc', {
+    position: { x: 0, y: 0, z: 0.5 },
+    ports: [
+      { id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' },
+      { id: 'eth-1', name: '网口', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const monitor = object('monitor', {
+    type: 'monitor', modelId: 'monitor-24', position: { x: 1, y: 0, z: 0.5 },
+    ports: [{ id: 'hdmi-in', name: 'HDMI 输入', type: 'hdmi', direction: 'input' }],
+  });
+  const router = object('router', {
+    type: 'router', modelId: 'router', position: { x: -1, y: 0, z: 0.5 },
+    ports: [{ id: 'lan-1', name: '网口 1', type: 'ethernet', direction: 'bidirectional' }],
+  });
+  const project = { room, objects: [pc, monitor, router], connections: [] };
 
-  assert.equal(buildPowerCompletion({ room, objects: [pc], connections: [] }, 'pc'), null, 'nothing to plug into');
-  assert.equal(buildPowerCompletion({ room, objects: [outlet, strip, pc], connections }, 'missing'), null);
+  const engine = buildFreeImprovements(room, project.objects, []).map(item => item.code).sort();
+  assert.deepEqual(engine, ['auto_connect_display', 'auto_network_device'], 'the engine still knows how to draw them');
+  assert.deepEqual(buildRecommendations(project).freeImprovements, [], 'but a user is not told to plug in their own monitor');
+});
+
+const poweredSetup = () => {
+  const outlet = object('outlet', {
+    position: { x: -1.5, y: 0, z: 0.3 },
+    ports: [1, 2].map(n => ({ id: `ac-out-${n}`, name: `插座 ${n}`, type: 'ac_output', direction: 'output' })),
+  });
+  const strip = { ...sixWayStrip('strip'), position: { x: 0, y: 0, z: 0.05 } };
+  const router = object('router', {
+    type: 'router', modelId: 'router', position: { x: -1, y: 1, z: 0.05 },
+    ports: [
+      { id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' },
+      { id: 'lan-1', name: '网口 1', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const monitor = object('monitor', {
+    type: 'monitor', modelId: 'monitor-24', position: { x: 0.5, y: 0.5, z: 1 },
+    ports: [
+      { id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' },
+      { id: 'hdmi-in', name: 'HDMI 输入', type: 'hdmi', direction: 'input' },
+      { id: 'dp-in', name: 'DP 输入', type: 'displayport', direction: 'input' },
+    ],
+  });
+  const connections = [
+    { id: 'outlet-strip', name: '插排电源线', cableType: 'power', length: 3, fromObjectId: 'outlet', fromPortId: 'ac-out-1', toObjectId: 'strip', toPortId: 'ac-in' },
+    { id: 'strip-router', name: '路由器电源线', cableType: 'power', length: 3, fromObjectId: 'strip', fromPortId: 'ac-out-1', toObjectId: 'router', toPortId: 'ac-in' },
+    { id: 'strip-monitor', name: '显示器电源线', cableType: 'power', length: 3, fromObjectId: 'strip', fromPortId: 'ac-out-2', toObjectId: 'monitor', toPortId: 'ac-in' },
+  ];
+  return { outlet, strip, router, monitor, connections };
+};
+
+test('completing a newly added computer draws its power, video and network lines', () => {
+  const { outlet, strip, router, monitor, connections } = poweredSetup();
+  const pc = object('pc', {
+    position: { x: 1, y: 0, z: 0.25 },
+    ports: [
+      { id: 'ac-in', name: '电源输入', type: 'ac_input', direction: 'input' },
+      { id: 'hdmi-out', name: 'HDMI 输出', type: 'hdmi', direction: 'output' },
+      { id: 'dp-out', name: 'DP 输出', type: 'displayport', direction: 'output' },
+      { id: 'eth-1', name: '网口', type: 'ethernet', direction: 'bidirectional' },
+    ],
+  });
+  const project = { room, objects: [outlet, strip, router, monitor, pc], connections };
+
+  const lines = buildConnectionCompletion(project, 'pc');
+  const kind = line => (['hdmi', 'displayport'].includes(line.cableType) ? 'video' : line.cableType);
+  assert.deepEqual(lines.map(line => [kind(line), line.fromObjectId, line.toObjectId]).sort(), [
+    ['ethernet', 'router', 'pc'],
+    ['power', 'strip', 'pc'],
+    ['video', 'pc', 'monitor'],
+  ], 'one video cable to the monitor, not two');
+
+  const completed = { ...project, connections: [...connections, ...lines] };
+  assert.deepEqual(analyzeProjectWiring(completed.objects, completed.connections)
+    .filter(issue => issue.severity !== 'info').map(issue => issue.title), []);
+});
+
+test('adding a strip first plugs it in, then powers the devices around it', () => {
+  const outlet = object('outlet', {
+    position: { x: -1.5, y: 0, z: 0.3 },
+    ports: [{ id: 'ac-out-1', name: '插座', type: 'ac_output', direction: 'output' }],
+  });
+  const pc = { ...acDevice('pc'), position: { x: 1, y: 0, z: 0.25 } };
+  const lamp = { ...acDevice('lamp'), position: { x: 1.5, y: 1, z: 0.25 } };
+  const strip = { ...sixWayStrip('strip'), position: { x: 0, y: 0, z: 0.05 } };
+
+  const lines = buildConnectionCompletion({ room, objects: [outlet, pc, lamp, strip], connections: [] }, 'strip');
+  assert.deepEqual(lines.map(line => [line.fromObjectId, line.toObjectId]).sort(), [
+    ['outlet', 'strip'],
+    ['strip', 'lamp'],
+    ['strip', 'pc'],
+  ]);
+});
+
+test('completion returns nothing when there is nothing to connect', () => {
+  assert.deepEqual(buildConnectionCompletion({ room, objects: [acDevice('pc')], connections: [] }, 'pc'), []);
+  assert.deepEqual(buildConnectionCompletion({ room, objects: [], connections: [] }, 'missing'), []);
+  assert.deepEqual(buildConnectionCompletion({ objects: [acDevice('pc')], connections: [] }, 'pc'), []);
 });

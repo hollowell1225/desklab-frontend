@@ -327,7 +327,8 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
 
       for (const candidate of actionableObjects) {
         if (candidate.id === object.id) continue;
-        if (!isRouter(candidate) || requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
+        // A real router is powered even when its power line is not drawn.
+        if (!isRouter(candidate)) continue;
 
         for (const candidatePort of getActionablePortRecords(candidate)) {
           if (candidatePort.type !== 'ethernet') continue;
@@ -726,18 +727,37 @@ export function applyAllAvailableImprovements(project) {
   }
 }
 
+// Lines that only complete the model: the user's real devices are already
+// plugged in and cabled, so these are drawn for them rather than suggested.
+const MODEL_COMPLETION_CODES = new Set(['auto_power_device', 'auto_connect_display', 'auto_network_device']);
+const MAX_COMPLETION_PASSES = 5;
+
 /**
- * The power line to draw for one device, or null: used to complete the model
- * automatically when a device is added, so load checks keep working without
- * the user drawing every power cable by hand.
+ * The power, video and network lines to draw for one newly added device (as
+ * new connection records, possibly empty). Several passes let a new strip get
+ * plugged in first and then power the devices around it. The new device is
+ * considered first so its own ports get the nearest free sockets.
  */
-export function buildPowerCompletion(project = {}, objectId) {
-  const { room, objects, connections } = project || {};
-  if (!room) return null;
-  const suggestion = buildFreeImprovements(room, objects || [], connections || [])
-    .find(candidate => candidate.code === 'auto_power_device'
-      && candidate.patch.newConnection.toObjectId === objectId);
-  return suggestion ? { ...suggestion.patch.newConnection } : null;
+export function buildConnectionCompletion(project = {}, objectId) {
+  const { room } = project || {};
+  const objects = getRecordItems(project?.objects);
+  const target = objects.find(object => object.id === objectId);
+  if (!room || !target) return [];
+
+  const orderedObjects = [target, ...objects.filter(object => object !== target)];
+  let connections = getRecordItems(project.connections);
+  const added = [];
+  for (let pass = 0; pass < MAX_COMPLETION_PASSES; pass += 1) {
+    const suggestions = buildFreeImprovements(room, orderedObjects, connections)
+      .filter(suggestion => MODEL_COMPLETION_CODES.has(suggestion.code)
+        && suggestion.objectIds?.includes(objectId));
+    const next = applyAllImprovements({ room, objects: orderedObjects, connections }, suggestions);
+    const newLines = next.connections.slice(connections.length);
+    if (newLines.length === 0) break;
+    added.push(...newLines);
+    connections = next.connections;
+  }
+  return added;
 }
 
 /**
@@ -753,11 +773,11 @@ export function buildRecommendations(project = {}, options = {}) {
     ? options.wiringIssues
     : analyzeProjectWiring(objects, connections);
   const powerGraph = options.powerGraph || buildPowerGraph(objects, connections);
-  // Drawing power lines only completes the model; a user's real devices are
-  // already plugged in, so it is not offered as an improvement.
+  // Drawing missing power, video or network lines only completes the model;
+  // the user's real devices already work, so these are not offered as fixes.
   const freeImprovements = room
     ? buildFreeImprovements(room, objects, connections, { wiringIssues, powerGraph })
-      .filter(suggestion => suggestion.code !== 'auto_power_device')
+      .filter(suggestion => !MODEL_COMPLETION_CODES.has(suggestion.code))
     : [];
   const purchases = buildPurchaseSuggestions(objects, connections, { wiringIssues, powerGraph });
   return {
