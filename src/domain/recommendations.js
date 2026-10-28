@@ -128,6 +128,36 @@ function requiresPowerButIsUnpowered(object, poweredObjectIds) {
   return hasPowerInput(object) && !poweredObjectIds.has(object.id);
 }
 
+/**
+ * Nearest free, compatible power output for an unpowered input. Powered
+ * sources always win. A DC input may fall back to an unpowered source (in
+ * practice the device's own power adapter that is not plugged in yet): wiring
+ * the device to it is the right first step, and the adapter keeps its own
+ * unpowered warning. AC inputs never chain through an unpowered strip.
+ */
+function findNearestFreePowerSource(object, port, candidates, occupiedPorts, poweredObjectIds) {
+  const search = allowUnpowered => {
+    let best = null;
+    for (const candidate of candidates) {
+      if (candidate.id === object.id) continue;
+      if (!allowUnpowered && requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
+      for (const candidatePort of getActionablePortRecords(candidate)) {
+        const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
+        if (!hasFromDir
+          || !isPortDirectionConsistent(candidatePort)
+          || occupiedPorts.get(candidate.id)?.has(candidatePort.id)
+          || !arePortTypesCompatible(candidatePort.type, port.type)) continue;
+        const distance = calculatePositionDistance(object.position, candidate.position);
+        if (distance !== null && (!best || distance < best.distance)) {
+          best = { device: candidate, port: candidatePort, distance };
+        }
+      }
+    }
+    return best;
+  };
+  return search(false) || (port.type === 'dc_input' ? search(true) : null);
+}
+
 function isRouter(object) {
   return object.modelId === 'router' || object.type === 'router';
 }
@@ -227,36 +257,17 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
       const object = endpoint?.object;
       const port = endpoint?.port;
       if (object && port && isPortDirectionConsistent(port)) {
-        let bestSource = null;
-        let minDistance = Number.MAX_VALUE;
-
-        for (const candidate of actionableObjects) {
-          if (candidate.id === object.id) continue;
-          if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
-          for (const candidatePort of getActionablePortRecords(candidate)) {
-            const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
-            if (hasFromDir &&
-                isPortDirectionConsistent(candidatePort) &&
-                !(occupiedPorts.get(candidate.id)?.has(candidatePort.id)) &&
-                arePortTypesCompatible(candidatePort.type, port.type)) {
-
-              const dist = calculatePositionDistance(object.position, candidate.position);
-              if (dist !== null && dist < minDistance) {
-                minDistance = dist;
-                bestSource = { device: candidate, port: candidatePort, distance: dist };
-              }
-            }
-          }
-        }
+        const bestSource = findNearestFreePowerSource(object, port, actionableObjects, occupiedPorts, poweredObjectIds);
 
         if (bestSource) {
           const length = ceilLength(Math.max(1.5, bestSource.distance * 1.1 + 0.3));
           const cableType = inferCableType(bestSource.port, port);
+          const sourceNeedsPower = requiresPowerButIsUnpowered(bestSource.device, poweredObjectIds);
           suggestions.push({
             id: `auto-power:${object.id}:${port.id}`,
             code: 'auto_power_device',
             title: `为“${object.name}”连接电源`,
-            description: `检测到“${object.name}”的电源接口“${port.name}”未连接。可自动使用一根 ${length}m 的电源线连接到附近的“${bestSource.device.name}”的空闲插孔“${bestSource.port.name}”。`,
+            description: `检测到“${object.name}”的电源接口“${port.name}”未连接。可自动使用一根 ${length}m 的电源线连接到附近的“${bestSource.device.name}”的空闲插孔“${bestSource.port.name}”。${sourceNeedsPower ? `接好后还需要把“${bestSource.device.name}”插到插座上。` : ''}`,
             objectIds: [bestSource.device.id, object.id],
             patch: {
               newConnection: {
@@ -599,11 +610,12 @@ export function buildPurchaseSuggestions(rawObjects, rawConnections = [], option
 
     if (!isPortDirectionConsistent(port)) continue;
 
-    // Check if there's a nearby power source with a free compatible port
+    // Check if there's a nearby power source with a free compatible port. A DC
+    // device's unplugged adapter still counts: it needs plugging in, not a twin.
     let hasNearbySource = false;
     for (const candidate of actionableObjects) {
       if (candidate.id === object.id) continue;
-      if (requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
+      if (port.type !== 'dc_input' && requiresPowerButIsUnpowered(candidate, poweredObjectIds)) continue;
       for (const candidatePort of getActionablePortRecords(candidate)) {
         const hasFromDir = candidatePort.direction === 'output' || candidatePort.direction === 'bidirectional';
         if (hasFromDir &&

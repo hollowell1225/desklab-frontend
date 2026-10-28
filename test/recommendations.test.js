@@ -557,6 +557,39 @@ test('auto_power_device with real catalog power-adapter and laptop clears unpowe
     'unpowered warning should be cleared after auto-connecting laptop');
 });
 
+test('a DC device uses its existing but unplugged adapter instead of buying another', () => {
+  const adapter = placeCatalogObject({
+    modelTemplate: findModelTemplate({ modelId: 'power-adapter' }),
+    categoryId: 'power',
+    room,
+    id: 'adapter',
+  }).object;
+  const laptop = placeCatalogObject({
+    modelTemplate: findModelTemplate({ modelId: 'laptop-15' }),
+    categoryId: 'computer',
+    room,
+    id: 'laptop',
+    position: { x: 1, y: 0, z: 0 },
+  }).object;
+  const objects = [adapter, laptop];
+
+  const autoPower = buildFreeImprovements(room, objects, [])
+    .find(item => item.code === 'auto_power_device' && item.objectIds.includes('laptop'));
+  assert.ok(autoPower, 'the laptop should be connected to the adapter that is already there');
+  assert.equal(autoPower.patch.newConnection.fromObjectId, 'adapter');
+  assert.match(autoPower.description, /插到插座/, 'the user is reminded to plug the adapter in');
+
+  const purchases = buildPurchaseSuggestions(objects, []);
+  assert.equal(purchases.some(item => item.code === 'buy_power_for_unpowered' && item.objectIds.includes('laptop')), false,
+    'no second adapter should be recommended');
+
+  const next = applyImprovement({ room, objects, connections: [] }, autoPower);
+  assert.equal(next.connections.length, 1);
+  assert.ok(analyzeProjectWiring(next.objects, next.connections)
+    .some(issue => issue.code === 'unpowered_input' && issue.objectIds.includes('adapter')),
+  'the adapter itself still reports that it needs power');
+});
+
 test('applyImprovement applies a layout patch without mutating the input', () => {
   const floating = object('floating', { position: { x: 1.5, y: 0, z: 1.5 }, scale: { x: 0.2, y: 0.2, z: 0.2 } });
   const project = { room, objects: [floating], connections: [] };
