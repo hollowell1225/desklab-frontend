@@ -378,6 +378,11 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
 
   // 4. 自动连接显示器 (auto_connect_display)
   const DISPLAY_PORT_TYPES = new Set(['hdmi', 'displayport', 'usb_c']);
+  // One video cable per computer-monitor pair is enough; a spare output should
+  // only be offered to a screen this computer does not already feed.
+  const linkedDisplayPairs = new Set(connections
+    .filter(connection => !invalidConnectionIds.has(connection.id) && DISPLAY_PORT_TYPES.has(connection.cableType))
+    .map(connection => `${connection.fromObjectId}\u0000${connection.toObjectId}`));
   for (const object of actionableObjects) {
     for (const port of getActionablePortRecords(object)) {
       if (!DISPLAY_PORT_TYPES.has(port.type)) continue;
@@ -397,7 +402,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
         const isDisplay = modelId.startsWith('monitor')
           || candidate.type === 'monitor'
           || modelId.startsWith('ultrawide');
-        if (!isDisplay) continue;
+        if (!isDisplay || linkedDisplayPairs.has(`${object.id}\u0000${candidate.id}`)) continue;
 
         for (const candidatePort of getActionablePortRecords(candidate)) {
           if (candidatePort.type !== port.type) continue;
@@ -445,6 +450,7 @@ export function buildFreeImprovements(room, rawObjects, rawConnections = [], opt
           occupiedPorts.set(bestDisplay.device.id, localPorts);
         }
         localPorts.add(bestDisplay.port.id);
+        linkedDisplayPairs.add(`${object.id}\u0000${bestDisplay.device.id}`);
       }
     }
   }

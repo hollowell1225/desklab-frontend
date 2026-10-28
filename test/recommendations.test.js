@@ -2310,9 +2310,49 @@ test('suggests connecting DisplayPort output to nearby monitor with DP input', (
 
   const suggestions = buildFreeImprovements(room, objects, []);
   const displaySuggestions = suggestions.filter(item => item.code === 'auto_connect_display');
-  assert.equal(displaySuggestions.length, 2, 'should suggest both HDMI and DP connections');
+  assert.equal(displaySuggestions.length, 1, 'one cable per computer-monitor pair is enough');
   assert.equal(displaySuggestions[0].patch.newConnection.cableType, 'displayport');
-  assert.equal(displaySuggestions[1].patch.newConnection.cableType, 'hdmi');
+});
+
+test('does not suggest a second video cable to a monitor the computer already feeds', () => {
+  const pc = object('pc', {
+    type: 'desktop-pc',
+    modelId: 'desktop-pc',
+    position: { x: 0, y: 0, z: 0.5 },
+    ports: [
+      { id: 'dp-out', name: 'DP OUT', type: 'displayport', direction: 'output' },
+      { id: 'hdmi-out', name: 'HDMI OUT', type: 'hdmi', direction: 'output' },
+    ],
+  });
+  const monitor = object('monitor1', {
+    type: 'monitor',
+    modelId: 'monitor-24',
+    position: { x: 1, y: 0, z: 0.5 },
+    ports: [
+      { id: 'dp-in', name: 'DP IN', type: 'displayport', direction: 'input' },
+      { id: 'hdmi-in', name: 'HDMI IN', type: 'hdmi', direction: 'input' },
+    ],
+  });
+  const secondMonitor = object('monitor2', {
+    type: 'monitor',
+    modelId: 'monitor-24',
+    position: { x: -1, y: 0, z: 0.5 },
+    ports: [{ id: 'hdmi-in', name: 'HDMI IN', type: 'hdmi', direction: 'input' }],
+  });
+  const connections = [{
+    id: 'pc-dp', name: 'PC DP', cableType: 'displayport', length: 2,
+    fromObjectId: 'pc', fromPortId: 'dp-out', toObjectId: 'monitor1', toPortId: 'dp-in',
+  }];
+
+  const onlyOneMonitor = buildFreeImprovements(room, [pc, monitor], connections)
+    .filter(item => item.code === 'auto_connect_display');
+  assert.deepEqual(onlyOneMonitor, [], 'the spare HDMI output should not nag about the same screen');
+
+  const withSecondMonitor = buildFreeImprovements(room, [pc, monitor, secondMonitor], connections)
+    .filter(item => item.code === 'auto_connect_display');
+  assert.equal(withSecondMonitor.length, 1);
+  assert.equal(withSecondMonitor[0].patch.newConnection.toObjectId, 'monitor2',
+    'the spare output goes to the screen that still needs a signal');
 });
 
 test('suggests connecting USB-C display output to nearby monitor with USB-C input', () => {
